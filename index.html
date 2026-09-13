@@ -1,0 +1,3525 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financiera Pacífico — Simulador WAN NOC</title>
+<style>
+:root {
+  --bg: #0f1218; --panel: #1a1f2c; --panel2: #222836; --panel3: #2a3347;
+  --text: #e6ebf5; --text2: #8a93a6; --accent: #ffa03c;
+  --green: #3cc878; --yellow: #f0c83c; --red: #dc4646; --gray: #5a6478;
+  --blue-cm: #6496ff; --blue-br: #4678b4;
+  --purple: #9070cc;
+  --legacy: #8a7560;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:13px;display:flex;flex-direction:column;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--panel2);border-radius:2px;}
+#topbar{display:flex;align-items:center;gap:14px;padding:6px 14px;
+  background:var(--panel);border-bottom:1px solid var(--panel2);
+  min-height:54px;flex-shrink:0;transition:background .4s,border-color .4s;
+  position:relative;z-index:10;}
+#topbar.alert{background:#1e0d0d;border-bottom-color:var(--red);
+  animation:pulse-tb 1.6s ease-in-out infinite;}
+@keyframes pulse-tb{0%,100%{border-bottom-color:var(--red);}50%{border-bottom-color:#ff4040;}}
+.tb-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.tb-logo{font-size:22px;color:var(--accent);}
+.tb-brand h1{font-size:13px;font-weight:700;letter-spacing:.3px;line-height:1.2;}
+.tb-brand .sub{font-size:10px;color:var(--text2);}
+.tb-metrics{display:flex;gap:18px;margin-left:auto;}
+.metric{display:flex;flex-direction:column;align-items:center;min-width:62px;}
+.mval{font-size:15px;font-weight:700;line-height:1;transition:color .3s;}
+.mlbl{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-top:2px;}
+.toggle-wrap{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.mode-pill{font-size:10px;padding:3px 9px;border-radius:3px;font-weight:700;letter-spacing:.5px;transition:all .3s;}
+.pill-despues{background:#1a3520;color:var(--green);border:1px solid #2a5030;}
+.pill-antes{background:#3a1010;color:var(--red);border:1px solid #5a2020;}
+.main-area{display:grid;grid-template-columns:1fr 330px;flex:1;min-height:0;overflow:hidden;}
+.map-panel{display:flex;flex-direction:column;gap:6px;padding:8px;overflow:hidden;min-height:0;}
+
+.map-container{
+  flex:1;min-height:0;position:relative;
+  border-radius:6px;border:1px solid var(--panel2);overflow:hidden;
+  background-color: #071220;
+  transition:background-color .5s;
+}
+.map-container::before{
+  content:'';position:absolute;inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse 120% 80% at 30% 20%, rgba(20,60,110,0.45) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 70% at 70% 70%, rgba(8,26,50,0.55) 0%, transparent 65%),
+    linear-gradient(180deg, #071b30 0%, #05101e 35%, #040b18 70%, #02060d 100%);
+  z-index:0;
+  transition:opacity .5s;
+}
+.map-container.legacy::before{
+  background:
+    radial-gradient(ellipse 120% 80% at 30% 20%, rgba(90,70,40,0.20) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 70% at 70% 70%, rgba(50,40,25,0.30) 0%, transparent 65%),
+    linear-gradient(180deg, #14100c 0%, #0e0c0a 35%, #0a0806 70%, #060504 100%);
+}
+.map-container::after{
+  content:'';position:absolute;inset:0;
+  pointer-events:none;
+  background:radial-gradient(ellipse at 25% 15%, rgba(100,180,230,0.06) 0%, transparent 55%);
+  z-index: 1;
+}
+.map-container.legacy::after{
+  background:radial-gradient(ellipse at 25% 15%, rgba(180,140,90,0.05) 0%, transparent 55%);
+}
+#chile-map{
+  width:100%;height:100%;display:block;
+  cursor:grab;
+  position:relative;
+  z-index: 2;
+  background: transparent;
+}
+#chile-map.dragging{cursor:grabbing !important;}
+.map-legend{display:flex;gap:14px;padding:5px 10px;flex-shrink:0;
+  background:var(--panel);border-radius:4px;border:1px solid var(--panel2);flex-wrap:wrap;}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+
+.handover-toast-layer{
+  position:absolute;top:12px;right:12px;
+  display:flex;flex-direction:column;gap:6px;
+  z-index:60;pointer-events:none;
+  max-width:300px;
+}
+.handover-toast{
+  background:#0d1117;border:1px solid #2a3347;
+  border-left:3px solid var(--accent);
+  padding:8px 12px;border-radius:4px;
+  font-size:11px;min-width:240px;
+  box-shadow:0 4px 16px rgba(0,0,0,.6);
+  display:flex;align-items:center;gap:10px;
+  animation:toast-in .3s ease-out;
+  transition:opacity .3s,transform .3s;
+  color:var(--text);
+}
+.handover-toast.out{opacity:0;transform:translateX(20px);}
+.handover-toast .ht-icon{
+  font-size:20px;display:inline-block;
+  animation:rotate-360 1.2s linear infinite;
+}
+.handover-toast .ht-content{flex:1;}
+.handover-toast .ht-title{font-weight:700;font-size:11px;color:var(--accent);margin-bottom:2px;}
+.handover-toast .ht-detail{font-size:11px;color:var(--text);margin-bottom:1px;}
+.handover-toast .ht-lat{font-size:10px;color:var(--text2);}
+@keyframes toast-in{from{opacity:0;transform:translateX(30px);}to{opacity:1;transform:translateX(0);}}
+@keyframes rotate-360{to{transform:rotate(360deg);}}
+
+.tooltip{position:absolute;background:#0d1117;border:1px solid var(--panel2);
+  border-radius:4px;padding:7px 10px;font-size:11px;pointer-events:none;
+  z-index:50;min-width:155px;max-width:220px;display:none;
+  box-shadow:0 4px 16px rgba(0,0,0,.5);}
+.tooltip.vis{display:block;}
+.tt-name{font-weight:700;color:var(--text);margin-bottom:4px;}
+.tt-ip{color:var(--text2);margin-bottom:4px;font-size:10px;}
+.tt-lrow{display:flex;align-items:center;gap:5px;margin:2px 0;font-size:11px;}
+.tt-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.detail-panel{background:var(--panel);border-left:1px solid var(--panel2);
+  overflow-y:auto;display:flex;flex-direction:column;}
+.detail-empty{flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;color:var(--text2);gap:8px;}
+.d-empty-icon{font-size:36px;opacity:.3;}
+.d-empty-sub{font-size:11px;text-align:center;opacity:.6;line-height:1.5;}
+.dc{padding:12px;}
+.dh{border-bottom:1px solid var(--panel2);padding-bottom:10px;margin-bottom:10px;}
+.dtitle{font-size:14px;font-weight:700;line-height:1.3;}
+.dsub{font-size:11px;color:var(--text2);margin-top:2px;}
+.dsec{margin-bottom:12px;}
+.dslbl{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;
+  margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--panel2);}
+.drow{display:flex;justify-content:space-between;padding:3px 0;font-size:11px;gap:8px;}
+.dkey{color:var(--text2);flex-shrink:0;}
+.dval{color:var(--text);font-weight:500;text-align:right;font-size:11px;}
+.lrow{display:flex;align-items:center;gap:7px;padding:5px 7px;
+  margin:3px 0;border-radius:4px;background:var(--panel2);font-size:11px;transition:all .3s;}
+.lind{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:all .3s;}
+.lname{flex:1;font-weight:500;}
+.lstatus{font-size:10px;padding:2px 6px;border-radius:10px;font-weight:700;
+  letter-spacing:.3px;white-space:nowrap;}
+.lmeta{font-size:10px;color:var(--text2);white-space:nowrap;}
+.st-activo .lind{background:var(--green);box-shadow:0 0 7px var(--green);}
+.st-activo .lstatus{background:#1a3a22;color:var(--green);}
+.st-standby .lind{background:var(--yellow);}
+.st-standby .lstatus{background:#3a3510;color:var(--yellow);}
+.st-caido .lind{background:var(--red);}
+.st-caido .lstatus{background:#3a1010;color:var(--red);}
+.st-inactivo .lind{background:var(--gray);}
+.st-inactivo .lstatus{background:#1e2434;color:var(--gray);}
+.badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.badge{font-size:10px;padding:2px 7px;border-radius:3px;
+  background:var(--panel2);color:var(--green);border:1px solid #2a4a2a;}
+.badge.off{color:var(--gray);border-color:var(--panel2);}
+.badge.warm{color:var(--yellow);border-color:#4a4010;}
+.badge.legacy{color:var(--legacy);border-color:#4a3a2a;}
+.ha-tag{display:inline-block;background:#1a2050;color:var(--blue-cm);
+  border:1px solid #2a3070;padding:1px 6px;border-radius:3px;
+  font-size:10px;font-weight:700;margin-left:6px;vertical-align:middle;}
+.vtable{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:4px;}
+.vtable th{color:var(--text2);text-align:left;padding:2px 4px;font-weight:500;font-size:10px;}
+.vtable td{padding:2px 4px;color:var(--text);border-bottom:1px solid var(--panel2);}
+.scenarios-panel{background:var(--panel);border-top:1px solid var(--panel2);
+  padding:7px 12px;display:flex;gap:14px;overflow-x:auto;flex-shrink:0;min-height:0;}
+.sg{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.sg-lbl{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;}
+.sbtns{display:flex;gap:4px;flex-wrap:nowrap;}
+.btn{padding:5px 9px;border-radius:3px;border:none;cursor:pointer;
+  font-size:11px;font-weight:600;white-space:nowrap;letter-spacing:.2px;
+  transition:opacity .15s,transform .15s;font-family:inherit;}
+.btn:hover{opacity:.85;transform:translateY(-1px);}
+.btn:active{transform:translateY(0);opacity:.95;}
+.btn-toggle{padding:5px 12px;font-size:11px;}
+.btn-g{background:var(--panel2);color:var(--green);border:1px solid #2a4a2a;}
+.btn-r{background:#2e1010;color:var(--red);border:1px solid #4a2020;}
+.btn-y{background:#2e2a08;color:var(--yellow);border:1px solid #4a4010;}
+.btn-b{background:#101830;color:var(--blue-cm);border:1px solid #1a2850;}
+.btn-n{background:var(--panel2);color:var(--text2);border:1px solid var(--panel3);}
+.btn-rst{background:#1e1e2e;color:#9090cc;border:1px solid #2a2a4a;}
+.btn-acc{background:var(--accent);color:#0f1218;font-weight:700;}
+.btn-rb{background:#1a0e2e;color:var(--red);border:1px solid #4a1060;}
+.btn-legacy{background:#2a1f14;color:var(--legacy);border:1px solid #4a3a2a;}
+.log-panel{border-top:1px solid var(--panel2);height:106px;display:flex;
+  flex-direction:column;flex-shrink:0;background:var(--panel);}
+.log-hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:3px 12px;background:var(--panel2);font-size:10px;color:var(--text2);flex-shrink:0;}
+.log-body{flex:1;overflow-y:auto;padding:3px 12px;}
+.log-entry{padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03);
+  display:flex;gap:8px;align-items:baseline;}
+.log-ts{color:var(--accent);font-family:'Courier New',monospace;font-size:10px;flex-shrink:0;}
+.log-msg{font-size:11px;color:var(--text2);}
+.log-msg.ok{color:var(--green);}
+.log-msg.warn{color:var(--yellow);}
+.log-msg.alert{color:var(--red);}
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.75);
+  align-items:center;justify-content:center;z-index:1000;display:none;}
+.moverlay.vis{display:flex;}
+.mbox{background:var(--panel);border:1px solid var(--panel2);border-radius:8px;
+  padding:20px;min-width:380px;max-width:540px;max-height:80vh;overflow-y:auto;
+  box-shadow:0 8px 40px rgba(0,0,0,.6);}
+.mtitle{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.mclose{cursor:pointer;color:var(--text2);font-size:16px;}
+.mclose:hover{color:var(--text);}
+.m2col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.mstat{background:var(--panel2);padding:11px;border-radius:6px;}
+.mstat-v{font-size:22px;font-weight:700;line-height:1;}
+.mstat-l{color:var(--text2);font-size:10px;margin-top:3px;}
+.brow{display:flex;align-items:center;gap:8px;margin:5px 0;}
+.blbl{width:72px;font-size:11px;color:var(--text2);text-align:right;flex-shrink:0;}
+.btrack{flex:1;height:14px;background:var(--panel2);border-radius:2px;overflow:hidden;}
+.bfill{height:100%;border-radius:2px;transition:width .6s ease;}
+.bval{width:75px;font-size:11px;color:var(--text);}
+@keyframes flow-line{to{stroke-dashoffset:-20;}}
+@keyframes pulse-ring{0%,100%{opacity:.8;}50%{opacity:.2;}}
+@keyframes glow-cm{0%,100%{opacity:.3;}50%{opacity:.7;}}
+@keyframes ante-pulse{0%,100%{opacity:.35;}50%{opacity:.7;}}
+@keyframes ante-expand{0%{r:6;opacity:.7;}100%{r:22;opacity:0;}}
+@keyframes tower-blink{0%,100%{opacity:1;}50%{opacity:.45;}}
+@keyframes mpls-pulse{0%,100%{opacity:.5;}50%{opacity:.85;}}
+@keyframes mpls-down-pulse{0%,100%{opacity:.4;}50%{opacity:0.9;}}
+.flow-line{animation:flow-line 1.8s linear infinite;}
+.down-ring{animation:pulse-ring 1s ease-in-out infinite;}
+.cm-glow{animation:glow-cm 2s ease-in-out infinite;}
+.ante-ring{animation:ante-pulse 3s ease-in-out infinite;}
+.ante-wave{animation:ante-expand 2.5s ease-out infinite;}
+.tower-blink{animation:tower-blink 1.6s ease-in-out infinite;}
+.mpls-core-pulse{animation:mpls-pulse 3s ease-in-out infinite;}
+.mpls-down-line{animation:mpls-down-pulse 1.2s ease-in-out infinite;}
+
+/* =========================================================
+   MODAL DE SEDE — AMPLIADO PARA PROYECCIÓN
+========================================================= */
+.sm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);
+  display:none;align-items:center;justify-content:center;z-index:2000;}
+.sm-overlay.vis{display:flex;}
+.sm-box{background:var(--panel);border:1px solid var(--panel2);border-radius:10px;
+  width:96vw;max-width:1500px;height:94vh;display:flex;flex-direction:column;
+  box-shadow:0 12px 60px rgba(0,0,0,.75);overflow:hidden;}
+.sm-hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;background:var(--panel2);flex-shrink:0;border-bottom:1px solid var(--panel3);}
+.sm-hdr-left{display:flex;align-items:center;gap:14px;}
+.sm-hdr-title{font-size:18px;font-weight:700;}
+.sm-hdr-sub{font-size:13px;color:var(--text2);margin-top:2px;}
+.sm-close{cursor:pointer;color:var(--text2);font-size:22px;padding:4px 10px;border-radius:4px;}
+.sm-close:hover{background:var(--panel3);color:var(--text);}
+.sm-tabs{display:flex;gap:2px;padding:8px 16px 0;background:var(--panel2);
+  border-bottom:1px solid var(--panel3);flex-shrink:0;overflow-x:auto;}
+.sm-tab{padding:9px 20px;border-radius:5px 5px 0 0;font-size:13px;font-weight:600;
+  cursor:pointer;border:none;background:transparent;color:var(--text2);
+  white-space:nowrap;transition:all .2s;font-family:inherit;}
+.sm-tab:hover{color:var(--text);background:var(--panel3);}
+.sm-tab.active{background:var(--panel);color:var(--accent);border-bottom:3px solid var(--accent);}
+.sm-body{flex:1;overflow:auto;padding:20px;}
+.topo-wrap{width:100%;overflow:auto;}
+.topo-svg{display:block;margin:0 auto;}
+
+/* === PCs CLICKEABLES — hover evidente === */
+.topo-pc{cursor:pointer;transition:transform .15s ease;}
+.topo-pc rect{transition:all .15s ease;}
+
+/* Sombra base de cada PC */
+.topo-pc rect.pc-body{
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+.topo-pc:hover rect.pc-body{
+  stroke:#ffffff !important;
+  stroke-width:2.5 !important;
+  filter:drop-shadow(0 0 6px rgba(255,255,255,0.75)) drop-shadow(0 0 12px rgba(255,255,255,0.4));
+}
+.topo-pc:hover rect.pc-screen{
+  fill:#3ad07a !important;
+}
+.topo-pc:hover text{
+  fill:#ffffff !important;
+  font-weight:800 !important;
+}
+
+.prov-card{cursor:pointer;transition:opacity .2s;}
+.prov-card:hover{opacity:0.85;}
+.prov-card:hover rect{stroke-width:2.5 !important;filter:drop-shadow(0 0 6px currentColor);}
+
+.dev-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);
+  display:none;align-items:center;justify-content:center;z-index:3000;}
+.dev-overlay.vis{display:flex;}
+.dev-box{background:#0d1117;border:1px solid var(--panel2);border-radius:6px;
+  width:80vw;max-width:860px;height:80vh;display:flex;flex-direction:column;
+  box-shadow:0 8px 40px rgba(0,0,0,.8);}
+.dev-hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px;background:#161b26;flex-shrink:0;border-bottom:1px solid var(--panel2);}
+.dev-hdr-info{font-size:12px;}
+.dev-hdr-title{font-weight:700;color:var(--accent);}
+.dev-hdr-model{font-size:10px;color:var(--text2);}
+.dev-close{cursor:pointer;color:var(--text2);font-size:16px;padding:2px 6px;}
+.dev-close:hover{background:var(--panel2);}
+.dev-tabs{display:flex;gap:1px;padding:4px 10px 0;background:#161b26;
+  border-bottom:1px solid var(--panel2);flex-shrink:0;overflow-x:auto;}
+.dev-tab{padding:5px 11px;border-radius:3px 3px 0 0;font-size:10px;font-weight:600;
+  cursor:pointer;border:none;background:transparent;color:var(--text2);
+  white-space:nowrap;font-family:inherit;transition:all .15s;}
+.dev-tab:hover{color:var(--text);}
+.dev-tab.active{background:#0d1117;color:var(--green);border-bottom:2px solid var(--green);}
+.dev-body{flex:1;overflow-y:auto;padding:10px 14px;}
+.ios{font-family:'Courier New',Courier,monospace;font-size:11px;
+  color:#c8d3e0;background:#0a0e14;border-radius:4px;
+  padding:10px 12px;white-space:pre;overflow-x:auto;line-height:1.55;}
+.ios-cmd{color:#ffa03c;font-weight:700;}
+.ios-up{color:#3cc878;}
+.ios-down{color:#dc4646;}
+.ios-warn{color:#f0c83c;}
+.ios-hdr{color:#6496ff;font-weight:700;}
+.ios-dim{color:#5a6478;}
+.term{font-family:'Courier New',monospace;font-size:11px;
+  background:#0a0c10;border-radius:4px;padding:10px;
+  height:320px;overflow-y:auto;display:flex;flex-direction:column;border:1px solid var(--panel2);}
+.term-out{flex:1;overflow-y:auto;margin-bottom:8px;}
+.term-line{padding:1px 0;line-height:1.5;}
+.term-prompt{color:var(--green);}
+.term-result{color:#c8d3e0;}
+.term-error{color:var(--red);}
+.term-info{color:var(--yellow);}
+.term-input-row{display:flex;align-items:center;gap:6px;border-top:1px solid #1a1f2c;padding-top:6px;}
+.term-ps{color:var(--green);font-size:11px;font-family:'Courier New',monospace;white-space:nowrap;}
+.term-input{flex:1;background:transparent;border:none;outline:none;
+  color:var(--green);font-family:'Courier New',monospace;font-size:11px;}
+.ping-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;}
+.ping-table th{color:var(--text2);text-align:left;padding:3px 6px;font-size:10px;border-bottom:1px solid var(--panel2);}
+.ping-table td{padding:3px 6px;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Courier New',monospace;}
+.ping-ok{color:var(--green);}
+.ping-fail{color:var(--red);}
+.ping-tunnel{color:var(--accent);}
+.ping-result{padding:8px;border-radius:4px;margin-top:10px;font-size:11px;font-weight:600;}
+.ping-result.ok{background:#1a3520;color:var(--green);border:1px solid #2a5030;}
+.ping-result.fail{background:#3a1010;color:var(--red);border:1px solid #5a2020;}
+.ping-src-sel{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:8px;background:var(--panel2);border-radius:4px;margin-bottom:8px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:4px;}
+.kpi-card{background:var(--panel2);padding:10px;border-radius:5px;text-align:center;}
+.kpi-val{font-size:18px;font-weight:700;line-height:1;}
+.kpi-lbl{font-size:10px;color:var(--text2);margin-top:4px;}
+.kpi-sub{font-size:9px;color:var(--gray);margin-top:2px;}
+</style>
+</head>
+<body>
+
+<header id="topbar">
+  <div class="tb-brand">
+    <span class="tb-logo">⬡</span>
+    <div>
+      <h1>Financiera Pacífico</h1>
+      <span class="sub">NOC Dashboard · Simulador WAN</span>
+    </div>
+  </div>
+  <div class="tb-metrics">
+    <div class="metric">
+      <span class="mval" id="m-uptime" style="color:var(--accent)">99.99999%</span>
+      <span class="mlbl">Uptime</span>
+    </div>
+    <div class="metric">
+      <span class="mval" id="m-rto" style="color:var(--text)">&lt;1 min</span>
+      <span class="mlbl">RTO promedio</span>
+    </div>
+    <div class="metric">
+      <span class="mval" id="m-op" style="color:var(--green)">22/22</span>
+      <span class="mlbl">Operativas</span>
+    </div>
+    <div class="metric">
+      <span class="mval" id="m-down" style="color:var(--gray)">0/22</span>
+      <span class="mlbl">Caídas</span>
+    </div>
+    <div class="metric">
+      <span class="mval" id="m-ev" style="color:var(--text2)">0</span>
+      <span class="mlbl">Eventos</span>
+    </div>
+    <div class="metric">
+      <span class="mval" id="m-preemp" style="color:var(--gray);font-size:11px">Inactivo</span>
+      <span class="mlbl">Preemption</span>
+    </div>
+  </div>
+  <div class="toggle-wrap">
+    <span class="mode-pill pill-despues" id="mode-pill">REDISEÑO</span>
+    <button class="btn btn-toggle btn-n" id="btn-toggle" onclick="toggleMode()">Ver ANTES →</button>
+    <button class="btn btn-b" style="padding:5px 8px;font-size:10px" onclick="openComparativa()" title="ANTES vs DESPUÉS">A|B</button>
+  </div>
+</header>
+
+<div class="main-area">
+  <div class="map-panel">
+    <div class="map-container" id="map-container">
+      <svg id="chile-map"
+           viewBox="0 0 300 960"
+           preserveAspectRatio="xMidYMid meet"
+           xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;height:100%">
+        <defs>
+          <filter id="glow-filter">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="halo-blur">
+            <feGaussianBlur stdDeviation="10"/>
+          </filter>
+          <filter id="sede-glow">
+            <feGaussianBlur stdDeviation="4" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="antenna-glow">
+            <feGaussianBlur stdDeviation="2.2" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <circle id="halo-sl-0" cx="60"  cy="-20" r="90"  fill="#ffa03c" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-sl-1" cx="100" cy="-90" r="90"  fill="#ffa03c" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-sl-2" cx="140" cy="-160" r="90" fill="#ffa03c" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-sl-3" cx="180" cy="-230" r="90" fill="#ffa03c" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-sl-4" cx="60"  cy="-300" r="90" fill="#ffa03c" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-sl-5" cx="120" cy="-370" r="90" fill="#ffa03c" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-sl-6" cx="200" cy="-440" r="90" fill="#ffa03c" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-sl-7" cx="160" cy="-510" r="90" fill="#ffa03c" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-sl-8" cx="80"  cy="-580" r="90" fill="#ffa03c" opacity="0" filter="url(#halo-blur)"/>
+
+        <circle id="halo-ow-0" cx="200" cy="-30"  r="130" fill="#6496ff" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-ow-1" cx="240" cy="-110" r="130" fill="#6496ff" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-ow-2" cx="280" cy="-190" r="130" fill="#6496ff" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-ow-3" cx="220" cy="-270" r="130" fill="#6496ff" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-ow-4" cx="80"  cy="-350" r="130" fill="#6496ff" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-ow-5" cx="180" cy="-430" r="130" fill="#6496ff" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-ow-6" cx="260" cy="-510" r="130" fill="#6496ff" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-ow-7" cx="100" cy="-590" r="130" fill="#6496ff" opacity="0" filter="url(#halo-blur)"/>
+        <circle id="halo-ow-8" cx="220" cy="-670" r="130" fill="#6496ff" opacity="0" filter="url(#halo-blur)"/>
+
+        <path id="chile-path" fill="#1f2a24" stroke="#4a6b5a" stroke-width="1.2"
+          d="M 169,0 L 166,23 L 175,66 L 172,104 L 163,141 L 158,173 L 150,220
+             L 148,252 L 142,263 L 139,286 L 136,320 L 136,350 L 134,357
+             L 131,366 L 128,378 L 109,412 L 93,435 L 79,458 L 74,481
+             L 82,503 L 82,526 L 96,549 L 82,561 L 55,595 L 68,629
+             L 41,663 L 27,697 L 27,731 L 41,766 L 82,789 L 136,800
+             L 150,814 L 164,823 L 204,835 L 246,847 L 268,872
+             L 246,872 L 218,847 L 218,823 L 218,789 L 150,743 L 136,697
+             L 136,651 L 123,606 L 136,560 L 130,548 L 136,514 L 150,469
+             L 164,423 L 177,389 L 177,354 L 177,331 L 191,286 L 191,217
+             L 204,173 L 231,141 L 218,80 L 204,44 L 191,23 L 191,0 Z"/>
+
+        <g id="pascua-inset" pointer-events="none">
+          <rect x="6" y="196" width="62" height="52" rx="3"
+                fill="rgba(10,20,30,0.55)" stroke="#5a7a8a"
+                stroke-width="0.5" stroke-dasharray="2 2"/>
+          <polygon points="28,232 40,214 44,226 42,236 30,238"
+                   fill="#1f2a24" stroke="#4a6b5a" stroke-width="0.8"/>
+          <text x="37" y="204" text-anchor="middle" fill="#8aa8a0" font-size="4.5"
+                font-family="system-ui" font-weight="700">ISLA DE PASCUA</text>
+        </g>
+
+        <g id="antartica-layer">
+          <path d="M 90,878 Q 100,872 130,870 Q 160,868 200,872 Q 240,878 268,872
+                   L 280,960 L 60,960 Q 70,920 90,878 Z"
+                fill="rgba(60,90,120,0.18)" stroke="#5a7a8a"
+                stroke-width="0.6" stroke-dasharray="4 3"/>
+          <path d="M 138,876 Q 140,890 142,905 Q 146,922 152,940 Q 158,955 168,965
+                   L 186,965 Q 178,948 172,930 Q 164,910 158,892 Q 152,880 146,875 Z"
+                fill="#24312c" stroke="#4a6b5a" stroke-width="1"/>
+          <ellipse cx="200" cy="945" rx="7" ry="4" fill="#24312c" stroke="#4a6b5a" stroke-width="0.6" opacity="0.85"/>
+          <ellipse cx="118" cy="955" rx="9" ry="4" fill="#24312c" stroke="#4a6b5a" stroke-width="0.6" opacity="0.85"/>
+          <text x="150" y="872" text-anchor="middle" fill="#5a7a8a"
+                font-size="3.5" font-family="system-ui" font-style="italic">Pasaje de Drake</text>
+          <text x="152" y="900" text-anchor="middle" fill="#8aa8a0" font-size="4.5"
+                font-family="system-ui" font-weight="700" letter-spacing="0.4">
+            TERRITORIO CHILENO ANTÁRTICO
+          </text>
+          <text x="152" y="908" text-anchor="middle" fill="#5a7a8a" font-size="3.4"
+                font-family="system-ui">Reclamación 1940 · Base Frei Montalva</text>
+        </g>
+
+        <g id="antenna-layer"></g>
+        <g id="sat-layer"></g>
+        <g id="flow-layer"></g>
+        <g id="sedes-layer"></g>
+        <g id="labels-layer"></g>
+
+        <circle id="sel-ring" cx="0" cy="0" r="0"
+                fill="none" stroke="white" stroke-width="2" opacity="0"
+                style="pointer-events:none;transition:all .3s;"/>
+      </svg>
+      <div class="handover-toast-layer" id="handover-toast-layer"></div>
+      <div class="tooltip" id="tooltip">
+        <div class="tt-name" id="tt-name"></div>
+        <div class="tt-ip"   id="tt-ip"></div>
+        <div id="tt-links"></div>
+      </div>
+    </div>
+    <div class="map-legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>Activo</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--yellow)"></div>Handover / Standby</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--red)"></div>Caído</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--gray)"></div>N/D</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--blue-cm)"></div>Casa Matriz</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--purple)"></div>Base Antártica</div>
+      <div class="leg" id="leg-mpls" style="display:none"><div class="leg-dot" style="background:#5a6478"></div>MPLS / Legacy</div>
+      <div class="leg" id="leg-sat"><div class="leg-dot" style="background:var(--accent)"></div>Starlink</div>
+      <div class="leg" id="leg-ow"><div class="leg-dot" style="background:var(--blue-cm)"></div>OneWeb</div>
+      <div class="leg" id="leg-5g"><div class="leg-dot" style="background:var(--green)"></div>5G Entel</div>
+      <div class="leg" id="leg-4g"><div class="leg-dot" style="background:var(--purple)"></div>4G GTD</div>
+      <div class="leg" style="color:var(--text2);font-size:10px;margin-left:auto">🖱 Rueda=zoom · Drag=mover · Click sede/satélite/torre=info</div>
+    </div>
+  </div>
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-empty">
+      <div class="d-empty-icon">🗺</div>
+      <div style="color:var(--text2)">Selecciona una sede o antena</div>
+      <div class="d-empty-sub">Haz clic sobre cualquier<br>punto del mapa</div>
+    </div>
+  </div>
+</div>
+
+<div class="scenarios-panel">
+  <div class="sg">
+    <div class="sg-lbl">Caídas de enlace</div>
+    <div class="sbtns" id="sg-links-despues">
+      <button class="btn btn-r" onclick="sc_dropLink('starlink')">↓ Starlink</button>
+      <button class="btn btn-r" onclick="sc_dropLink('oneweb')">↓ OneWeb</button>
+      <button class="btn btn-r" onclick="sc_dropLink('g5')">↓ 5G Entel</button>
+      <button class="btn btn-r" onclick="sc_dropLink('g4')">↓ 4G GTD</button>
+    </div>
+    <div class="sbtns" id="sg-links-antes" style="display:none">
+      <button class="btn btn-rb" onclick="sc_dropMPLS()">↓ MPLS Sucursal</button>
+    </div>
+  </div>
+  <div class="sg">
+    <div class="sg-lbl" id="sg-acad-lbl">Escenarios académicos — Rediseño</div>
+    <div class="sbtns" id="sg-acad-despues">
+      <button class="btn btn-b" onclick="sc_e1()">E1 Starlink suc.</button>
+      <button class="btn btn-b" onclick="sc_e2()">E2 Internet bkp</button>
+      <button class="btn btn-b" onclick="sc_e3()">E3 CM Router HA</button>
+      <button class="btn btn-b" onclick="sc_e4()">E4 Suc. total</button>
+      <button class="btn btn-b" onclick="sc_e5()">E5 Starlink nac.</button>
+      <button class="btn btn-b" onclick="sc_e6()">E6 Solo 4G/5G</button>
+      <button class="btn btn-g" onclick="sc_e7()">E7 Retorno</button>
+    </div>
+    <div class="sbtns" id="sg-acad-antes" style="display:none">
+      <button class="btn btn-legacy" onclick="sc_antes_e1()">E1 MPLS sucursal</button>
+      <button class="btn btn-legacy" onclick="sc_antes_e2()">E2 MPLS nacional</button>
+      <button class="btn btn-legacy" onclick="sc_antes_e3()">E3 Router HA (CM)</button>
+      <button class="btn btn-rb" onclick="sc_antes_e4()">E4 Cambio manual</button>
+    </div>
+  </div>
+  <div class="sg">
+    <div class="sg-lbl">Simulación extrema</div>
+    <div class="sbtns" id="sg-ext-despues">
+      <button class="btn btn-y" onclick="sc_drop2()">⚡ Caer 2 aleatorios</button>
+      <button class="btn btn-r" onclick="sc_dropAll()">☠ Caer TODOS</button>
+      <button class="btn btn-rst" onclick="sc_reset()">↺ Reset</button>
+    </div>
+    <div class="sbtns" id="sg-ext-antes" style="display:none">
+      <button class="btn btn-r" onclick="sc_dropMPLS()">☠ Caer MPLS nacional</button>
+      <button class="btn btn-rst" onclick="sc_reset()">↺ Reset</button>
+    </div>
+  </div>
+  <div class="sg">
+    <div class="sg-lbl">Herramientas</div>
+    <div class="sbtns">
+      <button class="btn btn-n" onclick="exportCSV()">📥 Exportar Log CSV</button>
+      <button class="btn btn-n" onclick="showModal()">📊 Ver Métricas</button>
+    </div>
+  </div>
+</div>
+
+<div class="log-panel">
+  <div class="log-hdr">
+    <span>▶ Log de auditoría en vivo</span>
+    <button class="btn btn-n" style="padding:2px 7px;font-size:10px" onclick="exportCSV()">Exportar CSV</button>
+  </div>
+  <div class="log-body" id="log-body"></div>
+</div>
+
+<div class="moverlay" id="modal-comp" onclick="if(event.target===this)closeComp()" style="display:none">
+  <div class="mbox" style="min-width:720px;max-width:900px">
+    <div class="mtitle">
+      <span>📊 Comparativa ANTES vs DESPUÉS — Financiera Pacífico</span>
+      <span class="mclose" onclick="closeComp()">✕</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="comp-body"></div>
+  </div>
+</div>
+
+<div class="sm-overlay" id="sm-overlay" onclick="if(event.target===this)closeSedeModal()">
+  <div class="sm-box">
+    <div class="sm-hdr">
+      <div class="sm-hdr-left">
+        <span style="font-size:28px" id="sm-icon">🏢</span>
+        <div>
+          <div class="sm-hdr-title" id="sm-title">Sede</div>
+          <div class="sm-hdr-sub" id="sm-sub">—</div>
+        </div>
+      </div>
+      <span class="sm-close" onclick="closeSedeModal()">✕</span>
+    </div>
+    <div class="sm-tabs" id="sm-tabs">
+      <button class="sm-tab active" onclick="smTab('topo',this)">🖧 Topología</button>
+      <button class="sm-tab" onclick="smTab('cmd',this)">⌨ Comandos</button>
+      <button class="sm-tab" onclick="smTab('ping',this)">📡 Ping / Trace</button>
+      <button class="sm-tab" onclick="smTab('tables',this)">📋 Tablas</button>
+      <button class="sm-tab" onclick="smTab('kpis',this)">📊 KPIs</button>
+    </div>
+    <div class="sm-body" id="sm-body"></div>
+  </div>
+</div>
+
+<div class="dev-overlay" id="dev-overlay" onclick="if(event.target===this)closeDevModal()">
+  <div class="dev-box">
+    <div class="dev-hdr">
+      <div class="dev-hdr-info">
+        <div class="dev-hdr-title" id="dev-title">Dispositivo</div>
+        <div class="dev-hdr-model" id="dev-model">—</div>
+      </div>
+      <span class="dev-close" onclick="closeDevModal()">✕</span>
+    </div>
+    <div class="dev-tabs" id="dev-tabs"></div>
+    <div class="dev-body" id="dev-body"></div>
+  </div>
+</div>
+
+<div class="moverlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="mbox">
+    <div class="mtitle">
+      <span>📊 Métricas del Sistema</span>
+      <span class="mclose" onclick="closeModal()">✕</span>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const SEDES = [
+  { id:'cm',  code:'CM',  name:'Casa Matriz / Datacenter', city:'Santiago Centro',
+    lat:-33.45, lon:-70.65, ip:'10.70.0.1',  num:0,  isCM:true,
+    router:'RTR-CM-01 (activo) / RTR-CM-02 (pasivo)',
+    switches:'SW-CM-01, SW-CM-02 (Catalyst C9200-48U)', ha:true,
+    links:{ starlink:{bw:'100 Mbps',ms:'22 ms'}, oneweb:{bw:'80 Mbps',ms:'35 ms'},
+            g5:{bw:'200 Mbps',ms:'18 ms'},       g4:{bw:'50 Mbps',ms:'42 ms'} } },
+  { id:'s01', code:'S01', name:'Sucursal 01', city:'Providencia', lat:-33.43, lon:-70.61, ip:'10.70.1.1', num:1,
+    links:{ starlink:{bw:'50 Mbps',ms:'25 ms'}, oneweb:{bw:'30 Mbps',ms:'40 ms'}, g5:{bw:'80 Mbps',ms:'20 ms'}, g4:{bw:'20 Mbps',ms:'38 ms'} } },
+  { id:'s02', code:'S02', name:'Sucursal 02', city:'Las Condes', lat:-33.41, lon:-70.57, ip:'10.70.2.1', num:2,
+    links:{ starlink:{bw:'50 Mbps',ms:'26 ms'}, oneweb:{bw:'30 Mbps',ms:'42 ms'}, g5:{bw:'80 Mbps',ms:'21 ms'}, g4:{bw:'20 Mbps',ms:'40 ms'} } },
+  { id:'s03', code:'S03', name:'Sucursal 03', city:'Maipú', lat:-33.51, lon:-70.76, ip:'10.70.3.1', num:3,
+    links:{ starlink:{bw:'50 Mbps',ms:'27 ms'}, oneweb:{bw:'30 Mbps',ms:'44 ms'}, g5:{bw:'60 Mbps',ms:'23 ms'}, g4:{bw:'20 Mbps',ms:'41 ms'} } },
+  { id:'s04', code:'S04', name:'Sucursal 04', city:'Puente Alto', lat:-33.61, lon:-70.58, ip:'10.70.4.1', num:4,
+    links:{ starlink:{bw:'50 Mbps',ms:'28 ms'}, oneweb:{bw:'30 Mbps',ms:'45 ms'}, g5:{bw:'60 Mbps',ms:'24 ms'}, g4:{bw:'15 Mbps',ms:'42 ms'} } },
+  { id:'s05', code:'S05', name:'Sucursal 05', city:'La Florida', lat:-33.52, lon:-70.60, ip:'10.70.5.1', num:5,
+    links:{ starlink:{bw:'50 Mbps',ms:'26 ms'}, oneweb:{bw:'30 Mbps',ms:'43 ms'}, g5:{bw:'70 Mbps',ms:'22 ms'}, g4:{bw:'18 Mbps',ms:'40 ms'} } },
+  { id:'s06', code:'S06', name:'Sucursal 06', city:'Arica', lat:-18.48, lon:-70.31, ip:'10.70.6.1', num:6,
+    links:{ starlink:{bw:'50 Mbps',ms:'28 ms'}, oneweb:{bw:'30 Mbps',ms:'45 ms'}, g5:{bw:'60 Mbps',ms:'25 ms'}, g4:{bw:'15 Mbps',ms:'45 ms'} } },
+  { id:'s07', code:'S07', name:'Sucursal 07', city:'Iquique', lat:-20.22, lon:-70.14, ip:'10.70.7.1', num:7,
+    links:{ starlink:{bw:'50 Mbps',ms:'29 ms'}, oneweb:{bw:'30 Mbps',ms:'46 ms'}, g5:{bw:'55 Mbps',ms:'26 ms'}, g4:{bw:'15 Mbps',ms:'46 ms'} } },
+  { id:'s08', code:'S08', name:'Sucursal 08', city:'Antofagasta', lat:-23.65, lon:-70.40, ip:'10.70.8.1', num:8,
+    links:{ starlink:{bw:'50 Mbps',ms:'27 ms'}, oneweb:{bw:'30 Mbps',ms:'44 ms'}, g5:{bw:'65 Mbps',ms:'24 ms'}, g4:{bw:'18 Mbps',ms:'44 ms'} } },
+  { id:'s09', code:'S09', name:'Sucursal 09', city:'Copiapó', lat:-27.37, lon:-70.33, ip:'10.70.9.1', num:9,
+    links:{ starlink:{bw:'50 Mbps',ms:'28 ms'}, oneweb:{bw:'30 Mbps',ms:'45 ms'}, g5:{bw:'50 Mbps',ms:'28 ms'}, g4:{bw:'15 Mbps',ms:'48 ms'} } },
+  { id:'s10', code:'S10', name:'Sucursal 10', city:'La Serena', lat:-29.90, lon:-71.25, ip:'10.70.10.1', num:10,
+    links:{ starlink:{bw:'50 Mbps',ms:'26 ms'}, oneweb:{bw:'30 Mbps',ms:'43 ms'}, g5:{bw:'55 Mbps',ms:'25 ms'}, g4:{bw:'15 Mbps',ms:'45 ms'} } },
+  { id:'s11', code:'S11', name:'Sucursal 11', city:'Valparaíso', lat:-33.05, lon:-71.62, ip:'10.70.11.1', num:11,
+    links:{ starlink:{bw:'50 Mbps',ms:'24 ms'}, oneweb:{bw:'30 Mbps',ms:'41 ms'}, g5:{bw:'80 Mbps',ms:'20 ms'}, g4:{bw:'20 Mbps',ms:'38 ms'} } },
+  { id:'s12', code:'S12', name:'Sucursal 12', city:'Rancagua', lat:-34.17, lon:-70.74, ip:'10.70.12.1', num:12,
+    links:{ starlink:{bw:'50 Mbps',ms:'27 ms'}, oneweb:{bw:'30 Mbps',ms:'44 ms'}, g5:{bw:'70 Mbps',ms:'23 ms'}, g4:{bw:'18 Mbps',ms:'42 ms'} } },
+  { id:'s13', code:'S13', name:'Sucursal 13', city:'Talca', lat:-35.43, lon:-71.65, ip:'10.70.13.1', num:13,
+    links:{ starlink:{bw:'50 Mbps',ms:'28 ms'}, oneweb:{bw:'30 Mbps',ms:'45 ms'}, g5:{bw:'60 Mbps',ms:'26 ms'}, g4:{bw:'15 Mbps',ms:'46 ms'} } },
+  { id:'s14', code:'S14', name:'Sucursal 14', city:'Chillán', lat:-36.61, lon:-72.10, ip:'10.70.14.1', num:14,
+    links:{ starlink:{bw:'50 Mbps',ms:'29 ms'}, oneweb:{bw:'30 Mbps',ms:'47 ms'}, g5:{bw:'50 Mbps',ms:'28 ms'}, g4:{bw:'15 Mbps',ms:'48 ms'} } },
+  { id:'s15', code:'S15', name:'Sucursal 15', city:'Concepción', lat:-36.83, lon:-73.05, ip:'10.70.15.1', num:15,
+    links:{ starlink:{bw:'50 Mbps',ms:'30 ms'}, oneweb:{bw:'30 Mbps',ms:'48 ms'}, g5:{bw:'80 Mbps',ms:'22 ms'}, g4:{bw:'20 Mbps',ms:'40 ms'} } },
+  { id:'s16', code:'S16', name:'Sucursal 16', city:'Temuco', lat:-38.74, lon:-72.60, ip:'10.70.16.1', num:16,
+    links:{ starlink:{bw:'50 Mbps',ms:'31 ms'}, oneweb:{bw:'30 Mbps',ms:'50 ms'}, g5:{bw:'60 Mbps',ms:'28 ms'}, g4:{bw:'15 Mbps',ms:'50 ms'} } },
+  { id:'s17', code:'S17', name:'Sucursal 17', city:'Valdivia', lat:-39.81, lon:-73.25, ip:'10.70.17.1', num:17,
+    links:{ starlink:{bw:'50 Mbps',ms:'32 ms'}, oneweb:{bw:'30 Mbps',ms:'52 ms'}, g5:{bw:'50 Mbps',ms:'30 ms'}, g4:{bw:'15 Mbps',ms:'52 ms'} } },
+  { id:'s18', code:'S18', name:'Sucursal 18', city:'Puerto Montt', lat:-41.47, lon:-72.94, ip:'10.70.18.1', num:18,
+    links:{ starlink:{bw:'50 Mbps',ms:'33 ms'}, oneweb:{bw:'30 Mbps',ms:'54 ms'}, g5:{bw:'40 Mbps',ms:'32 ms'}, g4:{bw:'12 Mbps',ms:'55 ms'} } },
+  { id:'s19', code:'S19', name:'Sucursal 19', city:'Coyhaique', lat:-45.57, lon:-72.07, ip:'10.70.19.1', num:19,
+    links:{ starlink:{bw:'50 Mbps',ms:'28 ms'}, oneweb:{bw:'30 Mbps',ms:'46 ms'}, g5:{bw:'40 Mbps',ms:'40 ms'}, g4:{bw:'10 Mbps',ms:'65 ms'} } },
+  { id:'s20', code:'S20', name:'Sucursal 20', city:'Punta Arenas', lat:-53.16, lon:-70.91, ip:'10.70.20.1', num:20,
+    links:{ starlink:{bw:'50 Mbps',ms:'27 ms'}, oneweb:{bw:'30 Mbps',ms:'44 ms'}, g5:{bw:'35 Mbps',ms:'50 ms'}, g4:{bw:'8 Mbps',ms:'75 ms'} } },
+  { id:'s21', code:'S21', name:'Sucursal 21', city:'Hanga Roa (Isla de Pascua)', lat:-27.15, lon:-109.43, ip:'10.70.21.1', num:21, isIsland:true,
+    links:{ starlink:{bw:'50 Mbps',ms:'35 ms'}, oneweb:{bw:'30 Mbps',ms:'55 ms'},
+            g5:{bw:'30 Mbps',ms:'75 ms'},        g4:{bw:'10 Mbps',ms:'95 ms'} } },
+  { id:'s22', code:'S22', name:'Base Frei Montalva', city:'Antártica Chilena', lat:-62.20, lon:-58.98, ip:'10.70.22.1', num:22, isAntarctic:true,
+    links:{ starlink:{bw:'50 Mbps',ms:'32 ms'}, oneweb:{bw:'30 Mbps',ms:'48 ms'},
+            g5:{bw:'10 Mbps',ms:'90 ms'},        g4:{bw:'5 Mbps',ms:'120 ms'} } },
+];
+
+const ST = {
+  mode: 'despues', selId: null, selAntenna: null,
+  links: {}, mpls: {}, logs: [], evCount: 0,
+  rmZoom: false, cmActive: 'rtr1',
+  enlaceActual: {},
+};
+
+const PRIORITY = ['starlink','oneweb','g5','g4'];
+const LK_NAME  = {
+  starlink:'Starlink', oneweb:'OneWeb', g5:'5G Entel', g4:'4G GTD', mpls:'MPLS'
+};
+const LK_COLOR = { starlink:'#ffa03c',  oneweb:'#6496ff', g5:'#3cc878', g4:'#9070cc' };
+
+const RM_OFF = {
+  cm:[0,0], s01:[14,-10], s02:[26,-17], s03:[-17,7], s04:[18,13], s05:[7,11]
+};
+
+const MW=300, MH=880, LATMAX=-17.5, LATMIN=-56, LONMIN=-76.5, LONMAX=-65.5;
+function mx(lon){ return (lon - LONMIN) / (LONMAX - LONMIN) * MW; }
+function my(lat){ return (LATMAX - lat) / (LATMAX - LATMIN) * MH; }
+
+function sedePos(s){
+  if(s.isIsland)    return [37, 226];
+  if(s.isAntarctic) return [152, 920];
+  let x = mx(s.lon), y = my(s.lat);
+  if(RM_OFF[s.id]){ x += RM_OFF[s.id][0]; y += RM_OFF[s.id][1]; }
+  return [x, y];
+}
+function sedePosReal(s){
+  if(s.isIsland) return [20, 226];
+  return sedePos(s);
+}
+
+const SAT_FISICA = {
+  starlink: { altitudKm: 550,  latenciaBaseMs: 20, factorKmMs: 0.045,
+    radioPrefPx: 45,  radioHandPx: 75,  radioMaxPx: 100 },
+  oneweb:   { altitudKm: 1200, latenciaBaseMs: 35, factorKmMs: 0.035,
+    radioPrefPx: 70,  radioHandPx: 115, radioMaxPx: 160 },
+};
+const MAPA_ESCALA_KM_PX = 5;
+
+function calcularFisica(tipo, distPx){
+  const f = SAT_FISICA[tipo];
+  const distHorizKm = distPx * MAPA_ESCALA_KM_PX;
+  const distanciaKm  = Math.round(Math.sqrt(f.altitudKm*f.altitudKm + distHorizKm*distHorizKm));
+  const latenciaMs   = Math.round(f.latenciaBaseMs + distHorizKm * f.factorKmMs);
+  return { altitudKm: f.altitudKm, distHorizKm: Math.round(distHorizKm), distanciaKm, latenciaMs };
+}
+
+const COV = {};
+['cm','s01','s02','s03','s04','s05','s06','s07','s08','s09','s10','s11','s12','s13','s14','s15','s16','s17','s18','s19','s20','s21','s22']
+  .forEach(id => COV[id] = {sl:1,ow:1,g5:1,g4:1});
+
+function linkPriority(id){ return PRIORITY; }
+
+const PC_COUNT = {
+  cm:55, s01:30,s02:30,s03:30,s04:30,s05:30,
+  s06:28,s07:28,s08:28,s09:28,s10:28,s11:28,s12:28,
+  s13:28,s14:28,s15:28,s16:28,s17:28,s18:28,s19:28,s20:28,
+  s21:17, s22:8,
+};
+
+function getPCs(sede){
+  const n=sede.num, total=PC_COUNT[sede.id]||0;
+  const half=Math.ceil(total/2);
+  return Array.from({length:total},(_, i)=>{
+    const oct=10+i;
+    return {
+      idx:i+1,
+      id:`PC-${sede.code}-${String(i+1).padStart(3,'0')}`,
+      ip:`10.70.${n}.${oct}`,
+      mac:`00:1A:2B:${n.toString(16).padStart(2,'0').toUpperCase()}:${i.toString(16).padStart(2,'0').toUpperCase()}:FF`,
+      sw: i<half ? 1 : 2, vlan:10,
+    };
+  });
+}
+
+function initLinks(){
+  SEDES.forEach(s => {
+    ST.links[s.id] = { starlink:'activo', oneweb:'standby', g5:'standby', g4:'standby' };
+    ST.mpls[s.id] = 'activo';
+  });
+}
+
+function activeLink(id){
+  if(ST.mode==='antes') return null;
+  const lk = ST.links[id];
+  for(const k of PRIORITY) if(lk[k]==='activo') return k;
+  return null;
+}
+
+function recompute(id){
+  const lk = ST.links[id];
+  const ord = linkPriority(id);
+  let best = null;
+  for(const k of ord){
+    if(lk[k]!=='caido' && lk[k]!=='inactivo'){ best=k; break; }
+  }
+  PRIORITY.forEach(k=>{
+    if(lk[k]==='inactivo'||lk[k]==='caido') return;
+    lk[k] = k===best ? 'activo' : 'standby';
+  });
+}
+
+function sedeDown(id){
+  if(ST.mode==='antes') return ST.mpls[id]==='caido';
+  return !activeLink(id);
+}
+
+const ANTENAS = [];
+function initAntenas(){
+  ANTENAS.length = 0;
+  SEDES.forEach(s => {
+    if(s.isIsland || s.isAntarctic) return;
+    const [px, py] = sedePos(s);
+    const esCostera = px < 110;
+    const offset = esCostera ? 15 : 22;
+
+    const ang5 = esCostera ? -Math.PI * 0.12 : -Math.PI * 0.28;
+    ANTENAS.push({
+      id: 'a5g-' + s.id, tipo: 'g5', sedeId: s.id, city: s.city,
+      x: px + Math.cos(ang5) * offset,
+      y: py + Math.sin(ang5) * offset,
+      radio: 18, sedeX: px, sedeY: py
+    });
+
+    const ang4 = esCostera ? Math.PI * 0.15 : Math.PI * 0.28;
+    ANTENAS.push({
+      id: 'a4g-' + s.id, tipo: 'g4', sedeId: s.id, city: s.city,
+      x: px + Math.cos(ang4) * offset,
+      y: py + Math.sin(ang4) * offset,
+      radio: 20, sedeX: px, sedeY: py
+    });
+  });
+}
+
+function renderAntenas(){
+  const layer = document.getElementById('antenna-layer');
+  if(!layer) return;
+  layer.innerHTML = '';
+  if(ST.mode === 'antes') return;
+  const NS = 'http://www.w3.org/2000/svg';
+  ANTENAS.forEach(a => {
+    const col = a.tipo === 'g5' ? '#3cc878' : '#9070cc';
+    const lk = ST.links[a.sedeId];
+    const estado = lk[a.tipo];
+    const activa = (activeLink(a.sedeId) === a.tipo) || (estado === 'activo');
+    const caida = estado === 'caido';
+    const opacBase = caida ? 0.35 : 1;
+
+    const cov = document.createElementNS(NS,'circle');
+    cov.setAttribute('cx', a.x.toFixed(1)); cov.setAttribute('cy', a.y.toFixed(1));
+    cov.setAttribute('r', a.radio);
+    cov.setAttribute('fill', col);
+    cov.setAttribute('fill-opacity', caida ? '0.02' : (activa ? '0.09' : '0.045'));
+    cov.setAttribute('stroke', col);
+    cov.setAttribute('stroke-opacity', caida ? '0.12' : (activa ? '0.5' : '0.25'));
+    cov.setAttribute('stroke-width', activa ? '0.55' : '0.35');
+    cov.setAttribute('stroke-dasharray', '2 2');
+    cov.classList.add('ante-ring');
+    cov.style.pointerEvents = 'none';
+    layer.appendChild(cov);
+
+    if(activa && !caida){
+      const wave = document.createElementNS(NS,'circle');
+      wave.setAttribute('cx', a.x.toFixed(1)); wave.setAttribute('cy', a.y.toFixed(1));
+      wave.setAttribute('r', '6'); wave.setAttribute('fill', 'none');
+      wave.setAttribute('stroke', col); wave.setAttribute('stroke-width', '0.5');
+      wave.setAttribute('opacity', '0.5');
+      wave.classList.add('ante-wave');
+      wave.style.pointerEvents = 'none';
+      layer.appendChild(wave);
+    }
+
+    const guia = document.createElementNS(NS,'line');
+    guia.setAttribute('x1', a.sedeX.toFixed(1)); guia.setAttribute('y1', a.sedeY.toFixed(1));
+    guia.setAttribute('x2', a.x.toFixed(1)); guia.setAttribute('y2', a.y.toFixed(1));
+    guia.setAttribute('stroke', col); guia.setAttribute('stroke-width', '0.4');
+    guia.setAttribute('opacity', caida ? '0.15' : (activa ? '0.65' : '0.3'));
+    guia.setAttribute('stroke-dasharray', '1.5 1.5');
+    guia.style.pointerEvents = 'none';
+    layer.appendChild(guia);
+
+    const g = document.createElementNS(NS,'g');
+    g.style.cursor = 'pointer';
+    g.setAttribute('opacity', opacBase);
+    g.addEventListener('click', e => { e.stopPropagation(); openAntenaModal(a.id); });
+    g.addEventListener('mouseenter', e => showTipAntena(e, a));
+    g.addEventListener('mouseleave', hideTip);
+
+    const baseTri = document.createElementNS(NS,'path');
+    baseTri.setAttribute('d', `M${a.x-2.2},${a.y+2.4} L${a.x+2.2},${a.y+2.4} L${a.x},${a.y-0.2} Z`);
+    baseTri.setAttribute('fill', col); baseTri.setAttribute('opacity', '0.85');
+    baseTri.setAttribute('stroke', '#0a0c10'); baseTri.setAttribute('stroke-width', '0.3');
+    g.appendChild(baseTri);
+
+    const mast = document.createElementNS(NS,'line');
+    mast.setAttribute('x1', a.x.toFixed(1)); mast.setAttribute('y1', (a.y + 2.2).toFixed(1));
+    mast.setAttribute('x2', a.x.toFixed(1)); mast.setAttribute('y2', (a.y - 5.5).toFixed(1));
+    mast.setAttribute('stroke', col); mast.setAttribute('stroke-width', '0.7');
+    g.appendChild(mast);
+
+    const leg1 = document.createElementNS(NS,'line');
+    leg1.setAttribute('x1', (a.x - 2.2).toFixed(1)); leg1.setAttribute('y1', (a.y + 2.4).toFixed(1));
+    leg1.setAttribute('x2', (a.x + 0.4).toFixed(1)); leg1.setAttribute('y2', (a.y - 3.4).toFixed(1));
+    leg1.setAttribute('stroke', col); leg1.setAttribute('stroke-width', '0.5'); leg1.setAttribute('opacity', '0.75');
+    g.appendChild(leg1);
+
+    const leg2 = document.createElementNS(NS,'line');
+    leg2.setAttribute('x1', (a.x + 2.2).toFixed(1)); leg2.setAttribute('y1', (a.y + 2.4).toFixed(1));
+    leg2.setAttribute('x2', (a.x - 0.4).toFixed(1)); leg2.setAttribute('y2', (a.y - 3.4).toFixed(1));
+    leg2.setAttribute('stroke', col); leg2.setAttribute('stroke-width', '0.5'); leg2.setAttribute('opacity', '0.75');
+    g.appendChild(leg2);
+
+    const apex = document.createElementNS(NS,'circle');
+    apex.setAttribute('cx', a.x.toFixed(1)); apex.setAttribute('cy', (a.y - 5.5).toFixed(1));
+    apex.setAttribute('r', '1.5'); apex.setAttribute('fill', col);
+    apex.setAttribute('filter', activa ? 'url(#antenna-glow)' : '');
+    g.appendChild(apex);
+
+    if(activa && !caida){
+      const pulse = document.createElementNS(NS,'circle');
+      pulse.setAttribute('cx', a.x.toFixed(1)); pulse.setAttribute('cy', (a.y - 5.5).toFixed(1));
+      pulse.setAttribute('r', '3.5'); pulse.setAttribute('fill', 'none');
+      pulse.setAttribute('stroke', col); pulse.setAttribute('stroke-width', '0.35'); pulse.setAttribute('opacity', '0.7');
+      pulse.classList.add('tower-blink');
+      pulse.style.pointerEvents = 'none';
+      g.appendChild(pulse);
+    }
+
+    const lblBg = document.createElementNS(NS,'rect');
+    lblBg.setAttribute('x', (a.x - 5.5).toFixed(1)); lblBg.setAttribute('y', (a.y + 3.6).toFixed(1));
+    lblBg.setAttribute('width', '11'); lblBg.setAttribute('height', '3.6'); lblBg.setAttribute('rx', '0.8');
+    lblBg.setAttribute('fill', col); lblBg.setAttribute('opacity', caida ? '0.4' : '0.92');
+    g.appendChild(lblBg);
+    const lbl = document.createElementNS(NS,'text');
+    lbl.setAttribute('x', a.x.toFixed(1)); lbl.setAttribute('y', (a.y + 6.3).toFixed(1));
+    lbl.setAttribute('text-anchor', 'middle'); lbl.setAttribute('font-size', '2.5');
+    lbl.setAttribute('font-family', 'system-ui'); lbl.setAttribute('font-weight', '700');
+    lbl.setAttribute('fill', '#0f1218');
+    lbl.textContent = a.tipo === 'g5' ? '5G' : '4G';
+    g.appendChild(lbl);
+
+    layer.appendChild(g);
+  });
+}
+
+function showTipAntena(e, a){
+  const tip = document.getElementById('tooltip');
+  const tipoLbl = a.tipo === 'g5' ? '5G Entel' : '4G GTD';
+  const col = a.tipo === 'g5' ? '#3cc878' : '#9070cc';
+  const operador = a.tipo === 'g5' ? 'Entel Empresas' : 'GTD Empresas';
+  const sedesCubiertas = SEDES.filter(s => {
+    const [sx, sy] = sedePosReal(s);
+    return Math.hypot(sx - a.x, sy - a.y) < a.radio + 5;
+  });
+  document.getElementById('tt-name').textContent = '📡 Torre ' + a.tipo.toUpperCase() + ' — ' + operador;
+  document.getElementById('tt-ip').textContent = a.city + ' · ' + sedesCubiertas.length + ' sede(s)';
+  document.getElementById('tt-links').innerHTML =
+    `<div class="tt-lrow"><div class="tt-dot" style="background:${col}"></div>Radio ~${(a.radio*MAPA_ESCALA_KM_PX).toFixed(0)} km</div>
+     <div class="tt-lrow" style="font-size:10px;color:#8a93a6">Click para ver configuración completa</div>`;
+  const cont = document.getElementById('map-container').getBoundingClientRect();
+  const tgt = e.target.getBoundingClientRect();
+  let left = tgt.right - cont.left + 8;
+  let top = tgt.top - cont.top - 10;
+  if(left + 220 > cont.width) left = tgt.left - cont.left - 225;
+  if(top + 100 > cont.height) top = cont.height - 105;
+  if(top < 0) top = 4;
+  tip.style.left = left + 'px'; tip.style.top = top + 'px';
+  tip.classList.add('vis');
+}
+
+function openAntenaModal(id){
+  const a = ANTENAS.find(x => x.id === id);
+  if(!a) return;
+  const esG5 = a.tipo === 'g5';
+  const tipoLbl = esG5 ? '5G NR sub-6 (Entel)' : '4G LTE (GTD)';
+  const operador = esG5 ? 'Entel Empresas' : 'GTD Empresas';
+  const lk = ST.links[a.sedeId];
+  const estado = lk[a.tipo];
+  document.getElementById('dev-title').textContent = `📡 Torre ${a.tipo.toUpperCase()} — ${operador}`;
+  document.getElementById('dev-model').textContent = `${tipoLbl} · ${a.city} · Estado: ${estado.toUpperCase()}`;
+  const tabConfigs = [
+    {k:'cfg',l:'Configuración'},{k:'cobertura',l:'Cobertura'},
+    {k:'operador',l:'Operador'},{k:'logs',l:'Logs'}
+  ];
+  document.getElementById('dev-tabs').innerHTML = tabConfigs.map((t,i)=>
+    `<button class="dev-tab${i===0?' active':''}" onclick="devTabAnt('${t.k}','${a.id}',this)">${t.l}</button>`
+  ).join('');
+  document.getElementById('dev-overlay').classList.add('vis');
+  devTabAnt('cfg', a.id, document.querySelector('.dev-tab'));
+}
+
+function devTabAnt(tab, id, btn){
+  document.querySelectorAll('.dev-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const a = ANTENAS.find(x => x.id === id);
+  if(!a) return;
+  const esG5 = a.tipo === 'g5';
+  const operador = esG5 ? 'Entel Empresas' : 'GTD Empresas';
+  const lk = ST.links[a.sedeId];
+  const estado = lk[a.tipo];
+  const activa = activeLink(a.sedeId) === a.tipo;
+  const sedesCubiertas = SEDES.filter(s => {
+    const [sx, sy] = sedePosReal(s);
+    return Math.hypot(sx - a.x, sy - a.y) < a.radio + 5;
+  });
+  const body = document.getElementById('dev-body');
+
+  if(tab === 'cfg'){
+    body.innerHTML = `<div class="ios">Torre ${a.tipo.toUpperCase()}-${a.sedeId.toUpperCase()}> <span class="ios-cmd">show configuration</span>
+
+<span class="ios-hdr">OPERADOR</span>
+Nombre comercial:   ${operador}
+APN Corporativo:    ${esG5 ? 'im.entel.cl' : 'bam.gtd.cl'}
+
+<span class="ios-hdr">PARÁMETROS TÉCNICOS</span>
+Tecnología:         ${esG5 ? '5G NR (3GPP Release 16)' : '4G LTE-A (3GPP Release 13)'}
+Banda:              ${esG5 ? 'n78 (3.5 GHz)' : 'B7 (2600 MHz) + B28 (700 MHz)'}
+Modulación:         ${esG5 ? '256-QAM DL / 64-QAM UL' : '64-QAM DL / 16-QAM UL'}
+MIMO:               ${esG5 ? '4x4 MIMO' : '2x2 MIMO'}
+
+<span class="ios-hdr">INTEGRACIÓN CON ROUTER</span>
+Módulo requerido:   NIM-5G-LTE-GA
+Interfaz:           Cellular 0/1/${esG5 ? '0' : '1'}
+
+<span class="ios-hdr">ESTADO</span>
+Enlace: <span class="${estado === 'caido' ? 'ios-down' : estado === 'activo' ? 'ios-up' : 'ios-warn'}">${estado.toUpperCase()}</span>
+Rol:    ${activa ? '● ACTIVO' : '○ Respaldo standby'}
+</div>`;
+  }
+  if(tab === 'cobertura'){
+    let sedesHTML = sedesCubiertas.map(s => {
+      const est = ST.links[s.id][a.tipo];
+      const badge = est === 'activo' ? 'ACTIVO' : est === 'standby' ? 'STANDBY' : est === 'caido' ? 'CAÍDO' : 'N/D';
+      const badgeCol = est === 'activo' ? 'var(--green)' : est === 'standby' ? 'var(--yellow)' : est === 'caido' ? 'var(--red)' : 'var(--gray)';
+      const [sx, sy] = sedePosReal(s);
+      const distKm = Math.round(Math.hypot(sx - a.x, sy - a.y) * MAPA_ESCALA_KM_PX);
+      return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1a1f2c;font-size:11px">
+        <span style="color:#c8d3e0">${s.code} — ${s.city}</span>
+        <span style="color:#8a93a6">${distKm} km</span>
+        <span style="color:${badgeCol};font-weight:700">${badge}</span>
+      </div>`;
+    }).join('');
+    body.innerHTML = `<div style="padding:10px;background:#0a0e14;border-radius:4px;font-size:11px">
+      <div style="color:#6496ff;font-weight:700;margin-bottom:8px">SEDES CUBIERTAS (${sedesCubiertas.length})</div>
+      ${sedesHTML || '<div style="color:#5a6478">Sin sedes en rango</div>'}
+      <div style="margin-top:12px;color:#8a93a6">Radio: ${(a.radio*MAPA_ESCALA_KM_PX).toFixed(0)} km · EIRP: ${esG5 ? '55 dBm' : '46 dBm'}</div>
+    </div>`;
+  }
+  if(tab === 'operador'){
+    body.innerHTML = `<div class="ios"><span class="ios-hdr">${esG5 ? 'ENTEL EMPRESAS — INTERNET MÓVIL 5G' : 'GTD EMPRESAS — BAM CORPORATIVO'}</span>
+
+Plan: ${esG5 ? 'Extra 5G 370 GB corporativo' : 'BAM Datos Ilimitado'}
+APN:  ${esG5 ? 'im.entel.cl' : 'bam.gtd.cl'}
+SIM:  Solo Datos con IP Pública Dinámica
+
+Contacto: ${esG5 ? 'empresas.entel.cl' : 'gtd.cl/negocios'}
+NOC 24x7: ${esG5 ? 'soporte.empresas@entel.cl' : 'soporte.empresas@gtd.cl'}
+</div>`;
+  }
+  if(tab === 'logs'){
+    const ts=(o)=>new Date(Date.now()-o*1000).toISOString().replace('T',' ').substr(0,19);
+    body.innerHTML = `<div class="ios">Torre ${a.tipo.toUpperCase()}-${a.sedeId.toUpperCase()}> <span class="ios-cmd">show logs | tail 8</span>
+
+${ts(2)}  <span class="ios-up">INFO</span>   Cell operativa (${operador})
+${ts(8)}  <span class="ios-up">INFO</span>   APN ${esG5 ? 'im.entel.cl' : 'bam.gtd.cl'} negociado
+${ts(30)} <span class="ios-up">INFO</span>   IPsec tunnel establecido
+${ts(45)} <span class="ios-up">INFO</span>   OSPF neighbor UP
+${ts(60)} <span class="ios-up">INFO</span>   BFD session UP
+${ts(120)}<span class="ios-warn">WARN</span>  Variación de latencia (normal)
+${ts(300)}<span class="ios-up">INFO</span>   Cell activa desde arranque
+</div>`;
+  }
+}
+
+function openSatModal(tipo, satId, satIdx){
+  const cfg = CONSTELACIONES[tipo].find(t => t.id === satId);
+  if(!cfg) return;
+  const fis = SAT_FISICA[tipo];
+  const tipoLbl = tipo === 'starlink' ? 'Starlink (SpaceX)' : 'OneWeb (Eutelsat)';
+  const sat = cfg.sats[satIdx];
+  const transform = sat ? sat.getAttribute('transform') : '';
+  let sx = 0, sy = 0;
+  if(transform){
+    const m = transform.match(/translate\(([\d.-]+),([\d.-]+)\)/);
+    if(m){ sx = parseFloat(m[1]); sy = parseFloat(m[2]); }
+  }
+  const sedesIluminadas = SEDES.filter(s => {
+    const [px, py] = sedePosReal(s);
+    return Math.hypot(px - sx, py - sy) < fis.radioMaxPx;
+  });
+  document.getElementById('dev-title').textContent = `🛰 ${satId.toUpperCase()}`;
+  document.getElementById('dev-model').textContent = `${tipoLbl} · altitud ${fis.altitudKm} km · ${sedesIluminadas.length} sede(s)`;
+  const tabConfigs = [
+    {k:'cfg',l:'Configuración'},{k:'cobertura',l:'Cobertura actual'},
+    {k:'orbita',l:'Órbita'},{k:'comms',l:'Comunicaciones'}
+  ];
+  document.getElementById('dev-tabs').innerHTML = tabConfigs.map((t,i)=>
+    `<button class="dev-tab${i===0?' active':''}" onclick="devTabSat('${t.k}','${tipo}','${satId}',${satIdx},this)">${t.l}</button>`
+  ).join('');
+  document.getElementById('dev-overlay').classList.add('vis');
+  devTabSat('cfg', tipo, satId, satIdx, document.querySelector('.dev-tab'));
+}
+
+function devTabSat(tab, tipo, satId, satIdx, btn){
+  document.querySelectorAll('.dev-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const cfg = CONSTELACIONES[tipo].find(t => t.id === satId);
+  if(!cfg) return;
+  const fis = SAT_FISICA[tipo];
+  const tipoLbl = tipo === 'starlink' ? 'Starlink (SpaceX)' : 'OneWeb (Eutelsat)';
+  const color = tipo === 'starlink' ? '#ffa03c' : '#6496ff';
+  const sat = cfg.sats[satIdx];
+  const transform = sat ? sat.getAttribute('transform') : '';
+  let sx = 0, sy = 0;
+  if(transform){
+    const m = transform.match(/translate\(([\d.-]+),([\d.-]+)\)/);
+    if(m){ sx = parseFloat(m[1]); sy = parseFloat(m[2]); }
+  }
+  const sedesIluminadas = SEDES.filter(s => {
+    const [px, py] = sedePosReal(s);
+    return Math.hypot(px - sx, py - sy) < fis.radioMaxPx;
+  });
+  const activo = SEDES.some(s => {
+    const ilum = ILUMINACION[s.id];
+    return ilum && ilum.tipo === tipo && ilum.idx === satIdx && Math.hypot(ilum.x - sx, ilum.y - sy) < 0.5;
+  });
+  const body = document.getElementById('dev-body');
+
+  if(tab === 'cfg'){
+    body.innerHTML = `<div class="ios">SAT-${satId.toUpperCase()}> <span class="ios-cmd">show system</span>
+
+<span class="ios-hdr">IDENTIFICACIÓN</span>
+ID catálogo:         ${satId.toUpperCase()}
+Constelación:        ${tipoLbl}
+Operador:            ${tipo === 'starlink' ? 'SpaceX' : 'Eutelsat OneWeb'}
+Tipo órbita:         LEO
+
+<span class="ios-hdr">ESTADO ACTUAL</span>
+Posición: (${sx.toFixed(1)}, ${sy.toFixed(1)}) mapa
+Sedes iluminadas: ${sedesIluminadas.length}
+Rol: ${activo ? '<span class="ios-up">● EN USO</span>' : '<span class="ios-dim">Sin sedes activas</span>'}
+</div>`;
+  }
+  if(tab === 'cobertura'){
+    let sedesHTML = sedesIluminadas.map(s => {
+      const [px, py] = sedePosReal(s);
+      const distPx = Math.hypot(px - sx, py - sy);
+      const distKm = (distPx * MAPA_ESCALA_KM_PX).toFixed(0);
+      const enPref = distPx < fis.radioPrefPx;
+      const enHand = distPx >= fis.radioPrefPx && distPx < fis.radioHandPx;
+      const badge = enPref ? 'ÓPTIMO' : enHand ? 'TRANSICIÓN' : 'HANDOVER';
+      const badgeCol = enPref ? 'var(--green)' : enHand ? 'var(--yellow)' : 'var(--red)';
+      return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1a1f2c;font-size:11px">
+        <span style="color:#c8d3e0">${s.code} — ${s.city}</span>
+        <span style="color:#8a93a6">${distKm} km</span>
+        <span style="color:${badgeCol};font-weight:700">${badge}</span>
+      </div>`;
+    }).join('');
+    body.innerHTML = `<div style="padding:10px;background:#0a0e14;border-radius:4px;font-size:11px">
+      <div style="color:${color};font-weight:700;margin-bottom:8px">SEDES EN RANGO (${sedesIluminadas.length})</div>
+      ${sedesHTML || '<div style="color:#5a6478">Sin sedes en rango</div>'}
+    </div>`;
+  }
+  if(tab === 'orbita'){
+    const periodo = tipo === 'starlink' ? 90 : 109;
+    const velOrbital = tipo === 'starlink' ? 7.6 : 7.3;
+    body.innerHTML = `<div class="ios">SAT-${satId.toUpperCase()}> <span class="ios-cmd">show orbit</span>
+
+Altitud:             ${fis.altitudKm} km
+Inclinación:         ${tipo === 'starlink' ? '53.0°' : '87.9° (polar)'}
+Período orbital:     ${periodo} min
+Velocidad orbital:   ${velOrbital} km/s
+Órbitas por día:     ${(24*60/periodo).toFixed(1)}
+</div>`;
+  }
+  if(tab === 'comms'){
+    body.innerHTML = `<div class="ios">SAT-${satId.toUpperCase()}> <span class="ios-cmd">show radio</span>
+
+Frecuencia DL: ${tipo === 'starlink' ? '10.7-12.7 GHz (Ku)' : '12.75-13.25 GHz (Ku)'}
+Modulación:    ${tipo === 'starlink' ? 'OFDM 256-QAM' : 'OFDM 64-QAM'}
+Capacidad:     ${tipo === 'starlink' ? '~20 Gbps' : '~7 Gbps'}
+
+Sedes iluminando: ${sedesIluminadas.length}
+Seguridad: IPsec AES-256-GCM · IKEv2
+</div>`;
+  }
+}
+
+function openProveedorModal(sedeId, tipo){
+  const s = SEDES.find(x => x.id === sedeId);
+  if(!s) return;
+  const lk = ST.links[sedeId];
+  const estado = lk[tipo];
+  const info = s.links[tipo];
+  const cfg = {
+    starlink: { nombre:'Starlink Business', operador:'SpaceX', tipoLbl:'Satelital LEO' },
+    oneweb:   { nombre:'OneWeb Enterprise', operador:'Eutelsat', tipoLbl:'Satelital LEO' },
+    g5:       { nombre:'5G Entel Empresas', operador:'Entel', tipoLbl:'Celular 5G NR sub-6' },
+    g4:       { nombre:'4G GTD Empresas', operador:'GTD', tipoLbl:'Celular LTE-A' },
+  };
+  const c = cfg[tipo];
+  if(!c) return;
+  document.getElementById('dev-title').textContent = `📡 ${c.nombre} — Enlace de ${s.code}`;
+  document.getElementById('dev-model').textContent = `${c.tipoLbl} · ${info ? info.bw : '—'} · Estado: ${estado.toUpperCase()}`;
+  const tabConfigs = [
+    {k:'cfg',l:'Configuración'},{k:'estado',l:'Estado actual'},
+    {k:'sla',l:'SLA / Calidad'},{k:'logs',l:'Logs'}
+  ];
+  document.getElementById('dev-tabs').innerHTML = tabConfigs.map((t,i)=>
+    `<button class="dev-tab${i===0?' active':''}" onclick="devTabProv('${t.k}','${sedeId}','${tipo}',this)">${t.l}</button>`
+  ).join('');
+  document.getElementById('dev-overlay').classList.add('vis');
+  devTabProv('cfg', sedeId, tipo, document.querySelector('.dev-tab'));
+}
+
+function devTabProv(tab, sedeId, tipo, btn){
+  document.querySelectorAll('.dev-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const s = SEDES.find(x => x.id === sedeId);
+  if(!s) return;
+  const lk = ST.links[sedeId];
+  const estado = lk[tipo];
+  const info = s.links[tipo];
+  const body = document.getElementById('dev-body');
+  const cfg = {
+    starlink: { nombre:'Starlink Business', operador:'SpaceX', banda:'Ku-band', altitud:'550 km', sla:'99.5%',
+      modulacion:'OFDM 256-QAM', rol:'Primario' },
+    oneweb: { nombre:'OneWeb Enterprise', operador:'Eutelsat', banda:'Ku-band', altitud:'1200 km', sla:'99.7%',
+      modulacion:'OFDM 64-QAM', rol:'Secundario' },
+    g5: { nombre:'5G Entel Empresas', operador:'Entel', banda:'n78 (3.5 GHz)', sla:'99.9%',
+      modulacion:'256-QAM DL', rol:'Terciario', apn:'im.entel.cl' },
+    g4: { nombre:'4G GTD Empresas', operador:'GTD', banda:'B7 + B28', sla:'99.7%',
+      modulacion:'64-QAM DL', rol:'Respaldo', apn:'bam.gtd.cl' },
+  };
+  const c = cfg[tipo];
+  if(!c) return;
+  const esActivo = (estado === 'activo');
+
+  if(tab === 'cfg'){
+    body.innerHTML = `<div class="ios">Enlace: ${tipo.toUpperCase()}-${s.code}> <span class="ios-cmd">show configuration</span>
+
+<span class="ios-hdr">IDENTIFICACIÓN</span>
+Nombre:      ${c.nombre}
+Operador:    ${c.operador}
+Rol:         ${c.rol}
+${c.apn ? 'APN:         ' + c.apn : ''}
+
+<span class="ios-hdr">ESPECIFICACIONES</span>
+Banda:       ${c.banda}
+${c.altitud ? 'Altitud:     ' + c.altitud : ''}
+Modulación:  ${c.modulacion}
+SLA:         ${c.sla}
+
+<span class="ios-hdr">CONTRATACIÓN</span>
+Sede:        ${s.code} — ${s.city}
+Ancho banda: ${info ? info.bw : 'N/D'}
+Latencia:    ${info ? info.ms : 'N/D'}
+
+<span class="ios-hdr">ESTADO</span>
+Estado: <span class="${estado === 'activo' ? 'ios-up' : estado === 'caido' ? 'ios-down' : 'ios-warn'}">${estado.toUpperCase()}</span>
+${esActivo ? '<span class="ios-up">● Enlace activo de esta sede</span>' : '<span class="ios-dim">○ En espera</span>'}
+</div>`;
+  }
+  if(tab === 'estado'){
+    body.innerHTML = `<div class="ios">Enlace: ${tipo.toUpperCase()}-${s.code}> <span class="ios-cmd">show status</span>
+
+Estado:                <span class="${estado === 'activo' ? 'ios-up' : estado === 'caido' ? 'ios-down' : 'ios-warn'}">${estado.toUpperCase()}</span>
+Latencia actual:       ${esActivo ? (info ? info.ms : '—') : '—'}
+Jitter:                ${esActivo ? Math.floor(Math.random()*5+2) + ' ms' : '—'}
+Pérdida de paquetes:   ${esActivo ? '0.02%' : '—'}
+Throughput DL:         ${esActivo ? Math.floor(Math.random()*30+20) + ' Mbps' : '0 Mbps'}
+Throughput UL:         ${esActivo ? Math.floor(Math.random()*10+5) + ' Mbps' : '0 Mbps'}
+</div>`;
+  }
+  if(tab === 'sla'){
+    body.innerHTML = `<div class="ios">Enlace: ${tipo.toUpperCase()}-${s.code}> <span class="ios-cmd">show sla</span>
+
+SLA contratado con ${c.operador.toUpperCase()}:
+  Disponibilidad:  ${c.sla}
+  Respuesta:       ${tipo === 'g5' || tipo === 'g4' ? '4 h' : '24 h'}
+  MTTR objetivo:   ${tipo === 'g5' ? '15 min' : tipo === 'g4' ? '30 min' : '2 h'}
+
+Uptime 30 días: ${(99.5 + Math.random()*0.4).toFixed(2)}% ✓ Cumple SLA
+Incidentes abiertos: 0
+</div>`;
+  }
+  if(tab === 'logs'){
+    const ts=(o)=>new Date(Date.now()-o*1000).toISOString().replace('T',' ').substr(0,19);
+    body.innerHTML = `<div class="ios">Enlace: ${tipo.toUpperCase()}-${s.code}> <span class="ios-cmd">show logs | tail 10</span>
+
+${ts(2)}   <span class="ios-up">INFO</span>   Enlace ${tipo.toUpperCase()} establecido
+${ts(8)}   <span class="ios-up">INFO</span>   IPsec tunnel UP — AES-256-GCM
+${ts(35)}  <span class="ios-up">INFO</span>   BFD session UP
+${ts(120)} <span class="ios-up">INFO</span>   Estado ${estado.toUpperCase()}
+${ts(240)} <span class="ios-up">INFO</span>   Tráfico cifrado cursando
+</div>`;
+  }
+}
+
+const CICLO_Y = 1800;
+
+const CONSTELACIONES = {
+  starlink: [
+    { id:'sl-0', lx:  8, gap: 11, dx: 0.02, dy:1.0, speed: 0.10, color:'#ffa03c', n:8 },
+    { id:'sl-1', lx: 42, gap: 12, dx:-0.02, dy:1.0, speed: 0.10, color:'#ffa03c', n:7 },
+    { id:'sl-2', lx: 78, gap: 10, dx: 0.02, dy:1.0, speed: 0.10, color:'#ffa03c', n:9 },
+    { id:'sl-3', lx:115, gap: 13, dx:-0.02, dy:1.0, speed: 0.10, color:'#ffa03c', n:6 },
+    { id:'sl-4', lx:150, gap: 12, dx: 0.02, dy:1.0, speed: 0.10, color:'#ffa03c', n:8 },
+    { id:'sl-5', lx:185, gap: 11, dx:-0.02, dy:1.0, speed: 0.10, color:'#ffa03c', n:8 },
+    { id:'sl-6', lx:220, gap: 12, dx: 0.02, dy:1.0, speed: 0.10, color:'#ffa03c', n:7 },
+    { id:'sl-7', lx:255, gap: 11, dx:-0.02, dy:1.0, speed: 0.10, color:'#ffa03c', n:8 },
+    { id:'sl-8', lx:288, gap: 12, dx: 0.02, dy:1.0, speed: 0.10, color:'#ffa03c', n:7 },
+  ],
+  oneweb: [
+    { id:'ow-0', lx: 16, gap: 11, dx:-0.02, dy:1.0, speed: 0.09, color:'#6496ff', n:8 },
+    { id:'ow-1', lx: 58, gap: 12, dx: 0.02, dy:1.0, speed: 0.09, color:'#6496ff', n:7 },
+    { id:'ow-2', lx: 95, gap: 10, dx:-0.02, dy:1.0, speed: 0.09, color:'#6496ff', n:9 },
+    { id:'ow-3', lx:130, gap: 13, dx: 0.02, dy:1.0, speed: 0.09, color:'#6496ff', n:6 },
+    { id:'ow-4', lx:165, gap: 12, dx:-0.02, dy:1.0, speed: 0.09, color:'#6496ff', n:8 },
+    { id:'ow-5', lx:200, gap: 11, dx: 0.02, dy:1.0, speed: 0.09, color:'#6496ff', n:8 },
+    { id:'ow-6', lx:235, gap: 12, dx:-0.02, dy:1.0, speed: 0.09, color:'#6496ff', n:7 },
+    { id:'ow-7', lx:265, gap: 11, dx: 0.02, dy:1.0, speed: 0.09, color:'#6496ff', n:8 },
+    { id:'ow-8', lx:292, gap: 12, dx:-0.02, dy:1.0, speed: 0.09, color:'#6496ff', n:7 },
+  ],
+};
+
+const SAT_POS = { starlink: [], oneweb: [] };
+
+function initSatellites(){
+  const layer = document.getElementById('sat-layer');
+  const NS = 'http://www.w3.org/2000/svg';
+  function makeSat(id, color, tipo, trenId, idx){
+    const g = document.createElementNS(NS,'g');
+    g.id = id;
+    g.style.cursor = 'pointer';
+    g.addEventListener('click', e => { e.stopPropagation(); openSatModal(tipo, trenId, idx); });
+    const p1 = document.createElementNS(NS,'rect');
+    p1.setAttribute('x','-9'); p1.setAttribute('y','-1.5');
+    p1.setAttribute('width','6'); p1.setAttribute('height','2.5');
+    p1.setAttribute('rx','.5'); p1.setAttribute('fill','#1a3060');
+    p1.classList.add('sat-panel');
+    const p2 = document.createElementNS(NS,'rect');
+    p2.setAttribute('x','4'); p2.setAttribute('y','-1.5');
+    p2.setAttribute('width','6'); p2.setAttribute('height','2.5');
+    p2.setAttribute('rx','.5'); p2.setAttribute('fill','#1a3060');
+    p2.classList.add('sat-panel');
+    const body = document.createElementNS(NS,'rect');
+    body.setAttribute('x','-3'); body.setAttribute('y','-2');
+    body.setAttribute('width','7'); body.setAttribute('height','4');
+    body.setAttribute('rx','1'); body.setAttribute('fill',color);
+    body.classList.add('sat-body');
+    const ant = document.createElementNS(NS,'circle');
+    ant.setAttribute('cx','0'); ant.setAttribute('cy','3');
+    ant.setAttribute('r','1'); ant.setAttribute('fill',color);
+    ant.classList.add('sat-body');
+    const trail = document.createElementNS(NS,'line');
+    trail.setAttribute('x1','0'); trail.setAttribute('y1','-2');
+    trail.setAttribute('x2','0'); trail.setAttribute('y2','-12');
+    trail.setAttribute('stroke',color); trail.setAttribute('stroke-width','0.8');
+    trail.setAttribute('stroke-dasharray','2 3'); trail.setAttribute('opacity','.4');
+    trail.classList.add('sat-trail');
+    g.append(trail,p1,p2,body,ant);
+    return g;
+  }
+  Object.entries(CONSTELACIONES).forEach(([tipo, trenes]) => {
+    const spacing = CICLO_Y / trenes.length;
+    trenes.forEach((t, idx) => {
+      t.offsetY = idx * spacing + (tipo === 'oneweb' ? spacing * 0.5 : 0);
+      t.sats = [];
+      for(let i = 0; i < t.n; i++){
+        const satId = `sat-${t.id}-${i}`;
+        const sat = makeSat(satId, t.color, tipo, t.id, i);
+        layer.appendChild(sat);
+        t.sats.push(sat);
+      }
+      if(idx === 0 || idx === 4 || idx === 8){
+        const lbl = document.createElementNS(NS,'text');
+        lbl.id = `lbl-${t.id}`;
+        lbl.setAttribute('font-size','4');
+        lbl.setAttribute('font-family','system-ui');
+        lbl.setAttribute('font-weight','700');
+        lbl.setAttribute('fill', t.color);
+        lbl.setAttribute('text-anchor','middle');
+        lbl.setAttribute('opacity','0.55');
+        layer.appendChild(lbl);
+        t.lbl = lbl;
+      }
+    });
+  });
+  animateSats();
+}
+
+function animateSats(){
+  function provState(type){
+    const k = type === 'starlink' ? 'starlink' : 'oneweb';
+    const anyCaido = SEDES.every(s => !ST.links[s.id] || ST.links[s.id][k]==='caido' || ST.links[s.id][k]==='inactivo');
+    const anyActive = SEDES.some(s => ST.links[s.id] && ST.links[s.id][k]==='activo');
+    return anyCaido ? 'caido' : anyActive ? 'activo' : 'standby';
+  }
+  const slState = provState('starlink');
+  const owState = provState('oneweb');
+  const stateColor = {
+    activo:  { starlink:'#ffa03c', oneweb:'#6496ff' },
+    standby: { starlink:'#806030', oneweb:'#304880' },
+    caido:   { starlink:'#dc4646', oneweb:'#dc4646' },
+  };
+  SAT_POS.starlink.length = 0;
+  SAT_POS.oneweb.length = 0;
+  const esModoAntes = ST.mode === 'antes';
+  Object.entries(CONSTELACIONES).forEach(([tipo, trenes]) => {
+    const estado = tipo === 'starlink' ? slState : owState;
+    const col = stateColor[estado][tipo];
+    trenes.forEach((t, tIdx) => {
+      t.offsetY += t.speed * t.dy;
+      if(t.offsetY > CICLO_Y) t.offsetY -= CICLO_Y;
+      const ly = -200 + t.offsetY;
+      const lx = t.lx;
+
+      t.sats.forEach((sat, i) => {
+        const sx = lx - i * t.gap * t.dx;
+        const sy = ly - i * t.gap * t.dy;
+        sat.setAttribute('transform', `translate(${sx.toFixed(1)},${sy.toFixed(1)})`);
+        sat.setAttribute('opacity', estado === 'caido' ? '0.4' : (i === 0 ? '1' : Math.max(0.25, 1 - i*0.09)));
+        sat.querySelectorAll('.sat-body').forEach(r => r.setAttribute('fill', col));
+        sat.querySelectorAll('.sat-trail').forEach(r => r.setAttribute('stroke', col));
+        if(estado !== 'caido'){
+          SAT_POS[tipo].push([sx, sy]);
+        }
+      });
+      if(t.lbl){
+        t.lbl.setAttribute('x', lx.toFixed(1));
+        t.lbl.setAttribute('y', (ly - 15).toFixed(1));
+        t.lbl.setAttribute('fill', col);
+      }
+      const halo = document.getElementById(`halo-${tipo === 'starlink' ? 'sl' : 'ow'}-${tIdx}`);
+      if(halo){
+        halo.setAttribute('cx', lx.toFixed(1));
+        halo.setAttribute('cy', ly.toFixed(1));
+        halo.setAttribute('fill', esModoAntes ? 'transparent' : (estado === 'caido' ? 'transparent' : col));
+        if(esModoAntes){
+          halo.setAttribute('opacity', '0');
+        } else {
+          const baseOp = estado === 'activo' ? 0.10 : estado === 'standby' ? 0.04 : 0;
+          const factor = Math.max(0.4, 1 - tIdx * 0.06);
+          halo.setAttribute('opacity', (baseOp * factor).toFixed(3));
+        }
+      }
+    });
+  });
+  renderFlowLines();
+  requestAnimationFrame(animateSats);
+}
+
+const ILUMINACION = {};
+
+function buscarSatelite(sede, tipo) {
+  const estado = ST.links[sede.id] ? ST.links[sede.id][tipo] : 'inactivo';
+  if(estado === 'caido' || estado === 'inactivo') return { optimo: null, handover: null };
+  const fis = SAT_FISICA[tipo];
+  const posiciones = SAT_POS[tipo];
+  const [sx, sy] = sedePosReal(sede);
+  let optimo = null, handover = null;
+  for(let i = 0; i < posiciones.length; i++){
+    const px = posiciones[i][0], py = posiciones[i][1];
+    const d = Math.hypot(px - sx, py - sy);
+    if(d < fis.radioPrefPx){
+      if(!optimo || d < optimo.dist) optimo = { tipo, x: px, y: py, dist: d, idx: i };
+    } else if(d < fis.radioMaxPx){
+      if(!handover || d < handover.dist) handover = { tipo, x: px, y: py, dist: d, idx: i };
+    }
+  }
+  return { optimo, handover };
+}
+
+function calcularIluminacion(){
+  if(ST.mode === 'antes') return;
+  const AHORA = performance.now();
+  SEDES.forEach(s => {
+    const sl = buscarSatelite(s, 'starlink');
+    const ow = buscarSatelite(s, 'oneweb');
+    let elegido = sl.optimo || sl.handover || ow.optimo || ow.handover;
+
+    if(!elegido){
+      ILUMINACION[s.id] = null;
+      delete ST.enlaceActual[s.id];
+      return;
+    }
+
+    const actual = ST.enlaceActual[s.id];
+    const cambioTipo = actual && actual.tipo !== elegido.tipo;
+    const cambioSat = actual && !cambioTipo && actual.idx !== elegido.idx;
+    const hayCambio = cambioTipo || cambioSat;
+
+    if(actual && hayCambio && actual.cooldownHasta && AHORA < actual.cooldownHasta){
+      const posAnt = SAT_POS[actual.tipo][actual.idx];
+      if(posAnt){
+        const fisAnt = SAT_FISICA[actual.tipo];
+        const [sx, sy] = sedePosReal(s);
+        const dAnt = Math.hypot(posAnt[0] - sx, posAnt[1] - sy);
+        if(dAnt < fisAnt.radioMaxPx){
+          ILUMINACION[s.id] = { tipo: actual.tipo, x: posAnt[0], y: posAnt[1], dist: dAnt, idx: actual.idx };
+          return;
+        }
+      }
+    }
+
+    if(actual && cambioTipo){
+      const fis = calcularFisica(elegido.tipo, elegido.dist);
+      mostrarNotificacionHandover(s, actual.tipo, elegido.tipo, fis.latenciaMs);
+    }
+
+    ST.enlaceActual[s.id] = {
+      tipo: elegido.tipo,
+      idx: elegido.idx,
+      cooldownHasta: AHORA + 3000
+    };
+    ILUMINACION[s.id] = elegido;
+  });
+  sincronizarEstados();
+}
+
+function sincronizarEstados(){
+  SEDES.forEach(s => {
+    const lk = ST.links[s.id];
+    const ilum = ILUMINACION[s.id];
+    const al = activeLink(s.id);
+    if(ilum && (ilum.tipo === 'starlink' || ilum.tipo === 'oneweb')){
+      if(lk[ilum.tipo] !== 'caido' && lk[ilum.tipo] !== 'inactivo'){
+        if(al !== ilum.tipo){
+          if(al === 'g5' || al === 'g4' || al === null){
+            PRIORITY.forEach(k => {
+              if(lk[k] === 'inactivo' || lk[k] === 'caido') return;
+              lk[k] = k === ilum.tipo ? 'activo' : 'standby';
+            });
+          }
+        }
+      }
+    } else if(!ilum){
+      if(al === 'starlink' || al === 'oneweb' || al === null){
+        const celularDisp = ['g5','g4'].find(k => lk[k] !== 'caido' && lk[k] !== 'inactivo');
+        if(celularDisp){
+          PRIORITY.forEach(k => {
+            if(lk[k] === 'inactivo' || lk[k] === 'caido') return;
+            lk[k] = k === celularDisp ? 'activo' : 'standby';
+          });
+        }
+      }
+    }
+  });
+}
+
+const _ultimoHandover = {};
+const HANDOVER_COOLDOWN_MS = 5000;
+const MAX_TOASTS_VISIBLES = 2;
+
+function mostrarNotificacionHandover(sede, tipoAnt, tipoNue, latenciaNueva){
+  const key = sede.id + ':' + tipoAnt + '->' + tipoNue;
+  const now = Date.now();
+  if(_ultimoHandover[key] && now - _ultimoHandover[key] < HANDOVER_COOLDOWN_MS) return;
+  _ultimoHandover[key] = now;
+
+  const layer = document.getElementById('handover-toast-layer');
+  if(!layer) return;
+
+  const toasts = layer.querySelectorAll('.handover-toast');
+  if(toasts.length >= MAX_TOASTS_VISIBLES){
+    layer.removeChild(toasts[0]);
+  }
+
+  const div = document.createElement('div');
+  div.className = 'handover-toast';
+  const icono = tipoNue === 'g5' || tipoNue === 'g4' ? '📡' : '🛰';
+  div.innerHTML = `
+    <div class="ht-icon">${icono}</div>
+    <div class="ht-content">
+      <div class="ht-title">HANDOVER — ${sede.code}</div>
+      <div class="ht-detail">${LK_NAME[tipoAnt]} → ${LK_NAME[tipoNue]}</div>
+      <div class="ht-lat">Nueva latencia: ${latenciaNueva} ms</div>
+    </div>`;
+  layer.appendChild(div);
+
+  setTimeout(() => div.classList.add('out'), 3000);
+  setTimeout(() => div.remove(), 3500);
+
+  addLog(`🔄 Handover ${sede.code} ${sede.city}: ${LK_NAME[tipoAnt]} → ${LK_NAME[tipoNue]} (${latenciaNueva} ms)`, 'ok');
+}
+
+function renderFlowLinesAntes(){
+  const fl = document.getElementById('flow-layer');
+  if(!fl) return;
+  fl.innerHTML = '';
+  const NS = 'http://www.w3.org/2000/svg';
+  const cmPos = sedePos(SEDES[0]);
+
+  SEDES.slice(1).forEach(s => {
+    const pos = sedePos(s);
+    const caido = ST.mpls[s.id] === 'caido';
+    const color = caido ? '#dc4646' : '#5a6478';
+    const dx = cmPos[0] - pos[0];
+    const dy = cmPos[1] - pos[1];
+    const dist = Math.hypot(dx, dy) || 1;
+    const k = Math.min(dist * 0.10, 25);
+    const perpX = (-dy / dist) * k;
+    const perpY = ( dx / dist) * k;
+    const ctrlX = (pos[0] + cmPos[0]) / 2 + perpX;
+    const ctrlY = (pos[1] + cmPos[1]) / 2 + perpY;
+
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', `M${pos[0].toFixed(1)},${pos[1].toFixed(1)} Q${ctrlX.toFixed(1)},${ctrlY.toFixed(1)} ${cmPos[0]},${cmPos[1]}`);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width', '0.7');
+    path.setAttribute('stroke-dasharray', caido ? '2 4' : '4 3');
+    path.setAttribute('opacity', caido ? '0.55' : '0.45');
+    if(caido){
+      path.classList.add('mpls-down-line');
+    } else {
+      path.classList.add('flow-line');
+      path.style.animationDuration = '4.5s';
+    }
+    fl.appendChild(path);
+  });
+
+  const g = document.createElementNS(NS, 'g');
+  g.setAttribute('id', 'mpls-core-icon');
+  g.setAttribute('transform', `translate(${cmPos[0]}, ${cmPos[1] - 28})`);
+  g.classList.add('mpls-core-pulse');
+  const hex = document.createElementNS(NS, 'polygon');
+  const rHex = 14;
+  const puntos = [];
+  for(let i = 0; i < 6; i++){
+    const ang = Math.PI / 6 + i * Math.PI / 3;
+    puntos.push(`${(Math.cos(ang)*rHex).toFixed(1)},${(Math.sin(ang)*rHex).toFixed(1)}`);
+  }
+  hex.setAttribute('points', puntos.join(' '));
+  hex.setAttribute('fill', '#161b28');
+  hex.setAttribute('stroke', '#5a6478');
+  hex.setAttribute('stroke-width', '1.3');
+  g.appendChild(hex);
+  const txt = document.createElementNS(NS, 'text');
+  txt.setAttribute('text-anchor', 'middle');
+  txt.setAttribute('y', '1');
+  txt.setAttribute('font-size', '5.5');
+  txt.setAttribute('font-weight', '700');
+  txt.setAttribute('fill', '#8a93a6');
+  txt.setAttribute('font-family', 'system-ui');
+  txt.textContent = 'MPLS';
+  g.appendChild(txt);
+  const txt2 = document.createElementNS(NS, 'text');
+  txt2.setAttribute('text-anchor', 'middle');
+  txt2.setAttribute('y', '-5');
+  txt2.setAttribute('font-size', '2.8');
+  txt2.setAttribute('fill', '#5a6478');
+  txt2.setAttribute('font-family', 'system-ui');
+  txt2.textContent = 'CORE';
+  g.appendChild(txt2);
+  fl.appendChild(g);
+}
+
+function renderFlowLines(){
+  const fl = document.getElementById('flow-layer');
+  if(!fl) return;
+  fl.innerHTML = '';
+
+  if(ST.mode === 'antes'){
+    renderFlowLinesAntes();
+    return;
+  }
+
+  const NS = 'http://www.w3.org/2000/svg';
+  calcularIluminacion();
+  SEDES.forEach(s => {
+    const pos = sedePos(s);
+    const ilum = ILUMINACION[s.id];
+    const al = activeLink(s.id);
+    let tx, ty, color, esSatelite = false, conmutando = false;
+    if(ilum){
+      tx = ilum.x; ty = ilum.y;
+      color = LK_COLOR[ilum.tipo];
+      esSatelite = true;
+      const fis = SAT_FISICA[ilum.tipo];
+      if(ilum.dist > fis.radioPrefPx) conmutando = true;
+    } else if(al === 'g5' || al === 'g4'){
+      const cercana = ANTENAS
+        .filter(a => a.tipo === al && a.sedeId === s.id)
+        .sort((a,b)=>{
+          const da = Math.hypot(a.x - pos[0], a.y - pos[1]);
+          const db = Math.hypot(b.x - pos[0], b.y - pos[1]);
+          return da - db;
+        })[0];
+      if(!cercana) return;
+      tx = cercana.x; ty = cercana.y;
+      color = LK_COLOR[al];
+    } else {
+      return;
+    }
+    let dash, opac, strokeWidth;
+    if(esSatelite && !conmutando){
+      dash = '3 4'; opac = '0.6';  strokeWidth = '0.9';
+    } else if(esSatelite && conmutando){
+      dash = '6 4'; opac = '0.5';  strokeWidth = '0.85';
+      color = '#f0c83c';
+    } else {
+      dash = '5 6'; opac = '0.35'; strokeWidth = '0.7';
+    }
+    const dx = tx - pos[0];
+    const dy = ty - pos[1];
+    const dist = Math.hypot(dx, dy) || 1;
+    const k = Math.min(dist * 0.18, 30);
+    const perpX = (-dy / dist) * k;
+    const perpY = ( dx / dist) * k;
+    const ctrlX = (pos[0]+tx)/2 + perpX;
+    const ctrlY = (pos[1]+ty)/2 + perpY;
+
+    const path = document.createElementNS(NS,'path');
+    path.setAttribute('d', `M${pos[0].toFixed(1)},${pos[1].toFixed(1)} Q${ctrlX.toFixed(1)},${ctrlY.toFixed(1)} ${tx.toFixed(1)},${ty.toFixed(1)}`);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width', strokeWidth);
+    path.setAttribute('stroke-dasharray', dash);
+    path.setAttribute('opacity', opac);
+    path.classList.add('flow-line');
+    path.style.animationDuration = (1.4 + (s.num % 5) * 0.25) + 's';
+    fl.appendChild(path);
+  });
+  SEDES.forEach(s => {
+    const halo = document.getElementById(`sede-halo-${s.id}`);
+    if(!halo) return;
+    const ilum = ILUMINACION[s.id];
+    if(ilum){
+      const fis = SAT_FISICA[ilum.tipo];
+      if(ilum.dist < fis.radioPrefPx){
+        halo.setAttribute('stroke', LK_COLOR[ilum.tipo]);
+        halo.setAttribute('opacity', '0.85');
+      } else if(ilum.dist < fis.radioHandPx){
+        halo.setAttribute('stroke', LK_COLOR[ilum.tipo]);
+        halo.setAttribute('opacity', '0.65');
+      } else {
+        halo.setAttribute('stroke', '#f0c83c');
+        halo.setAttribute('opacity', '0.55');
+      }
+    } else if(!sedeDown(s.id)){
+      halo.setAttribute('stroke', '#f0c83c');
+      halo.setAttribute('opacity', '0.3');
+    } else {
+      halo.setAttribute('opacity', '0.05');
+    }
+  });
+  if(ST.selId) actualizarPanelIluminacion();
+}
+
+function actualizarPanelIluminacion(){
+  const el = document.getElementById('ilum-info');
+  if(!el || !ST.selId) return;
+  if(ST.mode === 'antes') return;
+  const ilum = ILUMINACION[ST.selId];
+  const s = SEDES.find(x=>x.id===ST.selId);
+  if(!s) return;
+  if(ilum){
+    const tipoLbl = ilum.tipo === 'starlink' ? 'Starlink' : 'OneWeb';
+    const col = LK_COLOR[ilum.tipo];
+    const fis = calcularFisica(ilum.tipo, ilum.dist);
+    const fisTipo = SAT_FISICA[ilum.tipo];
+    let estadoTxt = '', estadoColor = '';
+    if(ilum.dist < fisTipo.radioPrefPx){
+      estadoTxt = '● ILUMINADO ÓPTIMO'; estadoColor = 'var(--green)';
+    } else if(ilum.dist < fisTipo.radioHandPx){
+      estadoTxt = '◐ EN TRANSICIÓN'; estadoColor = 'var(--text)';
+    } else {
+      estadoTxt = '⟳ HANDOVER EN CURSO'; estadoColor = 'var(--yellow)';
+    }
+    el.innerHTML = `
+      <div class="drow"><span class="dkey">Satélite</span>
+        <span class="dval" style="color:${col};font-weight:700">🛰 ${tipoLbl}</span></div>
+      <div class="drow"><span class="dkey">Altitud orbital</span>
+        <span class="dval">${fis.altitudKm} km</span></div>
+      <div class="drow"><span class="dkey">Distancia a satélite</span>
+        <span class="dval">${fis.distanciaKm.toLocaleString('es-CL')} km</span></div>
+      <div class="drow"><span class="dkey">Latencia RTT</span>
+        <span class="dval" style="color:var(--green);font-weight:700">${fis.latenciaMs} ms</span></div>
+      <div class="drow"><span class="dkey">Estado</span>
+        <span class="dval" style="color:${estadoColor};font-weight:700">${estadoTxt}</span></div>`;
+  } else if(sedeDown(ST.selId)){
+    el.innerHTML = `<div style="font-size:11px;color:var(--red)">⚠ Sin cobertura satelital ni celular</div>`;
+  } else {
+    const al = activeLink(ST.selId);
+    let info = '';
+    if(al === 'g5' || al === 'g4'){
+      const antena = ANTENAS.find(a => a.tipo === al && a.sedeId === ST.selId);
+      if(antena){
+        const [sx, sy] = sedePosReal(s);
+        const distPx = Math.hypot(antena.x - sx, antena.y - sy);
+        const distKm = Math.round(distPx * MAPA_ESCALA_KM_PX);
+        const operador = al === 'g5' ? 'Entel' : 'GTD';
+        info = `
+          <div class="drow"><span class="dkey">Enlace activo</span><span class="dval" style="color:var(--green);font-weight:700">📡 ${LK_NAME[al]}</span></div>
+          <div class="drow"><span class="dkey">Operador</span><span class="dval">${operador} Empresas</span></div>
+          <div class="drow"><span class="dkey">Distancia a torre</span><span class="dval">${distKm} km</span></div>
+          <div class="drow"><span class="dkey">Latencia RTT</span><span class="dval" style="color:var(--green);font-weight:700">${al === 'g5' ? '20' : '45'} ms</span></div>`;
+      }
+    }
+    el.innerHTML = `
+      <div class="drow"><span class="dkey">Satélites</span>
+        <span class="dval" style="color:var(--text2)">Ninguno en rango</span></div>
+      ${info}
+      <div style="font-size:10px;color:var(--yellow);margin-top:6px">
+        Conmutado a red celular mientras tanto
+      </div>`;
+  }
+}
+
+function renderMap(){
+  const sl = document.getElementById('sedes-layer');
+  const ll = document.getElementById('labels-layer');
+  sl.innerHTML=''; ll.innerHTML='';
+  const NS = 'http://www.w3.org/2000/svg';
+  const esAntes = ST.mode === 'antes';
+  const cmPos = sedePos(SEDES[0]);
+  const cmGlow = document.createElementNS(NS,'circle');
+  cmGlow.setAttribute('cx',cmPos[0]); cmGlow.setAttribute('cy',cmPos[1]);
+  cmGlow.setAttribute('r','14');
+  cmGlow.setAttribute('fill','none');
+  cmGlow.setAttribute('stroke', esAntes ? '#5a6478' : '#6496ff');
+  cmGlow.setAttribute('stroke-width','1.5');
+  cmGlow.setAttribute('opacity','0.3');
+  cmGlow.classList.add('cm-glow');
+  sl.appendChild(cmGlow);
+  SEDES.forEach(s => {
+    const pos = sedePos(s);
+    const down = sedeDown(s.id);
+    const dot = down ? '#dc4646' : (esAntes ? (s.isCM ? '#8a93a6' : '#5a6478') : (s.isCM ? '#6496ff' : s.isAntarctic ? '#9070cc' : '#3cc878'));
+    const r = s.isCM ? 6 : 4.5;
+    const isSel = ST.selId === s.id;
+    const halo = document.createElementNS(NS,'circle');
+    halo.setAttribute('id', `sede-halo-${s.id}`);
+    halo.setAttribute('cx', pos[0]);
+    halo.setAttribute('cy', pos[1]);
+    halo.setAttribute('r', r + 6);
+    halo.setAttribute('fill','none');
+    halo.setAttribute('stroke', esAntes ? '#5a6478' : dot);
+    halo.setAttribute('stroke-width','1.8');
+    halo.setAttribute('opacity','0.4');
+    halo.setAttribute('filter','url(#sede-glow)');
+    halo.style.pointerEvents='none';
+    sl.appendChild(halo);
+    if(down){
+      const pr = document.createElementNS(NS,'circle');
+      pr.setAttribute('cx',pos[0]); pr.setAttribute('cy',pos[1]);
+      pr.setAttribute('r', r+5);
+      pr.setAttribute('fill','none');
+      pr.setAttribute('stroke','#dc4646');
+      pr.setAttribute('stroke-width','1.5');
+      pr.classList.add('down-ring');
+      sl.appendChild(pr);
+    }
+    const c = document.createElementNS(NS,'circle');
+    c.setAttribute('cx',pos[0]); c.setAttribute('cy',pos[1]);
+    c.setAttribute('r',r);
+    c.setAttribute('fill',dot);
+    c.setAttribute('stroke',isSel?'#ffffff':'rgba(255,255,255,0.55)');
+    c.setAttribute('stroke-width',isSel?2:0.9);
+    c.style.cursor='pointer';
+    c.addEventListener('click', e=>{ e.stopPropagation(); selectSede(s.id); zoomASede(s.id); });
+    c.addEventListener('mouseenter', e=>showTip(e,s));
+    c.addEventListener('mouseleave', hideTip);
+    sl.appendChild(c);
+    const t = document.createElementNS(NS,'text');
+    t.setAttribute('x',pos[0]+r+2.5); t.setAttribute('y',pos[1]+3.2);
+    t.setAttribute('fill', esAntes ? '#8a93a6' : (s.isCM?'#a0b8ff':'#a8c0c8'));
+    t.setAttribute('font-size', s.isCM?'7':'6');
+    t.setAttribute('font-family','system-ui');
+    t.setAttribute('font-weight',s.isCM?'700':'600');
+    t.style.pointerEvents='none';
+    t.textContent = s.code;
+    ll.appendChild(t);
+  });
+  if(ST.selId){
+    const s = SEDES.find(x=>x.id===ST.selId);
+    if(s){
+      const pos = sedePos(s);
+      const r = document.getElementById('sel-ring');
+      r.setAttribute('cx',pos[0]); r.setAttribute('cy',pos[1]);
+      r.setAttribute('r',(s.isCM?6:4.5)+5);
+      r.setAttribute('opacity','1');
+    }
+  } else {
+    document.getElementById('sel-ring').setAttribute('opacity','0');
+  }
+}
+
+function updateMetrics(){
+  const down = SEDES.filter(s=>sedeDown(s.id)).length;
+  const op = SEDES.length - down;
+  document.getElementById('m-op').textContent = op+'/'+SEDES.length;
+  document.getElementById('m-op').style.color = op===SEDES.length?'var(--green)':'var(--yellow)';
+  document.getElementById('m-down').textContent = down+'/'+SEDES.length;
+  document.getElementById('m-down').style.color = down>0?'var(--red)':'var(--gray)';
+  document.getElementById('m-ev').textContent = ST.evCount;
+  if(ST.mode==='antes'){
+    document.getElementById('m-uptime').textContent='99.5%';
+    document.getElementById('m-uptime').style.color='var(--red)';
+    document.getElementById('m-rto').textContent='180 min';
+    document.getElementById('m-rto').style.color='var(--red)';
+  } else {
+    document.getElementById('m-uptime').textContent='99.99999%';
+    document.getElementById('m-uptime').style.color='var(--accent)';
+    document.getElementById('m-rto').textContent='<1 min';
+    document.getElementById('m-rto').style.color='var(--text)';
+  }
+  const tb = document.getElementById('topbar');
+  down>0 ? tb.classList.add('alert') : tb.classList.remove('alert');
+  document.title = down>0
+    ? '⚠ '+down+'/'+SEDES.length+' sin servicio — Financiera Pacífico'
+    : '✓ '+op+'/'+SEDES.length+' operativas — Financiera Pacífico';
+}
+
+function toggleMode(){
+  ST.mode = ST.mode==='despues' ? 'antes' : 'despues';
+  initLinks();
+  ST.cmActive='rtr1';
+  ST.enlaceActual = {};
+  const pill = document.getElementById('mode-pill');
+  const btn = document.getElementById('btn-toggle');
+  const acadLbl = document.getElementById('sg-acad-lbl');
+  const idsDespues = ['sg-links-despues','sg-acad-despues','sg-ext-despues'];
+  const idsAntes   = ['sg-links-antes','sg-acad-antes','sg-ext-antes'];
+  const satLayer = document.getElementById('sat-layer');
+  const antLayer = document.getElementById('antenna-layer');
+  const mapCont = document.getElementById('map-container');
+  const legSat = document.getElementById('leg-sat');
+  const legOw = document.getElementById('leg-ow');
+  const leg5g = document.getElementById('leg-5g');
+  const leg4g = document.getElementById('leg-4g');
+  const legMpls = document.getElementById('leg-mpls');
+  if(ST.mode==='antes'){
+    pill.textContent='DIAGNÓSTICO (ANTES)'; pill.className='mode-pill pill-antes';
+    btn.textContent='Ver REDISEÑO →'; btn.className='btn btn-toggle btn-r';
+    idsDespues.forEach(id=>document.getElementById(id).style.display='none');
+    idsAntes.forEach(id=>document.getElementById(id).style.display='');
+    acadLbl.textContent='Escenarios académicos — Diagnóstico';
+    satLayer.style.display='none';
+    antLayer.style.display='none';
+    mapCont.classList.add('legacy');
+    legSat.style.display='none';
+    legOw.style.display='none';
+    leg5g.style.display='none';
+    leg4g.style.display='none';
+    legMpls.style.display='';
+    addLog('Vista DIAGNÓSTICO — MPLS único por sede, hardware EOL 2014-2015','warn');
+  } else {
+    pill.textContent='REDISEÑO'; pill.className='mode-pill pill-despues';
+    btn.textContent='Ver ANTES →'; btn.className='btn btn-toggle btn-n';
+    idsDespues.forEach(id=>document.getElementById(id).style.display='');
+    idsAntes.forEach(id=>document.getElementById(id).style.display='none');
+    acadLbl.textContent='Escenarios académicos — Rediseño';
+    satLayer.style.display='';
+    antLayer.style.display='';
+    mapCont.classList.remove('legacy');
+    legSat.style.display='';
+    legOw.style.display='';
+    leg5g.style.display='';
+    leg4g.style.display='';
+    legMpls.style.display='none';
+    addLog('Vista REDISEÑO — 4 enlaces inalámbricos independientes por sede','ok');
+  }
+  renderMap(); renderAntenas(); updateMetrics();
+  if(ST.selId) renderDetail(ST.selId);
+}
+
+function selectSede(id){
+  ST.selId=id; ST.selAntenna=null;
+  renderMap();
+  renderDetail(id);
+}
+
+function renderDetail(id){
+  const s = SEDES.find(x=>x.id===id);
+  if(!s) return;
+  const panel = document.getElementById('detail-panel');
+  const n = s.num;
+  const vlans=[
+    {id:10,name:'Datos',    net:`10.70.${n}.0/24`,   gw:`10.70.${n}.1`},
+    {id:20,name:'VoIP',     net:`10.70.${n}.32/27`,  gw:`10.70.${n}.33`},
+    {id:30,name:'Gestión',  net:`10.70.${n}.64/28`,  gw:`10.70.${n}.65`},
+    {id:40,name:'Invitados',net:`10.70.${n}.80/28`,  gw:`10.70.${n}.81`},
+  ];
+  const esAntes = ST.mode === 'antes';
+  let linksHTML='';
+  if(esAntes){
+    const ms=ST.mpls[id];
+    linksHTML += lrowHTML('mpls','MPLS Entel 10 Mbps',ms,'10 Mbps','15 ms');
+  } else {
+    PRIORITY.forEach(k=>{
+      const st=ST.links[id][k];
+      const m=s.links[k];
+      linksHTML+=lrowHTML(k,LK_NAME[k],st,m.bw,m.ms);
+    });
+  }
+  const haRows = s.isCM ? (esAntes ? `
+    <div class="drow"><span class="dkey">Router activo</span>
+      <span class="dval" style="color:var(--green)">Cisco 2901 #1 ●</span></div>
+    <div class="drow"><span class="dkey">Router pasivo</span>
+      <span class="dval" style="color:var(--yellow)">Cisco 2901 #2 ○</span></div>
+    <div class="drow"><span class="dkey">Protocolo HA</span><span class="dval">HSRP</span></div>
+  ` : `
+    <div class="drow"><span class="dkey">Router activo</span>
+      <span class="dval" style="color:var(--green)">RTR-CM-0${ST.cmActive==='rtr1'?1:2} ●</span></div>
+    <div class="drow"><span class="dkey">Router pasivo</span>
+      <span class="dval" style="color:var(--yellow)">RTR-CM-0${ST.cmActive==='rtr1'?2:1} ○</span></div>
+    <div class="drow"><span class="dkey">Protocolo HA</span><span class="dval">HSRP + preemption</span></div>
+  `) : '';
+  const eqRows = esAntes ? `
+    <div class="drow"><span class="dkey">Router</span><span class="dval">${s.isCM ? 'Cisco 2901 (x2 HSRP)' : 'Cisco 1921'}</span></div>
+    <div class="drow"><span class="dkey">Switches</span><span class="dval">${s.isCM ? 'Cisco Catalyst 3750-X (x2 stack)' : 'Cisco Catalyst 2960-24TT-L'}</span></div>
+    <div class="drow"><span class="dkey">Firewall</span><span class="dval">${s.isCM ? 'Cisco ASA 5512-X' : 'No instalado'}</span></div>
+    <div class="drow"><span class="dkey">Soporte</span><span class="dval" style="color:var(--red)">EOL · 6-9 años sin soporte</span></div>
+  ` : `
+    <div class="drow"><span class="dkey">Router</span><span class="dval">Cisco ISR 4461</span></div>
+    <div class="drow"><span class="dkey">Switches</span><span class="dval">Cisco C9200-48U (x2 stack)</span></div>
+    <div class="drow"><span class="dkey">Firewall</span><span class="dval">Palo Alto PA-850</span></div>
+    <div class="drow"><span class="dkey">Soporte</span><span class="dval" style="color:var(--green)">Soporte vigente hasta 2031</span></div>
+  `;
+  panel.innerHTML=`
+<div class="dc">
+  <div class="dh">
+    <div class="dtitle">
+      ${s.isCM?'🏛':s.isIsland?'🏝':s.isAntarctic?'🔬':'🏢'} ${s.name}${s.isCM?'<span class="ha-tag">HA</span>':''}
+    </div>
+    <div class="dsub">${s.city} &nbsp;·&nbsp; ${s.ip}</div>
+  </div>
+  ${!esAntes ? `
+  <div class="dsec">
+    <div class="dslbl">Satélite iluminando AHORA</div>
+    <div id="ilum-info"></div>
+  </div>` : `
+  <div class="dsec">
+    <div class="dslbl">⚠ Situación actual</div>
+    <div style="font-size:11px;color:var(--yellow);line-height:1.6">
+      Equipos fuera de soporte fabricante. Sin firewall dedicado. Único enlace MPLS sin redundancia.
+    </div>
+  </div>`}
+  <div class="dsec">
+    <div class="dslbl">Equipamiento</div>
+    ${eqRows}
+    ${haRows}
+  </div>
+  <div class="dsec">
+    <div class="dslbl">${esAntes?'Conectividad WAN — DIAGNÓSTICO':'Conectividad WAN — Rediseño inalámbrico'}</div>
+    ${linksHTML}
+    ${esAntes?'<div style="font-size:10px;color:var(--red);margin-top:5px">⚠ Punto único de falla — Sin redundancia WAN</div>':''}
+  </div>
+  <div class="dsec">
+    <div class="dslbl">Seguridad y monitoreo</div>
+    <div class="badges">
+      ${esAntes ? `
+        <span class="badge off">IPsec Ausente</span>
+        <span class="badge off">Sin BFD</span>
+        <span class="badge off">Sin IP SLA</span>
+        <span class="badge off">Sin Threat Prevention</span>
+      ` : `
+        <span class="badge">IPsec AES-256</span>
+        <span class="badge">BFD &lt;300ms</span>
+        <span class="badge">IP SLA 10s</span>
+        <span class="badge">Threat Prevention</span>
+        <span class="badge">OSPF</span>
+        ${s.isCM?'<span class="badge">HSRP HA</span>':''}
+      `}
+    </div>
+  </div>
+  <div class="dsec">
+    <div class="dslbl">Detección de fallas</div>
+    ${esAntes ? `
+      <div class="drow"><span class="dkey">OSPF sin BFD</span><span class="dval" style="color:var(--red)">30-60 s</span></div>
+      <div class="drow"><span class="dkey">Sin IP SLA</span><span class="dval" style="color:var(--red)">No hay</span></div>
+      <div class="drow"><span class="dkey">Sin tracking</span><span class="dval" style="color:var(--red)">No hay</span></div>
+      <div class="drow"><span class="dkey">Failover</span>
+           <span class="dval" style="color:var(--red)">Manual / 180 min</span></div>
+    ` : `
+      <div class="drow"><span class="dkey">BFD</span><span class="dval">&lt;300 ms</span></div>
+      <div class="drow"><span class="dkey">IP SLA 1</span><span class="dval">ping 8.8.8.8 cada 10s</span></div>
+      <div class="drow"><span class="dkey">IP SLA 2</span><span class="dval">ping 1.1.1.1 cada 10s</span></div>
+      <div class="drow"><span class="dkey">IP SLA 3</span><span class="dval">ping GW 5G cada 10s</span></div>
+      <div class="drow"><span class="dkey">IP SLA 4</span><span class="dval">ping GW 4G cada 10s</span></div>
+      <div class="drow"><span class="dkey">Failover OSPF+BFD</span>
+           <span class="dval" style="color:var(--green)">&lt;1 segundo</span></div>
+    `}
+  </div>
+  <div class="dsec">
+    <div class="dslbl">Plan de direccionamiento</div>
+    <table class="vtable">
+      <tr><th>VLAN</th><th>Nombre</th><th>Red</th><th>Gateway</th></tr>
+      ${vlans.map(v=>`<tr><td>${v.id}</td><td>${v.name}</td><td>${v.net}</td><td>${v.gw}</td></tr>`).join('')}
+    </table>
+    <div style="font-size:10px;color:var(--text2);margin-top:6px">
+      ${esAntes
+        ? '<strong>ACL:</strong> <span style="color:var(--red)">Sin políticas definidas — riesgo operativo</span>'
+        : '<strong>ACL:</strong> Datos→VoIP ✓ · Datos→Gestión ✗ · Invitados→Interna ✗'}
+    </div>
+  </div>
+  <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--panel2)">
+    <button class="btn btn-acc" style="width:100%;font-size:12px;padding:8px"
+      onclick="openSedeModal('${id}')">
+      🖧 &nbsp;Ver topología interna completa
+    </button>
+  </div>
+</div>`;
+  if(!esAntes) actualizarPanelIluminacion();
+}
+
+function lrowHTML(k,name,st,bw,ms){
+  const labels={activo:'ACTIVO',standby:'STANDBY',caido:'CAÍDO',inactivo:'N/D'};
+  return `<div class="lrow st-${st}">
+    <div class="lind"></div>
+    <span class="lname">${name}</span>
+    <span class="lstatus">${labels[st]||st.toUpperCase()}</span>
+    <span class="lmeta">${st==='inactivo'?'No disponible':bw+' · '+ms}</span>
+  </div>`;
+}
+
+function showTip(e,s){
+  const tip=document.getElementById('tooltip');
+  const lk=ST.links[s.id];
+  const COL={activo:'#3cc878',standby:'#f0c83c',caido:'#dc4646',inactivo:'#5a6478'};
+  let rows='';
+  const TIP_LBL={activo:'ACTIVO',standby:'STANDBY',caido:'CAÍDO',inactivo:'INACTIVO'};
+  if(ST.mode==='antes'){
+    const ms=ST.mpls[s.id];
+    rows=`<div class="tt-lrow"><div class="tt-dot" style="background:${ms==='activo'?'#3cc878':'#dc4646'}"></div>MPLS: ${TIP_LBL[ms]||ms.toUpperCase()}</div>`;
+    rows+=`<div class="tt-lrow" style="font-size:10px;color:#8a93a6;margin-top:3px">Legacy 2014-2015</div>`;
+  } else {
+    PRIORITY.forEach(k=>{
+      const st=lk[k];
+      rows+=`<div class="tt-lrow"><div class="tt-dot" style="background:${COL[st]}"></div>${LK_NAME[k]}: ${TIP_LBL[st]||st.toUpperCase()}</div>`;
+    });
+  }
+  document.getElementById('tt-name').textContent=(s.isCM?'🏛 ':s.isAntarctic?'🔬 ':s.isIsland?'🏝 ':'🏢 ')+s.name;
+  document.getElementById('tt-ip').textContent='IP: '+s.ip;
+  document.getElementById('tt-links').innerHTML=rows;
+  const cont=document.getElementById('map-container').getBoundingClientRect();
+  const tgt=e.target.getBoundingClientRect();
+  let left=tgt.right-cont.left+8;
+  let top =tgt.top -cont.top -10;
+  if(left+220>cont.width) left=tgt.left-cont.left-225;
+  if(top+145>cont.height) top=cont.height-148;
+  if(top<0) top=4;
+  tip.style.left=left+'px'; tip.style.top=top+'px';
+  tip.classList.add('vis');
+}
+function hideTip(){ document.getElementById('tooltip').classList.remove('vis'); }
+
+const ZOOM = { x: 0, y: 0, w: 300, h: 960, minW: 60, maxW: 320 };
+let DRAG = { active: false, startX: 0, startY: 0, startVX: 0, startVY: 0 };
+
+function aplicarZoom(){
+  const m = document.getElementById('chile-map');
+  m.setAttribute('viewBox', `${ZOOM.x} ${ZOOM.y} ${ZOOM.w} ${ZOOM.h}`);
+}
+function zoomASede(id){
+  const s = SEDES.find(x => x.id === id);
+  if(!s) return;
+  const [px, py] = sedePos(s);
+  const targetW = 90;
+  const targetH = targetW * (960 / 300);
+  ZOOM.w = targetW;
+  ZOOM.h = targetH;
+  ZOOM.x = px - targetW/2;
+  ZOOM.y = py - targetH/2;
+  ZOOM.x = Math.max(-30, Math.min(330 - ZOOM.w, ZOOM.x));
+  ZOOM.y = Math.max(-30, Math.min(990 - ZOOM.h, ZOOM.y));
+  aplicarZoom();
+}
+function zoomReset(){
+  ZOOM.x = 0; ZOOM.y = 0; ZOOM.w = 300; ZOOM.h = 960;
+  aplicarZoom();
+}
+function initZoom(){
+  const mapEl = document.getElementById('map-container');
+  const svgEl = document.getElementById('chile-map');
+  if(!mapEl || !svgEl) return;
+  mapEl.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const factor = e.deltaY > 0 ? 1.15 : 0.87;
+    const newW = Math.max(ZOOM.minW, Math.min(ZOOM.maxW, ZOOM.w * factor));
+    const newH = newW * (960 / 300);
+    const rect = svgEl.getBoundingClientRect();
+    const mx_ = (e.clientX - rect.left) / rect.width;
+    const my_ = (e.clientY - rect.top) / rect.height;
+    const cursorX = ZOOM.x + mx_ * ZOOM.w;
+    const cursorY = ZOOM.y + my_ * ZOOM.h;
+    ZOOM.x = cursorX - mx_ * newW;
+    ZOOM.y = cursorY - my_ * newH;
+    ZOOM.w = newW;
+    ZOOM.h = newH;
+    ZOOM.x = Math.max(-30, Math.min(330 - ZOOM.w, ZOOM.x));
+    ZOOM.y = Math.max(-30, Math.min(990 - ZOOM.h, ZOOM.y));
+    aplicarZoom();
+  }, { passive: false });
+  mapEl.addEventListener('mousedown', (e) => {
+    if(e.target.closest('g') && !e.target.closest('#chile-path')) return;
+    DRAG.active = true;
+    DRAG.startX = e.clientX;
+    DRAG.startY = e.clientY;
+    DRAG.startVX = ZOOM.x;
+    DRAG.startVY = ZOOM.y;
+    svgEl.classList.add('dragging');
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if(!DRAG.active) return;
+    const dx = e.clientX - DRAG.startX;
+    const dy = e.clientY - DRAG.startY;
+    const rect = svgEl.getBoundingClientRect();
+    const scaleX = ZOOM.w / rect.width;
+    const scaleY = ZOOM.h / rect.height;
+    ZOOM.x = DRAG.startVX - dx * scaleX;
+    ZOOM.y = DRAG.startVY - dy * scaleY;
+    ZOOM.x = Math.max(-30, Math.min(330 - ZOOM.w, ZOOM.x));
+    ZOOM.y = Math.max(-30, Math.min(990 - ZOOM.h, ZOOM.y));
+    aplicarZoom();
+  });
+  document.addEventListener('mouseup', () => {
+    if(DRAG.active){
+      DRAG.active = false;
+      svgEl.classList.remove('dragging');
+    }
+  });
+  mapEl.addEventListener('dblclick', (e) => {
+    if(e.target.closest('circle') || e.target.closest('g')) return;
+    e.preventDefault();
+    zoomReset();
+    addLog('Zoom restaurado — vista Chile completa', 'ok');
+  });
+}
+
+document.getElementById('map-container').addEventListener('click',(e)=>{
+  if(e.target.closest('circle') || e.target.closest('g') || e.target.closest('#chile-path')) return;
+  ST.selId=null; ST.selAntenna=null;
+  document.getElementById('sel-ring').setAttribute('opacity','0');
+  document.getElementById('detail-panel').innerHTML=`
+    <div class="detail-empty">
+      <div class="d-empty-icon">🗺</div>
+      <div style="color:var(--text2)">Selecciona una sede o antena</div>
+      <div class="d-empty-sub">Haz clic sobre cualquier<br>punto del mapa</div>
+    </div>`;
+});
+
+function needDespues(){
+  if(ST.mode!=='despues'){ addLog('⚠ Este escenario requiere modo REDISEÑO','warn'); return true; }
+  return false;
+}
+function sc_dropLink(lk, silent){
+  if(needDespues()) return;
+  let sw=0;
+  SEDES.forEach(s=>{
+    if(ST.links[s.id][lk]==='inactivo') return;
+    const prev=activeLink(s.id);
+    ST.links[s.id][lk]='caido';
+    recompute(s.id);
+    if(activeLink(s.id)!==prev) sw++;
+  });
+  ST.evCount++;
+  if(!silent) addLog(`Caída global ${LK_NAME[lk]} en ${SEDES.length} sedes — ${sw} conmutaciones`,'warn');
+  _refresh();
+}
+function sc_e1(){
+  if(needDespues()) return;
+  ST.links['s08'].starlink='caido';
+  recompute('s08');
+  const al=activeLink('s08');
+  ST.evCount++;
+  addLog(`E1: Falla Starlink S08 Antofagasta — Failover a ${LK_NAME[al]||'— SIN SERVICIO'} en <1s`,'ok');
+  _refresh(); selectSede('s08');
+}
+function sc_e2(){
+  if(needDespues()) return;
+  ['s15','s16','s17'].forEach(id=>{ ST.links[id].oneweb='caido'; ST.links[id].g4='caido'; recompute(id); });
+  ST.evCount++;
+  addLog('E2: OneWeb+4G GTD caídos en zona sur — Operando por Starlink/5G Entel','warn');
+  _refresh(); selectSede('s15');
+}
+function sc_e3(){
+  if(needDespues()) return;
+  ST.cmActive = ST.cmActive==='rtr1'?'rtr2':'rtr1';
+  const actNm = ST.cmActive==='rtr1'?'RTR-CM-01':'RTR-CM-02';
+  const psvNm = ST.cmActive==='rtr1'?'RTR-CM-02':'RTR-CM-01';
+  ST.evCount++;
+  addLog(`E3: Failover HA Casa Matriz — ${actNm} ACTIVO, ${psvNm} PASIVO (HSRP <1s)`,'ok');
+  _refresh(); selectSede('cm');
+}
+function sc_e4(){
+  if(needDespues()) return;
+  PRIORITY.forEach(k=>{ if(ST.links['s19'][k]!=='inactivo') ST.links['s19'][k]='caido'; });
+  ST.evCount++;
+  addLog('E4: Caída total S19 Coyhaique — Los 4 enlaces caídos — SIN SERVICIO','alert');
+  _refresh(); selectSede('s19');
+}
+function sc_e5(){
+  if(needDespues()) return;
+  sc_dropLink('starlink', true);
+  addLog('E5: Caída Starlink nacional — sedes conmutan a OneWeb (prioridad 2)','warn');
+}
+function sc_e6(){
+  if(needDespues()) return;
+  SEDES.forEach(s=>{ ST.links[s.id].starlink='caido'; ST.links[s.id].oneweb='caido'; recompute(s.id); });
+  ST.evCount++;
+  addLog('E6: Starlink+OneWeb caídos — Todas las sedes operan por 5G Entel / 4G GTD','warn');
+  _refresh();
+}
+function sc_e7(){
+  if(needDespues()) return;
+  let n=0;
+  SEDES.forEach(s=>{ if(ST.links[s.id].starlink==='caido'){ ST.links[s.id].starlink='standby'; recompute(s.id); n++; } });
+  ST.evCount++;
+  addLog(`E7: Retorno controlado — Starlink restaurado en ${n} sedes`,'ok');
+  _refresh();
+}
+function sc_drop2(){
+  if(needDespues()) return;
+  let dropped=0;
+  SEDES.forEach(s=>{
+    const avail=PRIORITY.filter(k=>ST.links[s.id][k]!=='inactivo'&&ST.links[s.id][k]!=='caido');
+    const maxDrop=Math.max(0,avail.length-1);
+    const n=Math.min(2,maxDrop);
+    if(n===0) return;
+    const pick=avail.sort(()=>Math.random()-.5).slice(0,n);
+    pick.forEach(k=>{ ST.links[s.id][k]='caido'; dropped++; });
+    recompute(s.id);
+  });
+  ST.evCount++;
+  addLog(`⚡ ${dropped} enlaces caídos — Siempre queda ≥1 activo por sede`,'warn');
+  _refresh();
+}
+function sc_dropAll(){
+  if(needDespues()) return;
+  SEDES.forEach(s=>{ PRIORITY.forEach(k=>{ if(ST.links[s.id][k]!=='inactivo') ST.links[s.id][k]='caido'; }); });
+  ST.evCount++;
+  addLog('☠ CATÁSTROFE TOTAL: 4 enlaces caídos en 22 sedes — P=7.5×10⁻¹¹','alert');
+  _refresh();
+}
+
+function needAntes(){
+  if(ST.mode!=='antes'){ addLog('⚠ Este escenario requiere modo DIAGNÓSTICO','warn'); return true; }
+  return false;
+}
+function sc_antes_e1(){
+  if(needAntes()) return;
+  ST.mpls['s08']='caido';
+  ST.evCount++;
+  addLog('E1: Falla MPLS S08 Antofagasta — Sede SIN SERVICIO (sin redundancia) — RTO 180 min','alert');
+  _refresh(); selectSede('s08');
+}
+function sc_antes_e2(){
+  if(needAntes()) return;
+  SEDES.forEach(s=>{ ST.mpls[s.id]='caido'; });
+  ST.evCount++;
+  addLog('E2: Corte MPLS nacional — 22/22 sedes SIN SERVICIO — RTO 180 min','alert');
+  _refresh();
+}
+function sc_antes_e3(){
+  if(needAntes()) return;
+  ST.cmActive = ST.cmActive==='rtr1'?'rtr2':'rtr1';
+  const actNm = ST.cmActive==='rtr1'?'Cisco 2901 #1':'Cisco 2901 #2';
+  const psvNm = ST.cmActive==='rtr1'?'Cisco 2901 #2':'Cisco 2901 #1';
+  ST.evCount++;
+  addLog(`E3: Failover HSRP casa matriz — ${actNm} ACTIVO, ${psvNm} PASIVO (<1s) — Pero hardware EOL`,'warn');
+  _refresh(); selectSede('cm');
+}
+function sc_antes_e4(){
+  if(needAntes()) return;
+  ST.evCount++;
+  addLog('E4: Cambio de configuración manual en S08 — Sin registro de auditoría. Trazabilidad: NULA','alert');
+  _refresh();
+}
+function sc_dropMPLS(){
+  if(ST.mode!=='antes'){addLog('MPLS solo en modo DIAGNÓSTICO','warn');return;}
+  let n=0;
+  SEDES.forEach(s=>{ if(ST.mpls[s.id]==='activo'){ST.mpls[s.id]='caido';n++;} });
+  ST.evCount++;
+  addLog(`☠ CATÁSTROFE: Corte MPLS nacional — ${n} sedes SIN SERVICIO — RTO: 180 min`,'alert');
+  _refresh();
+}
+
+function sc_reset(){
+  initLinks();
+  ST.cmActive='rtr1';
+  ST.enlaceActual = {};
+  ST.evCount++;
+  addLog('↺ Reset completo — Estado inicial restaurado','ok');
+  _refresh();
+}
+function _refresh(){
+  renderMap(); renderAntenas(); updateMetrics();
+  if(ST.selId) renderDetail(ST.selId);
+}
+
+function addLog(msg,type){
+  const now=new Date();
+  const ts=now.toTimeString().split(' ')[0];
+  ST.logs.unshift({ts,msg,type});
+  if(ST.logs.length>300) ST.logs.pop();
+  const body=document.getElementById('log-body');
+  const div=document.createElement('div');
+  div.className='log-entry';
+  const cls=type==='alert'?'alert':type==='ok'?'ok':type==='warn'?'warn':'';
+  div.innerHTML=`<span class="log-ts">[${ts}]</span><span class="log-msg ${cls}">${msg}</span>`;
+  body.insertBefore(div,body.firstChild);
+}
+
+function exportCSV(){
+  const rows=['timestamp,tipo,evento'];
+  ST.logs.forEach(l=>{ rows.push(`"${l.ts}","${l.type}","${l.msg.replace(/"/g,'""')}"`); });
+  const blob=new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='auditoria_financiera_pacifico.csv'; a.click();
+  URL.revokeObjectURL(url);
+  addLog('📥 Log exportado a CSV','ok');
+}
+
+function showModal(){
+  const down=SEDES.filter(s=>sedeDown(s.id)).length;
+  const op=SEDES.length-down;
+  const cnt={starlink:0,oneweb:0,g5:0,g4:0,none:0};
+  SEDES.forEach(s=>{
+    const ilum = ILUMINACION[s.id];
+    const al = activeLink(s.id);
+    if(ilum) cnt[ilum.tipo]++;
+    else if(al) cnt[al]++;
+    else cnt.none++;
+  });
+  const barRows=[
+    {k:'starlink',n:'Starlink',col:'var(--accent)'},
+    {k:'oneweb',  n:'OneWeb',  col:'var(--blue-cm)'},
+    {k:'g5',      n:'5G Entel',col:'var(--green)'},
+    {k:'g4',      n:'4G GTD',  col:'var(--purple)'},
+    {k:'none',    n:'Sin servicio',col:'var(--red)'},
+  ];
+  document.getElementById('modal-body').innerHTML=`
+    <div class="m2col">
+      <div class="mstat"><div class="mstat-v" style="color:var(--green)">${op}</div><div class="mstat-l">Sedes operativas</div></div>
+      <div class="mstat"><div class="mstat-v" style="color:${down?'var(--red)':'var(--gray)'}">${down}</div><div class="mstat-l">Sedes caídas</div></div>
+      <div class="mstat"><div class="mstat-v" style="color:var(--accent)">${ST.mode==='despues'?'99.99999%':'99.5%'}</div><div class="mstat-l">Uptime objetivo</div></div>
+      <div class="mstat"><div class="mstat-v" style="color:var(--blue-br)">${ST.evCount}</div><div class="mstat-l">Eventos totales</div></div>
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:6px">Enlace activo AHORA</div>
+    ${barRows.map(({k,n,col})=>{
+      const pct=Math.round(cnt[k]/SEDES.length*100);
+      return `<div class="brow">
+        <div class="blbl">${n}</div>
+        <div class="btrack"><div class="bfill" style="width:${pct}%;background:${col}"></div></div>
+        <div class="bval">${cnt[k]} (${pct}%)</div>
+      </div>`;
+    }).join('')}
+    <div style="margin-top:14px;padding:10px;background:var(--panel2);border-radius:6px;font-size:11px;color:var(--text2)">
+      <div style="font-weight:700;color:var(--text);margin-bottom:6px">Cálculo de disponibilidad teórica</div>
+      <div>P(falla 4 enlaces simultáneos) = 7.5 × 10⁻¹¹</div>
+      <div style="color:var(--accent);font-weight:700;margin-top:4px">→ Uptime: 99.99999%</div>
+    </div>
+    <div style="margin-top:12px;display:flex;justify-content:flex-end">
+      <button class="btn btn-n" onclick="closeModal()">Cerrar</button>
+    </div>`;
+  document.getElementById('modal').classList.add('vis');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('vis'); }
+
+let SM_ID = null, SM_TAB = 'topo';
+function openSedeModal(id){
+  SM_ID = id; SM_TAB = 'topo';
+  const s = SEDES.find(x=>x.id===id);
+  document.getElementById('sm-icon').textContent = s.isCM?'🏛':s.isIsland?'🏝':s.isAntarctic?'🔬':'🏢';
+  document.getElementById('sm-title').textContent = s.name+(s.isCM?' [Casa Matriz / HA]':'');
+  document.getElementById('sm-sub').textContent   = `${s.city}  ·  ${s.ip}  ·  ${PC_COUNT[id]} PCs  ·  ${ST.mode==='antes' ? 'Topología legacy 2014' : 'Topología rediseñada 2026'}`;
+  document.getElementById('sm-overlay').classList.add('vis');
+  smTab('topo', document.querySelector('.sm-tab'));
+}
+function closeSedeModal(){ document.getElementById('sm-overlay').classList.remove('vis'); SM_ID = null; }
+function smTab(tab, btn){
+  SM_TAB = tab;
+  document.querySelectorAll('.sm-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const s = SEDES.find(x=>x.id===SM_ID);
+  const body = document.getElementById('sm-body');
+  if(tab==='topo') body.innerHTML = renderTopoTab(s);
+  if(tab==='cmd')  body.innerHTML = renderCmdTab(s);
+  if(tab==='ping') body.innerHTML = renderPingTab(s);
+  if(tab==='tables') body.innerHTML = renderTablesTab(s);
+  if(tab==='kpis') body.innerHTML = renderKPIsTab(s);
+}
+
+/* =========================================================
+   TOPOLOGÍA LEGACY (ANTES) — AMPLIADA Y CON HOVER EN PCs
+========================================================= */
+function renderTopoTabLegacy(s){
+  const pcs = getPCs(s);
+  const mplsUp = ST.mpls[s.id]==='activo';
+  const isCM = s.isCM;
+
+  const pcGrid = (list, centerX, startY, label) => {
+    const cols = 8;
+    const cellW = 60;
+    const cellH = 46;
+    const totalW = cols * cellW;
+    const startX = centerX - totalW / 2;
+
+    let g = `<text x="${centerX}" y="${startY - 14}" text-anchor="middle" font-size="15"
+              font-weight="700" fill="#8a7560" font-family="system-ui">${list.length} PCs · ${label}</text>`;
+
+    list.forEach((pc, i) => {
+      const col = i % cols, row = Math.floor(i / cols);
+      const px = startX + col * cellW + 8;
+      const py = startY + row * cellH;
+
+      g += `<g class="topo-pc" onclick="openPC('${s.id}',${pc.idx-1})">
+        <title>Click para abrir ${pc.id} · IP ${pc.ip}</title>
+        <rect class="pc-body" x="${px}" y="${py}" width="44" height="32" rx="4"
+              fill="#2a1f14" stroke="#4a3a2a" stroke-width="1.4"/>
+        <rect class="pc-screen" x="${px+5}" y="${py+5}" width="34" height="20" rx="2"
+              fill="#1a1208" stroke="none"/>
+        <text x="${px+22}" y="${py+45}" text-anchor="middle" font-size="11"
+              font-weight="700" fill="#8a7560"
+              font-family="system-ui" style="pointer-events:none">${pc.idx}</text>
+      </g>`;
+    });
+    return g;
+  };
+
+  const W = 1300;
+  const pcsTotal = pcs.length;
+  const rowsPC = Math.ceil(pcsTotal / 8);
+  const totalH = isCM ? 260 + rowsPC * 46 + 80 : 300 + rowsPC * 46 + 80;
+
+  if(isCM){
+    return `<div class="topo-wrap"><svg class="topo-svg" width="${W}" height="${totalH}" viewBox="0 0 ${W} ${totalH}" xmlns="http://www.w3.org/2000/svg">
+  <text x="${W/2}" y="28" text-anchor="middle" font-size="20" fill="#8a7560" font-family="system-ui" font-weight="700" letter-spacing="1">
+    TOPOLOGÍA LEGACY — CASA MATRIZ (2014)
+  </text>
+
+  <!-- 2 MPLS -->
+  <g class="prov-card">
+    <rect x="330" y="55" width="280" height="66" rx="8" fill="#1a1a1a" stroke="#5a6478" stroke-width="2"/>
+    <text x="470" y="82" text-anchor="middle" font-size="18" fill="#8a93a6" font-weight="700" font-family="system-ui">MPLS ENTEL</text>
+    <text x="470" y="104" text-anchor="middle" font-size="14" fill="#5a6478" font-family="system-ui">100 Mbps · activo</text>
+  </g>
+  <g class="prov-card">
+    <rect x="690" y="55" width="280" height="66" rx="8" fill="#1a1a1a" stroke="#4a5468" stroke-width="2"/>
+    <text x="830" y="82" text-anchor="middle" font-size="18" fill="#8a93a6" font-weight="700" font-family="system-ui">MPLS MOVISTAR</text>
+    <text x="830" y="104" text-anchor="middle" font-size="14" fill="#5a6478" font-family="system-ui">100 Mbps · standby</text>
+  </g>
+
+  <line x1="470" y1="121" x2="530" y2="165" stroke="#5a6478" stroke-width="2"/>
+  <line x1="830" y1="121" x2="770" y2="165" stroke="#5a6478" stroke-width="2" stroke-dasharray="6 4"/>
+
+  <!-- 2 Cisco 2901 -->
+  <rect x="410" y="165" width="240" height="76" rx="8" fill="#1f1a14" stroke="#8a7560" stroke-width="2"/>
+  <text x="530" y="197" text-anchor="middle" font-size="17" fill="#8a7560" font-weight="700" font-family="system-ui">Cisco 2901 #1</text>
+  <text x="530" y="220" text-anchor="middle" font-size="13" fill="#5a6478" font-family="system-ui">HSRP Activo · EOL 2019</text>
+
+  <rect x="650" y="165" width="240" height="76" rx="8" fill="#1f1a14" stroke="#8a7560" stroke-width="2"/>
+  <text x="770" y="197" text-anchor="middle" font-size="17" fill="#8a7560" font-weight="700" font-family="system-ui">Cisco 2901 #2</text>
+  <text x="770" y="220" text-anchor="middle" font-size="13" fill="#5a6478" font-family="system-ui">HSRP Standby · EOL 2019</text>
+
+  <line x1="650" y1="203" x2="650" y2="203" stroke="#8a7560" stroke-width="2" stroke-dasharray="4 3"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="#8a7560"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="#8a7560"/>
+  <!-- Conexión HSRP entre los 2 routers -->
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
+
+  <line x1="530" y1="241" x2="530" y2="280" stroke="#8a7560" stroke-width="2"/>
+  <line x1="770" y1="241" x2="770" y2="280" stroke="#8a7560" stroke-width="2"/>
+
+  <!-- ASA 5512-X -->
+  <rect x="410" y="280" width="480" height="66" rx="8" fill="#1f1a14" stroke="#dc4646" stroke-width="2"/>
+  <text x="650" y="308" text-anchor="middle" font-size="17" fill="#8a7560" font-weight="700" font-family="system-ui">Cisco ASA 5512-X</text>
+  <text x="650" y="330" text-anchor="middle" font-size="13" fill="#dc4646" font-family="system-ui" font-weight="700">⚠ EOL 2017 · Sin parches por 9 años</text>
+
+  <line x1="650" y1="346" x2="650" y2="380" stroke="#8a7560" stroke-width="2"/>
+
+  <!-- C3750-X Stack -->
+  <rect x="380" y="380" width="540" height="66" rx="8" fill="#1f1a14" stroke="#8a7560" stroke-width="2"/>
+  <text x="650" y="408" text-anchor="middle" font-size="17" fill="#8a7560" font-weight="700" font-family="system-ui">Cisco Catalyst 3750-X Stack (x2)</text>
+  <text x="650" y="430" text-anchor="middle" font-size="13" fill="#dc4646" font-family="system-ui" font-weight="700">EOL 2020 · Sin MACsec</text>
+
+  <line x1="650" y1="446" x2="650" y2="475" stroke="#8a7560" stroke-width="2"/>
+
+  ${pcGrid(pcs, 650, 480, 'Casa Matriz')}
+  </svg></div>`;
+  }
+
+  return `<div class="topo-wrap"><svg class="topo-svg" width="${W}" height="${totalH}" viewBox="0 0 ${W} ${totalH}" xmlns="http://www.w3.org/2000/svg">
+  <text x="${W/2}" y="28" text-anchor="middle" font-size="20" fill="#8a7560" font-family="system-ui" font-weight="700" letter-spacing="1">
+    TOPOLOGÍA LEGACY — ${s.code} (2014)
+  </text>
+
+  <!-- MPLS único -->
+  <g class="prov-card">
+    <rect x="510" y="55" width="280" height="66" rx="8" fill="#1a1a1a" stroke="#5a6478" stroke-width="2"/>
+    <text x="650" y="82" text-anchor="middle" font-size="18" fill="#8a93a6" font-weight="700" font-family="system-ui">MPLS ENTEL</text>
+    <text x="650" y="104" text-anchor="middle" font-size="14" fill="#dc4646" font-family="system-ui" font-weight="700">10 Mbps · ÚNICO — Sin respaldo</text>
+  </g>
+
+  <line x1="650" y1="121" x2="650" y2="170" stroke="#5a6478" stroke-width="2" stroke-dasharray="${mplsUp ? 'none' : '6 4'}"/>
+
+  <!-- Cisco 1921 -->
+  <rect x="470" y="170" width="360" height="76" rx="8" fill="#1f1a14" stroke="#8a7560" stroke-width="2"/>
+  <text x="650" y="202" text-anchor="middle" font-size="19" fill="#8a7560" font-weight="700" font-family="system-ui">Cisco 1921</text>
+  <text x="650" y="226" text-anchor="middle" font-size="13" fill="#5a6478" font-family="system-ui">IOS 15.5(3)M · EOL 2020</text>
+
+  <line x1="650" y1="246" x2="650" y2="285" stroke="#8a7560" stroke-width="2"/>
+
+  <!-- C2960-24TT-L -->
+  <rect x="440" y="285" width="420" height="76" rx="8" fill="#1f1a14" stroke="#8a7560" stroke-width="2"/>
+  <text x="650" y="317" text-anchor="middle" font-size="17" fill="#8a7560" font-weight="700" font-family="system-ui">Cisco Catalyst 2960-24TT-L</text>
+  <text x="650" y="341" text-anchor="middle" font-size="13" fill="#dc4646" font-family="system-ui" font-weight="700">EOL 2018 · SIN FIREWALL · SIN HA</text>
+
+  <line x1="650" y1="361" x2="650" y2="395" stroke="#8a7560" stroke-width="2"/>
+
+  <!-- Alerta sin firewall -->
+  <rect x="490" y="395" width="320" height="40" rx="6" fill="#2a1010" stroke="#dc4646" stroke-width="1.5"/>
+  <text x="650" y="420" text-anchor="middle" font-size="14" fill="#dc4646" font-family="system-ui" font-weight="700">
+    ⚠ SIN FIREWALL PERIMETRAL
+  </text>
+
+  <line x1="650" y1="435" x2="650" y2="465" stroke="#8a7560" stroke-width="2"/>
+
+  ${pcGrid(pcs, 650, 470, 'Sucursal')}
+  </svg></div>`;
+}
+
+/* =========================================================
+   TOPOLOGÍA ACTUAL (DESPUÉS) — AMPLIADA Y CON HOVER EN PCs
+========================================================= */
+function renderTopoTab(s){
+  if(ST.mode === 'antes') return renderTopoTabLegacy(s);
+
+  const pcs = getPCs(s);
+  const sw1pcs = pcs.filter(p=>p.sw===1);
+  const sw2pcs = pcs.filter(p=>p.sw===2);
+  const lk = ST.links[s.id];
+  const cov = COV[s.id]||{sl:1,ow:1,g5:1,g4:1};
+  function linkColor(key){ const st=lk[key]; return st==='activo'?'#3cc878':st==='standby'?'#f0c83c':st==='caido'?'#dc4646':'#3a4050'; }
+  function linkLabel(key){ const st=lk[key]; const m={activo:'ACTIVO',standby:'STANDBY',caido:'CAÍDO',inactivo:'N/D'}; return m[st]||st; }
+  const slCol=linkColor('starlink'), owCol=linkColor('oneweb'), g5Col=cov.g5?linkColor('g5'):'#3a4050', g4Col=linkColor('g4');
+  const rtCol = s.isCM?'#6496ff':'#ffa03c';
+
+  const pcGrid=(list, centerX, startY, label)=>{
+    const cols = 6;
+    const cellW = 60;
+    const cellH = 46;
+    const totalW = cols * cellW;
+    const startX = centerX - totalW / 2;
+
+    let g = `<text x="${centerX}" y="${startY - 14}" text-anchor="middle" font-size="15"
+              font-weight="700" fill="#8a93a6" font-family="system-ui">${list.length} PCs · ${label}</text>`;
+
+    list.forEach((pc,i)=>{
+      const col=i%cols, row=Math.floor(i/cols);
+      const px = startX + col * cellW + 8;
+      const py = startY + row * cellH;
+
+      g += `<g class="topo-pc" onclick="openPC('${s.id}',${pc.idx-1})">
+        <title>Click para abrir ${pc.id} · IP ${pc.ip}</title>
+        <rect class="pc-body" x="${px}" y="${py}" width="44" height="32" rx="4"
+              fill="#1a2030" stroke="#4a5a70" stroke-width="1.4"/>
+        <rect class="pc-screen" x="${px+5}" y="${py+5}" width="34" height="20" rx="2"
+              fill="#0f1a28" stroke="none"/>
+        <text x="${px+22}" y="${py+45}" text-anchor="middle" font-size="11"
+              font-weight="700" fill="#8a93a6"
+              font-family="system-ui" style="pointer-events:none">${pc.idx}</text>
+      </g>`;
+    });
+    return g;
+  };
+
+  const sw1X = 400;
+  const sw2X = 900;
+  const swY = 380;
+  const rowsMax = Math.ceil(Math.max(sw1pcs.length, sw2pcs.length) / 6);
+  const totalH = 470 + rowsMax * 46 + 60;
+  const W = 1300;
+
+  return `<div class="topo-wrap"><svg class="topo-svg" width="${W}" height="${totalH}" viewBox="0 0 ${W} ${totalH}" xmlns="http://www.w3.org/2000/svg">
+
+  <text x="${W/2}" y="28" text-anchor="middle" font-size="20" fill="#5a6478" font-family="system-ui" font-weight="700" letter-spacing="1">
+    ENLACES WAN — OPERADORES (click para ver configuración)
+  </text>
+
+  <!-- 4 operadores -->
+  <g class="prov-card" onclick="openProveedorModal('${s.id}','starlink')">
+    <title>Click para ver configuración del enlace Starlink de ${s.code}</title>
+    <rect x="80" y="55" width="250" height="70" rx="8" fill="#1e1408" stroke="${slCol}" stroke-width="2"/>
+    <text x="205" y="85" text-anchor="middle" font-size="17" fill="${slCol}" font-weight="700" font-family="system-ui" style="pointer-events:none">STARLINK</text>
+    <text x="205" y="108" text-anchor="middle" font-size="14" fill="${slCol}" font-family="system-ui" style="pointer-events:none">${linkLabel('starlink')}</text>
+  </g>
+  <g class="prov-card" onclick="openProveedorModal('${s.id}','oneweb')">
+    <title>Click para ver configuración del enlace OneWeb de ${s.code}</title>
+    <rect x="355" y="55" width="250" height="70" rx="8" fill="#0e1220" stroke="${owCol}" stroke-width="2"/>
+    <text x="480" y="85" text-anchor="middle" font-size="17" fill="${owCol}" font-weight="700" font-family="system-ui" style="pointer-events:none">ONEWEB</text>
+    <text x="480" y="108" text-anchor="middle" font-size="14" fill="${owCol}" font-family="system-ui" style="pointer-events:none">${linkLabel('oneweb')}</text>
+  </g>
+  <g class="prov-card" onclick="openProveedorModal('${s.id}','g5')">
+    <title>Click para ver configuración 5G Entel de ${s.code}</title>
+    <rect x="630" y="55" width="250" height="70" rx="8" fill="#0a1a14" stroke="${g5Col}" stroke-width="2"/>
+    <text x="755" y="85" text-anchor="middle" font-size="17" fill="${g5Col}" font-weight="700" font-family="system-ui" style="pointer-events:none">5G ENTEL</text>
+    <text x="755" y="108" text-anchor="middle" font-size="14" fill="${g5Col}" font-family="system-ui" style="pointer-events:none">${cov.g5?linkLabel('g5'):'N/D'}</text>
+  </g>
+  <g class="prov-card" onclick="openProveedorModal('${s.id}','g4')">
+    <title>Click para ver configuración 4G GTD de ${s.code}</title>
+    <rect x="905" y="55" width="250" height="70" rx="8" fill="#0f1a10" stroke="${g4Col}" stroke-width="2"/>
+    <text x="1030" y="85" text-anchor="middle" font-size="17" fill="${g4Col}" font-weight="700" font-family="system-ui" style="pointer-events:none">4G GTD</text>
+    <text x="1030" y="108" text-anchor="middle" font-size="14" fill="${g4Col}" font-family="system-ui" style="pointer-events:none">${linkLabel('g4')}</text>
+  </g>
+
+  <!-- Conexiones desde operadores al router -->
+  <line x1="205"  y1="125" x2="650" y2="175" stroke="${slCol}" stroke-width="2" stroke-dasharray="${lk.starlink==='activo'?'none':'6 4'}"/>
+  <line x1="480"  y1="125" x2="650" y2="175" stroke="${owCol}" stroke-width="2" stroke-dasharray="${lk.oneweb==='activo'?'none':'6 4'}"/>
+  <line x1="755"  y1="125" x2="650" y2="175" stroke="${g5Col}" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="1030" y1="125" x2="650" y2="175" stroke="${g4Col}" stroke-width="2" stroke-dasharray="${lk.g4==='activo'?'none':'6 4'}"/>
+
+  <!-- Router -->
+  <rect x="440" y="175" width="420" height="76" rx="8" fill="#1a2010" stroke="${rtCol}" stroke-width="2.5"/>
+  <text x="650" y="207" text-anchor="middle" font-size="19" fill="${rtCol}" font-weight="700" font-family="system-ui" onclick="openDevice('router','${s.id}')" style="cursor:pointer">
+    🔧 ${s.isCM?'RTR-CM-01 (activo)':'RTR-'+s.code} — Cisco ISR 4461
+  </text>
+  <text x="650" y="230" text-anchor="middle" font-size="13" fill="#8a93a6" font-family="system-ui">NIM-5G-LTE-GA · IOS-XE 17.9.4 · OSPF · IPsec · BFD</text>
+
+  <line x1="650" y1="251" x2="650" y2="285" stroke="${rtCol}" stroke-width="2.5"/>
+
+  <!-- Firewall -->
+  <rect x="440" y="285" width="420" height="70" rx="8" fill="#14101e" stroke="#9070cc" stroke-width="2"/>
+  <text x="650" y="315" text-anchor="middle" font-size="19" fill="#9070cc" font-weight="700" font-family="system-ui" onclick="openDevice('fw','${s.id}')" style="cursor:pointer">
+    🛡 PA-${s.isCM?'CM':s.code} — Palo Alto PA-850
+  </text>
+  <text x="650" y="338" text-anchor="middle" font-size="13" fill="#8a93a6" font-family="system-ui">PAN-OS 11.1 · Threat Prevention</text>
+
+  <line x1="650" y1="355" x2="${sw1X}" y2="${swY}" stroke="#9070cc" stroke-width="2"/>
+  <line x1="650" y1="355" x2="${sw2X}" y2="${swY}" stroke="#9070cc" stroke-width="2"/>
+
+  <!-- Switch 1 -->
+  <rect x="${sw1X-190}" y="${swY}" width="380" height="66" rx="8" fill="#0e1e10" stroke="#3cc878" stroke-width="2"/>
+  <text x="${sw1X}" y="${swY+32}" text-anchor="middle" font-size="18" fill="#3cc878" font-weight="700" font-family="system-ui" onclick="openDevice('sw1','${s.id}')" style="cursor:pointer">
+    SW-${s.isCM?'CM':s.code}-01 — C9200-48U
+  </text>
+  <text x="${sw1X}" y="${swY+54}" text-anchor="middle" font-size="13" fill="#5a6478" font-family="system-ui">${sw1pcs.length} PCs · MACsec</text>
+
+  <!-- Switch 2 -->
+  <rect x="${sw2X-190}" y="${swY}" width="380" height="66" rx="8" fill="#0e1e10" stroke="#3cc878" stroke-width="2"/>
+  <text x="${sw2X}" y="${swY+32}" text-anchor="middle" font-size="18" fill="#3cc878" font-weight="700" font-family="system-ui" onclick="openDevice('sw2','${s.id}')" style="cursor:pointer">
+    SW-${s.isCM?'CM':s.code}-02 — C9200-48U
+  </text>
+  <text x="${sw2X}" y="${swY+54}" text-anchor="middle" font-size="13" fill="#5a6478" font-family="system-ui">${sw2pcs.length} PCs · MACsec</text>
+
+  <!-- Stack link entre switches -->
+  <line x1="${sw1X+190}" y1="${swY+33}" x2="${sw2X-190}" y2="${swY+33}" stroke="#3cc878" stroke-width="2.5" stroke-dasharray="8 5"/>
+  <text x="${(sw1X+sw2X)/2}" y="${swY+26}" text-anchor="middle" font-size="13" fill="#2a5a2a" font-family="system-ui" font-weight="700">Stack 10G</text>
+
+  <!-- Grids de PCs -->
+  ${pcGrid(sw1pcs, sw1X, swY + 100, 'SW-01')}
+  ${pcGrid(sw2pcs, sw2X, swY + 100, 'SW-02')}
+
+  </svg></div>`;
+}
+
+function renderCmdTab(s){
+  if(ST.mode === 'antes'){
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-legacy" onclick="openDevice('router','${s.id}')">🔧 ${s.isCM?'Cisco 2901':'Cisco 1921'}</button>
+        <button class="btn btn-legacy" onclick="openDevice('sw1','${s.id}')">⚡ ${s.isCM?'C3750-X (stack)':'C2960-24TT-L'}</button>
+        ${s.isCM ? `<button class="btn btn-legacy" onclick="openDevice('fw','${s.id}')">🛡 Cisco ASA 5512-X</button>` : ''}
+      </div>
+      <div style="font-size:11px;color:var(--red);margin-top:8px">⚠ Equipos fuera de soporte fabricante (EOL 2017-2020)</div>
+    </div>
+    <div class="ios">${genRouterOverviewLegacy(s)}</div>`;
+  }
+  return `<div style="margin-bottom:10px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-b" onclick="openDevice('router','${s.id}')">🔧 Router ISR 4461</button>
+      <button class="btn btn-b" onclick="openDevice('fw','${s.id}')">🛡 Firewall PA-850</button>
+      <button class="btn btn-b" onclick="openDevice('sw1','${s.id}')">⚡ Switch 01 C9200</button>
+      <button class="btn btn-b" onclick="openDevice('sw2','${s.id}')">⚡ Switch 02 C9200</button>
+    </div>
+  </div>
+  <div class="ios">${genRouterOverview(s)}</div>`;
+}
+
+function renderPingTab(s){
+  const opts = SEDES.filter(x=>x.id!==s.id).map(x=>`<option value="${x.id}">${x.code} — ${x.city}</option>`).join('');
+  return `
+  <div class="ping-src-sel">
+    <span style="font-size:11px;color:var(--text2)">Origen:</span>
+    <strong style="font-size:11px">${s.code} — ${s.city}</strong>
+    <span style="font-size:11px;color:var(--text2);margin-left:10px">Destino:</span>
+    <select id="ping-dest" style="background:var(--panel2);color:var(--text);border:1px solid var(--panel3);padding:3px 6px;border-radius:3px;font-size:11px">${opts}</select>
+    <button class="btn btn-acc" onclick="runPing('${s.id}')">▶ Ejecutar Ping</button>
+  </div>
+  <div id="ping-result" style="min-height:200px"></div>`;
+}
+
+function renderTablesTab(s){
+  const pcs = getPCs(s);
+  const arpRows = pcs.slice(0,8).map(p=>`<tr><td>${p.ip}</td><td>${p.mac}</td><td>Dynamic</td></tr>`).join('');
+  return `
+  <div class="dsec">
+    <div class="dslbl">Tabla ARP — RTR-${s.code}</div>
+    <table class="vtable">
+      <tr><th>IP</th><th>MAC</th><th>Tipo</th></tr>
+      ${arpRows}
+    </table>
+  </div>`;
+}
+
+function renderKPIsTab(s){
+  const esAntes = ST.mode === 'antes';
+  if(esAntes){
+    const mplsCaido = ST.mpls[s.id] === 'caido';
+    return `
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">99.5%</div><div class="kpi-lbl">Disponibilidad</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">180 min</div><div class="kpi-lbl">RTO</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--gray)">—</div><div class="kpi-lbl">Latencia</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--gray)">—</div><div class="kpi-lbl">Jitter</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">${mplsCaido ? '100%' : '<0.1%'}</div><div class="kpi-lbl">Pérdida</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">3.2</div><div class="kpi-lbl">MOS VoIP</div></div>
+    </div>
+    <div style="margin-top:14px;font-size:11px;color:var(--red);text-align:center;padding:8px;background:#2e1010;border-radius:4px;border:1px solid #4a2020">
+      ⚠ Sin BFD · Sin IP SLA · Sin tracking · Sin firewall · Hardware EOL
+    </div>`;
+  }
+  const al=activeLink(s.id)||'—';
+  const latMap={starlink:28,oneweb:44,g5:24,g4:46,'—':999};
+  const lat=latMap[al]||30;
+  const jitter=Math.round(lat*0.08);
+  const mos=(4.5-lat/100).toFixed(2);
+  return `
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--accent)">99.99999%</div><div class="kpi-lbl">Disponibilidad</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--green)">&lt;1 min</div><div class="kpi-lbl">RTO</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--blue-cm)">${al==='—'?'—':lat+' ms'}</div><div class="kpi-lbl">Latencia</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--yellow)">${al==='—'?'—':jitter+' ms'}</div><div class="kpi-lbl">Jitter</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--green)">0%</div><div class="kpi-lbl">Pérdida</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:${parseFloat(mos)>=4?'var(--green)':'var(--yellow)'}">${al==='—'?'—':mos}</div><div class="kpi-lbl">MOS VoIP</div></div>
+  </div>`;
+}
+
+let DEV_STATE = {type:null, sedeId:null, tab:null};
+
+function openDevice(type, sedeId){
+  DEV_STATE = {type, sedeId, tab:null};
+  const s = SEDES.find(x=>x.id===sedeId);
+  const esAntes = ST.mode === 'antes';
+
+  let titles, models;
+  if(esAntes){
+    titles = {
+      router: s.isCM ? `Cisco 2901 (x2 HSRP) — ${s.code}` : `Cisco 1921 — ${s.code}`,
+      fw:     `Cisco ASA 5512-X — ${s.code}`,
+      sw1:    s.isCM ? `Cisco Catalyst 3750-X #1 — ${s.code}` : `Cisco Catalyst 2960-24TT-L — ${s.code}`,
+      sw2:    s.isCM ? `Cisco Catalyst 3750-X #2 — ${s.code}` : `—`,
+    };
+    models = {
+      router: s.isCM ? 'Cisco 2901 · IOS 15.5(3)M · EOL 2019' : 'Cisco 1921 · IOS 15.5(3)M · EOL 2020',
+      fw:     'Cisco ASA 5512-X · ASA 9.1 · EOL 2017',
+      sw1:    s.isCM ? 'Cisco Catalyst 3750-X · IOS 15.2 · EOL 2020' : 'Cisco Catalyst 2960-24TT-L · IOS 15.0 · EOL 2018',
+      sw2:    '—',
+    };
+  } else {
+    titles = {
+      router:`RTR-${s.code} — Cisco ISR 4461`,
+      fw:`PA-${s.code} — Palo Alto PA-850`,
+      sw1:`SW-${s.code}-01 — Cisco Catalyst C9200-48U`,
+      sw2:`SW-${s.code}-02 — Cisco Catalyst C9200-48U`,
+    };
+    models = {
+      router:'Cisco ISR 4461 · NIM-5G-LTE-GA · IOS-XE 17.9.4a',
+      fw:'Palo Alto PA-850 · PAN-OS 11.1.2',
+      sw1:'Cisco Catalyst C9200-48U · IOS-XE 17.9.4',
+      sw2:'Cisco Catalyst C9200-48U · IOS-XE 17.9.4',
+    };
+  }
+
+  document.getElementById('dev-title').textContent = titles[type]||type;
+  document.getElementById('dev-model').textContent = models[type]||'';
+  const tabConfigs = esAntes ? {
+    router:[{k:'ov',l:'Overview'},{k:'iface',l:'Interfaces'},{k:'wan',l:'WAN MPLS'},{k:'eol',l:'EOL/Deuda'}],
+    fw:    [{k:'ov',l:'Overview'},{k:'iface',l:'Interfaces'},{k:'rules',l:'Reglas'},{k:'eol',l:'EOL/Deuda'}],
+    sw1:   [{k:'ov',l:'Overview'},{k:'vlan',l:'VLANs'},{k:'ports',l:'Puertos'}],
+    sw2:   [{k:'ov',l:'Overview'}],
+  } : {
+    router:[{k:'ov',l:'Overview'},{k:'iface',l:'Interfaces'},{k:'vlan',l:'VLANs'},{k:'wan',l:'WAN/Failover'},{k:'ipsec',l:'IPsec'},{k:'acl',l:'ACLs'}],
+    fw:    [{k:'ov',l:'Overview'},{k:'iface',l:'Interfaces'},{k:'zones',l:'Zonas/Reglas'},{k:'threat',l:'Threat Prev.'}],
+    sw1:   [{k:'ov',l:'Overview'},{k:'vlan',l:'VLANs'},{k:'ports',l:'Puertos'},{k:'macsec',l:'MACsec'}],
+    sw2:   [{k:'ov',l:'Overview'},{k:'vlan',l:'VLANs'},{k:'ports',l:'Puertos'},{k:'macsec',l:'MACsec'}],
+  };
+  const tabs = tabConfigs[type]||[];
+  document.getElementById('dev-tabs').innerHTML = tabs.map((t,i)=>
+    `<button class="dev-tab${i===0?' active':''}" onclick="devTab('${t.k}',this)">${t.l}</button>`
+  ).join('');
+  document.getElementById('dev-overlay').classList.add('vis');
+  devTab(tabs[0]?.k||'ov', document.querySelector('.dev-tab'));
+}
+function openPC(sedeId, pcIdx){
+  const s=SEDES.find(x=>x.id===sedeId);
+  const pc=getPCs(s)[pcIdx];
+  if(!pc) return;
+  DEV_STATE={type:'pc', sedeId, tab:null, pc};
+  document.getElementById('dev-title').textContent=`${pc.id} — Estación de Trabajo`;
+  document.getElementById('dev-model').textContent=`IP: ${pc.ip} · MAC: ${pc.mac} · VLAN ${pc.vlan}`;
+  document.getElementById('dev-tabs').innerHTML=
+    `<button class="dev-tab active" onclick="devTab('cfg',this)">Config</button>
+     <button class="dev-tab" onclick="devTab('term',this)">Terminal</button>`;
+  document.getElementById('dev-overlay').classList.add('vis');
+  devTab('cfg', document.querySelector('.dev-tab'));
+}
+function closeDevModal(){ document.getElementById('dev-overlay').classList.remove('vis'); }
+function devTab(tab, btn){
+  DEV_STATE.tab = tab;
+  document.querySelectorAll('.dev-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const s = SEDES.find(x=>x.id===DEV_STATE.sedeId);
+  const body = document.getElementById('dev-body');
+  const t=DEV_STATE.type;
+  const esAntes = ST.mode === 'antes';
+
+  if(esAntes){
+    if(t==='router'){
+      if(tab==='ov')    body.innerHTML=`<div class="ios">${genRouterOverviewLegacy(s)}</div>`;
+      if(tab==='iface') body.innerHTML=`<div class="ios">${genIfBriefLegacy(s)}</div>`;
+      if(tab==='wan')   body.innerHTML=`<div class="ios">${genWANLegacy(s)}</div>`;
+      if(tab==='eol')   body.innerHTML=`<div class="ios">${genEOLRouter(s)}</div>`;
+    }
+    if(t==='fw'){
+      if(tab==='ov')    body.innerHTML=`<div class="ios">${genFWLegacyOverview(s)}</div>`;
+      if(tab==='iface') body.innerHTML=`<div class="ios">${genFWLegacyIfaces(s)}</div>`;
+      if(tab==='rules') body.innerHTML=`<div class="ios">${genFWLegacyRules(s)}</div>`;
+      if(tab==='eol')   body.innerHTML=`<div class="ios">${genEOLFW(s)}</div>`;
+    }
+    if(t==='sw1'||t==='sw2'){
+      if(tab==='ov')    body.innerHTML=`<div class="ios">${genSWLegacyOverview(s)}</div>`;
+      if(tab==='vlan')  body.innerHTML=`<div class="ios">${genSWLegacyVLAN(s)}</div>`;
+      if(tab==='ports') body.innerHTML=`<div class="ios">${genSWLegacyPorts(s)}</div>`;
+    }
+    if(t==='pc'){
+      const pc=DEV_STATE.pc;
+      if(tab==='cfg')  body.innerHTML=genPCConfig(s,pc);
+      if(tab==='term') body.innerHTML=genPCTerminal(s,pc);
+    }
+    return;
+  }
+
+  if(t==='router'){
+    if(tab==='ov')    body.innerHTML=`<div class="ios">${genRouterOverview(s)}</div>`;
+    if(tab==='iface') body.innerHTML=`<div class="ios">${genIfBrief(s)}</div>`;
+    if(tab==='vlan')  body.innerHTML=`<div class="ios">${genRouterVLAN(s)}</div>`;
+    if(tab==='wan')   body.innerHTML=`<div class="ios">${genWANFailover(s)}</div>`;
+    if(tab==='ipsec') body.innerHTML=`<div class="ios">${genCryptoSA(s)}</div>`;
+    if(tab==='acl')   body.innerHTML=`<div class="ios">${genACLs(s)}</div>`;
+  }
+  if(t==='fw'){
+    if(tab==='ov')     body.innerHTML=`<div class="ios">${genFWOverview(s)}</div>`;
+    if(tab==='iface')  body.innerHTML=`<div class="ios">${genFWIfaces(s)}</div>`;
+    if(tab==='zones')  body.innerHTML=`<div class="ios">${genFWZones(s)}</div>`;
+    if(tab==='threat') body.innerHTML=`<div class="ios">${genFWThreat(s)}</div>`;
+  }
+  if(t==='sw1'||t==='sw2'){
+    const swN=t==='sw1'?1:2;
+    if(tab==='ov')     body.innerHTML=`<div class="ios">${genSWOverview(s,swN)}</div>`;
+    if(tab==='vlan')   body.innerHTML=`<div class="ios">${genSWVLAN(s)}</div>`;
+    if(tab==='ports')  body.innerHTML=`<div class="ios">${genSWPorts(s,swN)}</div>`;
+    if(tab==='macsec') body.innerHTML=`<div class="ios">${genMACsec(s,swN)}</div>`;
+  }
+  if(t==='pc'){
+    const pc=DEV_STATE.pc;
+    if(tab==='cfg')  body.innerHTML=genPCConfig(s,pc);
+    if(tab==='term') body.innerHTML=genPCTerminal(s,pc);
+  }
+}
+
+const UPTIME = `${Math.floor(Math.random()*30)+5} days, ${Math.floor(Math.random()*23)}:${String(Math.floor(Math.random()*59)).padStart(2,'0')}:${String(Math.floor(Math.random()*59)).padStart(2,'0')}`;
+
+function genRouterOverview(s){
+  const al=activeLink(s.id)||'—';
+  const esG5 = al === 'g5';
+  const esG4 = al === 'g4';
+  return `RTR-${s.code}> <span class="ios-cmd">show version</span>
+
+Cisco IOS XE Software, Version 17.09.04a
+RTR-${s.code} uptime is ${UPTIME}
+Cisco ISR 4461 (2RU) processor
+
+<span class="ios-hdr">HARDWARE MÓVIL INSTALADO</span>
+Módulo: NIM-5G-LTE-GA (Network Interface Module)
+Ranuras SIM: 2 (SIM1=Entel 5G, SIM2=GTD 4G)
+Bandas: n78 (3.5 GHz), B7 (2600 MHz), B28 (700 MHz)
+
+<span class="ios-hdr">Enlace WAN activo: <span class="${al==='starlink'?'ios-up':al==='—'?'ios-down':'ios-warn'}">${(al||'NINGUNO').toUpperCase()}</span></span>
+${esG5 ? '<span class="ios-up">● 5G Entel Empresas — APN im.entel.cl</span>' : ''}
+${esG4 ? '<span class="ios-up">● 4G GTD Empresas — APN bam.gtd.cl</span>' : ''}
+DNA Center: <span class="ios-up">ACTIVO</span>`;
+}
+
+function genRouterOverviewLegacy(s){
+  const mplsEstado = ST.mpls[s.id];
+  const label = mplsEstado === 'activo' ? '<span class="ios-up">UP</span>' : '<span class="ios-down">DOWN</span>';
+  return `RTR-${s.code}> <span class="ios-cmd">show version</span>
+
+Cisco IOS Software, C1900 Software (C1900-UNIVERSALK9-M)
+Version 15.5(3)M, RELEASE SOFTWARE (fc1)
+${s.isCM ? 'Cisco 2901' : 'Cisco 1921'} uptime is ${UPTIME}
+
+<span class="ios-down">⚠ EQUIPO FUERA DE SOPORTE — EOL desde ${s.isCM ? '2019' : '2020'}</span>
+<span class="ios-down">Sin repuestos oficiales · Sin parches de seguridad</span>
+
+<span class="ios-hdr">HARDWARE INSTALADO</span>
+2x Gigabit Ethernet integrados
+Sin módulos cellular (no soporta 5G/4G)
+Sin HA en sucursales (único router)
+
+<span class="ios-hdr">MPLS</span>
+Interfaz Gig0/0/0 → MPLS Entel (${s.isCM ? '100' : '10'} Mbps)
+Estado: ${label}
+
+<span class="ios-hdr">Memoria / CPU</span>
+DRAM: 512 MB (limitante para nuevas features)
+CPU load: ${Math.floor(30+Math.random()*40)}% (elevado por antigüedad)`;
+}
+
+function genIfBriefLegacy(s){
+  const n = s.num;
+  const mplsSt = ST.mpls[s.id]==='caido'?'<span class="ios-down">down           down</span>':'<span class="ios-up">up               up</span>';
+  if(s.isCM){
+    return `RTR-CM> <span class="ios-cmd">show ip interface brief</span>
+<span class="ios-hdr">Interface                  IP-Address        OK? Method Status           Protocol</span>
+GigabitEthernet0/0/0       dhcp              YES NVRAM  <span class="ios-up">up</span>               <span class="ios-up">up</span>   (MPLS Entel)
+GigabitEthernet0/0/1       dhcp              YES NVRAM  <span class="ios-up">up</span>               <span class="ios-up">up</span>   (MPLS Movistar)
+GigabitEthernet0/1.10      10.70.${n}.1      YES NVRAM  up               up   (VLAN Datos)
+GigabitEthernet0/1.20      10.70.${n}.33     YES NVRAM  up               up   (VLAN VoIP)
+GigabitEthernet0/1.30      10.70.${n}.65     YES NVRAM  up               up   (VLAN Gestión)
+GigabitEthernet0/1.40      10.70.${n}.81     YES NVRAM  up               up   (VLAN Invitados)`;
+  }
+  return `RTR-${s.code}> <span class="ios-cmd">show ip interface brief</span>
+<span class="ios-hdr">Interface                  IP-Address        OK? Method Status           Protocol</span>
+GigabitEthernet0/0/0       dhcp              YES NVRAM  ${mplsSt}   (MPLS Único)
+GigabitEthernet0/1.10      10.70.${n}.1      YES NVRAM  up               up   (VLAN Datos)
+GigabitEthernet0/1.20      10.70.${n}.33     YES NVRAM  up               up   (VLAN VoIP)
+GigabitEthernet0/1.30      10.70.${n}.65     YES NVRAM  up               up   (VLAN Gestión)
+GigabitEthernet0/1.40      10.70.${n}.81     YES NVRAM  up               up   (VLAN Invitados)
+
+<span class="ios-hdr">⚠ PUNTO ÚNICO DE FALLA</span>
+Solo 1 interfaz WAN. Si cae MPLS, no hay ruta alternativa.`;
+}
+
+function genWANLegacy(s){
+  return `RTR-${s.code}> <span class="ios-cmd">show ip route | include 0.0.0.0</span>
+
+Gateway of last resort is 10.100.0.1 to network 0.0.0.0
+
+<span class="ios-hdr">S*   0.0.0.0/0 [1/0] via 10.100.0.1</span>
+
+<span class="ios-hdr">OSPF</span>
+Router ID: 10.70.${s.num}.1
+Neighbors: ${ST.mpls[s.id]==='activo' ? '1 (RTR-CM)' : '0 (peer perdido)'}
+Hello: 10s · Dead: 40s
+<span class="ios-warn">⚠ Sin BFD · Reconvergencia 30-60s ante falla</span>
+
+<span class="ios-hdr">⚠ PROBLEMAS ACTUALES</span>
+• Sin IP SLA configurado
+• Sin tracking objects
+• Sin rutas de respaldo
+• Sin failover automático
+• Cambios de configuración = intervención manual`;
+}
+
+function genEOLRouter(s){
+  const modelo = s.isCM ? 'Cisco 2901' : 'Cisco 1921';
+  const eol = s.isCM ? '2019' : '2020';
+  return `${modelo} — ANÁLISIS EOL
+
+<span class="ios-hdr">CICLO DE VIDA</span>
+Año instalación:     2014-2015
+Fecha EOL:           ${eol}
+Años sin soporte:    ${s.isCM ? 7 : 6} años
+Último firmware:     IOS 15.5(3)M
+
+<span class="ios-hdr">RIESGOS</span>
+• CVEs públicos sin parche disponible
+• Sin acceso a TAC de Cisco
+• Repuestos solo en mercado secundario
+• No soporta 5G, IPsec IKEv2 con AES-256-GCM
+• DRAM limitada impide features nuevas
+
+<span class="ios-hdr">CONCLUSIÓN</span>
+<span class="ios-down">⚠ Equipo debe ser reemplazado en el rediseño</span>`;
+}
+
+function genFWLegacyOverview(s){
+  return `ASA-${s.code}> <span class="ios-cmd">show version</span>
+
+Cisco Adaptive Security Appliance Software Version 9.1(7)22
+Hardware:   ASA5512, 4096 MB RAM
+Uptime:     ${UPTIME}
+
+<span class="ios-down">⚠ ASA 5512-X EOL desde 2017 — 9 años sin parches</span>
+
+<span class="ios-hdr">LICENCIAS</span>
+AnyConnect Premium: 25 sesiones
+Firewall: Base
+Contextos: 2
+
+<span class="ios-hdr">RIESGOS</span>
+• Vulnerabilidades CVE sin mitigación
+• Sin WildFire · Sin Threat Prevention moderno`;
+}
+
+function genFWLegacyIfaces(s){
+  return `ASA-${s.code}> <span class="ios-cmd">show interface ip brief</span>
+
+<span class="ios-hdr">Interface    IP-Address      OK?  Method  Status  Protocol</span>
+GigabitEthernet0/0    100.64.10.2    YES  CONFIG  up      up        (outside — MPLS)
+GigabitEthernet0/1    10.70.0.254    YES  CONFIG  up      up        (inside)
+GigabitEthernet0/2    unassigned     YES  unset   down    down
+GigabitEthernet0/3    unassigned     YES  unset   down    down
+Management0/0        10.70.0.250    YES  CONFIG  up      up        (management)`;
+}
+
+function genFWLegacyRules(s){
+  return `ASA-${s.code}> <span class="ios-cmd">show running-config access-list</span>
+
+access-list INSIDE_OUT extended permit ip any any
+access-list OUTSIDE_IN extended deny ip any any
+
+<span class="ios-warn">⚠ ANÁLISIS: Reglas mínimas, sin granularidad</span>
+
+• No hay ACL por VLAN
+• No hay inspección de aplicaciones
+• No hay filtrado por URL
+• Permit "any any" en dirección saliente (riesgo exfiltración)`;
+}
+
+function genEOLFW(s){
+  return `ASA 5512-X — ANÁLISIS EOL
+
+<span class="ios-hdr">CICLO DE VIDA</span>
+Año instalación:     2014
+Fecha EOL:           2017
+Años sin soporte:    9 años
+Último firmware:     9.1(7)22 (2017)
+
+<span class="ios-hdr">RIESGOS CRÍTICOS</span>
+• CVEs de 2018-2025 sin parche
+• Ejemplos públicos: CVE-2018-0101, CVE-2020-3187, CVE-2023-20269
+• No soporta TLS 1.3
+• No soporta certificados modernos
+• Posible incumplimiento PCI DSS
+
+<span class="ios-hdr">CONCLUSIÓN</span>
+<span class="ios-down">⚠ Debe ser reemplazado por Palo Alto PA-850</span>`;
+}
+
+function genSWLegacyOverview(s){
+  const modelo = s.isCM ? 'Cisco Catalyst 3750-X' : 'Cisco Catalyst 2960-24TT-L';
+  const ios = s.isCM ? '15.2(4)E10' : '15.0(2)SE11';
+  const eol = s.isCM ? '2020' : '2018';
+  const puertos = s.isCM ? '48 puertos GbE + stack' : '24 puertos 10/100 + 2 GbE';
+  return `SW-${s.code}> <span class="ios-cmd">show version</span>
+
+Cisco IOS Software, ${modelo}
+Version ${ios}, RELEASE SOFTWARE
+
+Modelo:              ${modelo}
+Puertos:             ${puertos}
+Uptime:              ${UPTIME}
+
+<span class="ios-down">⚠ EOL desde ${eol} · Sin actualizaciones de seguridad</span>
+
+<span class="ios-hdr">NOTAS</span>
+${s.isCM ? '• Stack de 2 unidades (redundancia de puertos)' : '• 1 unidad única (sin redundancia de puertos)'}
+${s.isCM ? '• Sin MACsec' : '• Puertos 10/100 (limitante actual)'}`;
+}
+
+function genSWLegacyVLAN(s){
+  return `SW-${s.code}> <span class="ios-cmd">show vlan brief</span>
+
+<span class="ios-hdr">VLAN Name                             Status    Ports</span>
+1    default                          active    Gi1/0/1-24
+10   DATOS-Usuarios                   active    Gi1/0/3-15
+20   VOIP-Telefonia                   active    Gi1/0/16-20
+30   GESTION-Red                      active    Gi1/0/21
+40   INVITADOS-DMZ                    active    Gi1/0/22
+
+<span class="ios-warn">⚠ VLANs definidas pero SIN ACLs de política</span>`;
+}
+
+function genSWLegacyPorts(s){
+  return `SW-${s.code}> <span class="ios-cmd">show interfaces status</span>
+
+<span class="ios-hdr">Port      Name              Status      Vlan</span>
+Gi1/0/1   Uplink-Router     <span class="ios-up">connected </span> trunk
+Gi1/0/2   Libre             notconnect  1
+Gi1/0/3   PC-001            <span class="ios-up">connected </span> 10
+Gi1/0/4   PC-002            <span class="ios-up">connected </span> 10
+Gi1/0/5   PC-003            <span class="ios-up">connected </span> 10
+Gi1/0/6   PC-004            <span class="ios-up">connected </span> 10`;
+}
+
+function genIfBrief(s){
+  const n=s.num, lk=ST.links[s.id], cov=COV[s.id]||{};
+  const slSt=lk.starlink==='caido'?'<span class="ios-down">down           down</span>':'<span class="ios-up">up               up</span>';
+  const owSt=lk.oneweb  ==='caido'?'<span class="ios-down">down           down</span>':'<span class="ios-up">up               up</span>';
+  const g5St=cov.g5?(lk.g5==='caido'?'<span class="ios-down">down           down</span>':'<span class="ios-up">up               up</span>'):'<span class="ios-dim">disabled       down</span>';
+  const g4St=lk.g4==='caido'?'<span class="ios-down">down           down</span>':'<span class="ios-up">up               up</span>';
+  return `RTR-${s.code}> <span class="ios-cmd">show ip interface brief</span>
+<span class="ios-hdr">Interface                  IP-Address        OK? Method Status           Protocol</span>
+GigabitEthernet0/0/2.10    10.70.${n}.1      YES manual up               up
+GigabitEthernet0/0/2.20    10.70.${n}.33     YES manual up               up
+GigabitEthernet0/0/2.30    10.70.${n}.65     YES manual up               up
+GigabitEthernet0/0/2.40    10.70.${n}.81     YES manual up               up
+GigabitEthernet0/0/3       dhcp              YES DHCP   ${slSt}
+GigabitEthernet0/0/4       dhcp              YES DHCP   ${owSt}
+Cellular0/1/0 (Entel 5G)   dhcp              YES DHCP   ${g5St}
+Cellular0/1/1 (GTD 4G)     dhcp              YES DHCP   ${g4St}
+Loopback0                  10.70.${n}.254    YES other  up               up`;
+}
+
+function genRouterVLAN(s){
+  const n=s.num;
+  return `RTR-${s.code}> <span class="ios-cmd">show vlan brief</span>
+
+<span class="ios-hdr">Subinterface         Encap  VLAN   IP-Address        Descripción</span>
+Gig0/0/2.10          dot1Q  10     10.70.${n}.1/24   DATOS
+Gig0/0/2.20          dot1Q  20     10.70.${n}.33/27  VOIP
+Gig0/0/2.30          dot1Q  30     10.70.${n}.65/28  GESTION
+Gig0/0/2.40          dot1Q  40     10.70.${n}.81/28  INVITADOS`;
+}
+
+function genWANFailover(s){
+  const lk=ST.links[s.id];
+  const trackSt=(k)=>lk[k]==='caido'?'<span class="ios-down">Down</span>':'<span class="ios-up">Up</span>';
+  return `RTR-${s.code}> <span class="ios-cmd">show track</span>
+<span class="ios-hdr">Track 1 — Starlink</span>     State: ${trackSt('starlink')}
+<span class="ios-hdr">Track 2 — OneWeb</span>       State: ${trackSt('oneweb')}
+<span class="ios-hdr">Track 3 — 5G Entel</span>     State: ${trackSt('g5')}
+<span class="ios-hdr">Track 4 — 4G GTD</span>       State: ${trackSt('g4')}
+
+<span class="ios-hdr">CONFIGURACIÓN MÓVIL</span>
+cellular 0/1/0 lte profile create 1 im.entel.cl
+cellular 0/1/1 lte profile create 1 bam.gtd.cl`;
+}
+
+function genCryptoSA(s){
+  return `RTR-${s.code}> <span class="ios-cmd">show crypto isakmp policy</span>
+
+Global IKE policy
+  encryption algorithm:   AES-256
+  hash algorithm:         SHA-256
+  Diffie-Hellman group:   #14 (2048 bit)
+
+Status: <span class="ios-up">ACTIVE</span>`;
+}
+
+function genACLs(s){
+  const n=s.num;
+  return `RTR-${s.code}> <span class="ios-cmd">show ip access-lists</span>
+
+Extended IP access list ACL-DATOS-IN
+    10 permit ip 10.70.${n}.0 0.0.0.255 10.70.${n}.32 0.0.0.31 (VoIP)
+    20 deny   ip 10.70.${n}.0 0.0.0.255 10.70.${n}.64 0.0.0.15 (Gestión)
+    30 deny   ip 10.70.${n}.0 0.0.0.255 10.70.${n}.80 0.0.0.15 (Invitados)`;
+}
+
+function genFWOverview(s){
+  return `PA-${s.code}> <span class="ios-cmd">show system info</span>
+
+Hostname:     PA-${s.code}
+Model:        PA-850
+SW Version:   PAN-OS 11.1.2-h1
+Uptime:       ${UPTIME}
+
+Threat Prevention:     <span class="ios-up">Active</span>
+WildFire:              <span class="ios-up">Active</span>`;
+}
+
+function genFWIfaces(s){
+  return `PA-${s.code}> <span class="ios-cmd">show interface all</span>
+<span class="ios-hdr">Name         IPv4 Address      Zone      Status     Speed</span>
+ethernet1/1  DHCP             untrust   <span class="ios-up">up</span>        1Gbps
+ethernet1/2  10.70.${s.num}.1/24 trust  <span class="ios-up">up</span>        1Gbps
+ethernet1/3  10.70.${s.num}.81/28 guest <span class="ios-up">up</span>        1Gbps`;
+}
+
+function genFWZones(s){
+  return `PA-${s.code}> <span class="ios-cmd">show security policy</span>
+<span class="ios-hdr">Name           From    To       App        Action  Log</span>
+Allow-VoIP     trust   untrust  sip,rtp    <span class="ios-up">allow</span>   yes
+Allow-Web      trust   untrust  web,ssl    <span class="ios-up">allow</span>   yes
+Block-Guest    guest   trust    any        <span class="ios-down">deny</span>    yes
+Default-Deny   any     any      any        <span class="ios-down">deny</span>    yes`;
+}
+
+function genFWThreat(s){
+  return `PA-${s.code}> <span class="ios-cmd">show threat-prevention status</span>
+
+Antivirus:            <span class="ios-up">ENABLED</span>
+Anti-Spyware:         <span class="ios-up">ENABLED</span>
+Vulnerability Prot.:  <span class="ios-up">ENABLED</span>
+URL Filtering:        <span class="ios-up">ENABLED</span>
+WildFire:             <span class="ios-up">ENABLED</span>`;
+}
+
+function genSWOverview(s,swN){
+  const mac=Math.floor(PC_COUNT[s.id]/2);
+  return `SW-${s.code}-0${swN}> <span class="ios-cmd">show version</span>
+
+Cisco IOS XE Software, Version 17.09.04
+SW-${s.code}-0${swN} uptime is ${UPTIME}
+Model Number      : C9200-48U
+MAC entries: ${mac}
+DNA Center: <span class="ios-up">ACTIVO</span>`;
+}
+
+function genSWVLAN(s){
+  return `SW-${s.code}-01> <span class="ios-cmd">show vlan brief</span>
+
+<span class="ios-hdr">VLAN  Name                             Status    Ports</span>
+10    DATOS-Usuarios                   <span class="ios-up">active    </span>Gi1/0/3-46
+20    VOIP-Telefonia                   <span class="ios-up">active    </span>Gi1/0/3-46
+30    GESTION-Red                      <span class="ios-up">active    </span>Gi1/0/1,Gi1/0/2
+40    INVITADOS-DMZ                    <span class="ios-up">active    </span>(none)`;
+}
+
+function genSWPorts(s,swN){
+  const pcs=getPCs(s).filter(p=>p.sw===swN);
+  let rows=`SW-${s.code}-0${swN}> <span class="ios-cmd">show interfaces status</span>\n`;
+  rows+=`<span class="ios-hdr">Port      Name              Status      Vlan</span>\n`;
+  rows+=`Gi1/0/1   Trunk-to-Router   <span class="ios-up">connected </span>  trunk\n`;
+  pcs.slice(0,6).forEach((pc,i)=>{
+    rows+=`Gi1/0/${i+3}   ${pc.id.padEnd(17)}  <span class="ios-up">connected </span>  10\n`;
+  });
+  return rows;
+}
+
+function genMACsec(s,swN){
+  return `SW-${s.code}-0${swN}> <span class="ios-cmd">show mka sessions</span>
+
+<span class="ios-hdr">Interface    Policy-Name         Audit-Status</span>
+Gi1/0/1      MACsec-Uplink    <span class="ios-up">Active</span>
+Gi1/0/2      MACsec-Uplink    <span class="ios-up">Active</span>`;
+}
+
+function genPCConfig(s,pc){
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="dsec">
+      <div class="dslbl">Configuración TCP/IP</div>
+      <div class="drow"><span class="dkey">Hostname</span><span class="dval">${pc.id}</span></div>
+      <div class="drow"><span class="dkey">IPv4</span><span class="dval">${pc.ip}</span></div>
+      <div class="drow"><span class="dkey">Gateway</span><span class="dval">10.70.${s.num}.1</span></div>
+      <div class="drow"><span class="dkey">MAC</span><span class="dval">${pc.mac}</span></div>
+    </div>
+    <div class="dsec">
+      <div class="dslbl">Estado</div>
+      <div class="drow"><span class="dkey">Gateway</span><span class="dval" style="color:var(--green)">✓ Alcanzable</span></div>
+      <div class="drow"><span class="dkey">Internet</span><span class="dval" style="color:var(--green)">✓ Online</span></div>
+    </div>
+  </div>`;
+}
+
+function genPCTerminal(s,pc){
+  return `<div>
+    <div class="ios" style="font-size:10px;margin-bottom:8px">
+Comandos: <span class="ios-up">ipconfig</span>  <span class="ios-up">ping &lt;IP&gt;</span>  <span class="ios-up">clear</span>
+    </div>
+    <div class="term" id="term-box">
+      <div class="term-out" id="term-out">
+        <div class="term-line term-result">Microsoft Windows [Versión 10.0]</div>
+      </div>
+      <div class="term-input-row">
+        <span class="term-ps">C:\\Users\\${pc.id}></span>
+        <input class="term-input" id="term-input" type="text" autocomplete="off"
+          onkeydown="handleTermCmd(event,'${s.id}',${pc.idx-1})">
+      </div>
+    </div>
+  </div>`;
+}
+
+function handleTermCmd(ev,sedeId,pcIdx){
+  if(ev.key!=='Enter') return;
+  const inp=document.getElementById('term-input');
+  const cmd=inp.value.trim();
+  if(!cmd) return;
+  inp.value='';
+  const s=SEDES.find(x=>x.id===sedeId);
+  const pc=getPCs(s)[pcIdx];
+  const out=document.getElementById('term-out');
+  const addLine=(txt,cls='term-result')=>{
+    const d=document.createElement('div');
+    d.className=`term-line ${cls}`;
+    d.innerHTML=txt;
+    out.appendChild(d);
+  };
+  addLine(`C:\\Users\\${pc.id}> <span style="color:#7aff7a">${cmd}</span>`,'term-prompt');
+  const lower=cmd.toLowerCase();
+  if(lower==='clear'||lower==='cls'){ out.innerHTML=''; return; }
+  if(lower==='ipconfig'){
+    addLine(`Dirección IPv4 . . . . . . . . . . . . .  : ${pc.ip}`);
+    addLine(`Puerta de enlace predeterminada . . . . . : 10.70.${s.num}.1`);
+  } else if(lower.startsWith('ping')){
+    const target=lower.split(' ').slice(-1)[0];
+    const alive=!sedeDown(sedeId);
+    const delay=(50+Math.random()*30).toFixed(0);
+    if(alive){
+      for(let i=0;i<4;i++) addLine(`Respuesta desde ${target}: bytes=32 tiempo=${delay}ms TTL=63`);
+    } else {
+      for(let i=0;i<4;i++) addLine(`Se agotó el tiempo de espera.`,'term-error');
+    }
+  } else {
+    addLine(`'${cmd}' no se reconoce.`,'term-error');
+  }
+  addLine('');
+  const box=document.getElementById('term-box');
+  if(box) box.scrollTop=box.scrollHeight;
+}
+
+function runPing(srcId){
+  const destId=document.getElementById('ping-dest').value;
+  const src=SEDES.find(x=>x.id===srcId);
+  const dst=SEDES.find(x=>x.id===destId);
+  const div=document.getElementById('ping-result');
+  const alive=!sedeDown(srcId)&&!sedeDown(destId);
+  const esAntes = ST.mode === 'antes';
+  const al=esAntes ? 'mpls' : (activeLink(srcId)||'—');
+  const latMap={starlink:28,oneweb:44,g5:22,g4:48,mpls:15,'—':999};
+  const baseLat=latMap[al]||35;
+  const totalLat=baseLat*2+4;
+  setTimeout(()=>{
+    if(!alive){
+      div.innerHTML=`<div class="ping-result fail">⚠ Timeout</div>`;
+      return;
+    }
+    div.innerHTML=`
+      <table class="ping-table">
+        <tr><th>HOP</th><th>Dispositivo</th><th>IP</th><th>Tiempo</th></tr>
+        <tr><td>1</td><td>PC-${src.code}-001</td><td>10.70.${src.num}.10</td><td class="ping-ok">—</td></tr>
+        <tr><td>2</td><td>RTR-${src.code}</td><td>10.70.${src.num}.1</td><td class="ping-ok">2 ms</td></tr>
+        <tr><td>3</td><td>Túnel IPsec (${al.toUpperCase()})</td><td>172.16.${src.num}.1</td><td class="ping-ok">${baseLat} ms</td></tr>
+        <tr><td>4</td><td>RTR-CM</td><td>10.70.0.1</td><td class="ping-ok">${baseLat+4} ms</td></tr>
+        <tr><td>5</td><td>PC-${dst.code}-001</td><td>10.70.${dst.num}.10</td><td class="ping-ok">${totalLat} ms</td></tr>
+      </table>
+      <div class="ping-result ok">✓ 4/4 paquetes · RTT ${totalLat} ms · Via ${al.toUpperCase()}</div>`;
+  }, 800);
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    closeDevModal(); closeSedeModal(); closeModal(); closeComp();
+  }
+});
+
+function openComparativa(){
+  const down = SEDES.filter(s=>sedeDown(s.id)).length;
+  const comp = document.getElementById('comp-body');
+  comp.innerHTML=`
+    <div style="background:#2a1f14;border:1px solid #4a3a2a;border-radius:6px;padding:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--legacy);margin-bottom:10px">⚠ ANTES — Diagnóstico 2014-2015</div>
+      <div class="drow"><span class="dkey">Routers</span><span class="dval" style="color:var(--legacy)">Cisco 1921 / 2901 (EOL)</span></div>
+      <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--legacy)">C2960-24TT-L / C3750-X (EOL)</span></div>
+      <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--red)">Solo ASA 5512-X (EOL 2017)</span></div>
+      <div class="drow"><span class="dkey">WAN</span><span class="dval" style="color:var(--red)">MPLS único 10 Mbps</span></div>
+      <div class="drow"><span class="dkey">Uptime</span><span class="dval" style="color:var(--red)">99.5%</span></div>
+      <div class="drow"><span class="dkey">RTO</span><span class="dval" style="color:var(--red)">180 min</span></div>
+      <div class="drow"><span class="dkey">Años sin soporte</span><span class="dval" style="color:var(--red)">6-9</span></div>
+    </div>
+    <div style="background:#0a2010;border:1px solid var(--green);border-radius:6px;padding:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px">✓ DESPUÉS — Rediseño 2026</div>
+      <div class="drow"><span class="dkey">Routers</span><span class="dval" style="color:var(--green)">Cisco ISR 4461 + NIM-5G</span></div>
+      <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--green)">C9200-48U x2 (stack)</span></div>
+      <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--green)">22x PA-850</span></div>
+      <div class="drow"><span class="dkey">WAN</span><span class="dval" style="color:var(--green)">4 enlaces inalámbricos</span></div>
+      <div class="drow"><span class="dkey">Uptime</span><span class="dval" style="color:var(--green)">99.99999%</span></div>
+      <div class="drow"><span class="dkey">RTO</span><span class="dval" style="color:var(--green)">&lt;1 minuto</span></div>
+      <div class="drow"><span class="dkey">Soporte</span><span class="dval" style="color:var(--green)">Vigente hasta 2031</span></div>
+      <div class="drow"><span class="dkey">Sedes offline</span><span class="dval" style="color:${down>0?'var(--red)':'var(--green)'}">${down} ahora</span></div>
+    </div>`;
+  document.getElementById('modal-comp').classList.add('vis');
+}
+function closeComp(){ document.getElementById('modal-comp').classList.remove('vis'); }
+
+initLinks();
+initAntenas();
+renderMap();
+renderAntenas();
+updateMetrics();
+initSatellites();
+initZoom();
+
+addLog('Sistema NOC iniciado — Financiera Pacífico','ok');
+addLog('Modo DESPUÉS: 22 sedes + 4 enlaces inalámbricos + satélites LEO','ok');
+addLog('Modo ANTES: hardware legacy 2014-2015 (Cisco 1921/2901, C2960, ASA 5512-X)','warn');
+addLog('Click en sede/satélite/torre/proveedor → modal de configuración','ok');
+</script>
+</body>
+</html>
