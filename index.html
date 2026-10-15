@@ -4064,7 +4064,7 @@ function genFWOverview(s){
   return `PA-${s.code}> <span class="ios-cmd">show system info</span>
 
 Hostname:     PA-${s.code}
-Model:        PA-850
+Model:        PA-1410
 SW Version:   PAN-OS 11.1.2-h1
 Uptime:       ${UPTIME}
 
@@ -4266,7 +4266,7 @@ function genRouterVersionFull(s){
     'System restarted at 14:01:35 CLT Thu Jul 30 2026',
     'System image file is "bootflash:packages.conf"',
     'Last reload reason: PowerOn',
-    'Cisco ISR4461/K9 (2RU) processor with 7999296K/6147K bytes of memory.',
+    'Cisco C8300-2N2S-4T2X (2RU) processor with 7999296K/6147K bytes of memory.',
     'Processor board ID FDO2345A1BC',
     '3 Virtual Ethernet interfaces',
     '16 Gigabit Ethernet interfaces',
@@ -4280,7 +4280,7 @@ function genRouterVersionFull(s){
     'Motherboard Serial Number       : FOC2345A2BC',
     'Model Revision Number           : A0',
     'Motherboard Revision Number     : A0',
-    'Model Number                    : ISR4461/K9',
+    'Model Number                    : C8300-2N2S-4T2X',
     'System Serial Number            : FDO2345A1BC',
     'Configuration register is 0x2102'
   ]);
@@ -4442,8 +4442,8 @@ function handleTermCmd(ev,sedeId,pcIdx){
       const n=s.num, host=`SW-${s.code}-0${swN}`;
       const lines=['Building configuration...','Current configuration : 6421 bytes','version 17.9',`hostname ${host}`,
         'aaa new-model','aaa authentication login default group tacacs+ local','aaa authorization exec default group tacacs+ local',
-        'aaa accounting exec default start-stop group tacacs+','clock timezone CLT -4 0','switch 1 provision c9200-48u',
-        'switch 2 provision c9200-48u','stackwise-virtual',' domain '+n,' link 1','ip domain name financierapacifico.cl',
+        'aaa accounting exec default start-stop group tacacs+','clock timezone CLT -4 0','switch 1 provision c9200l-48t-4g',
+        'switch 2 provision c9200l-48t-4g','! StackWise Virtual no se modela en C9200L; dos switches independientes','ip domain name financierapacifico.cl',
         'ip name-server 10.70.0.10','ip name-server 10.70.0.11','login on-success log','login on-failure log',
         'spanning-tree mode rapid-pvst','spanning-tree extend system-id','spanning-tree vlan 1-4094 priority 32768',
         'vlan 10',' name DATOS-Usuarios','vlan 20',' name VOIP-Telefonia','vlan 30',' name GESTION-Red',
@@ -4496,14 +4496,14 @@ function handleTermCmd(ev,sedeId,pcIdx){
       if(command==='show etherchannel summary' || command==='show port-channel summary') return h+['Group Port-channel Protocol Ports','1 Po1(SD) LACP Gi1/0/1(P) Gi1/0/2(P)'].join('<br>');
       if(command==='show interfaces trunk') return h+['Port Mode Encapsulation Status Native vlan','Po1 on 802.1q trunking 999','Gi1/0/33 on 802.1q trunking 999','Gi1/0/34 on 802.1q trunking 999','Vlans allowed on trunk: 10,20,30,40','Vlans allowed and active in management domain: 10,20,30,40','Vlans in spanning tree forwarding state and not pruned: 10,20,30,40'].join('<br>');
       if(command==='show switch' || command==='show stack') return h+['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Mac persistency wait time: Indefinite','H/W Current','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','2 Standby 14 Ready C9200L-48T-4G-E 17.9.4a'].join('<br>');
-      if(command==='show cdp neighbors') return h+['Capability Codes: R - Router, S - Switch, H - Host','Device ID Local Intrfce Holdtme Capability Platform Port ID',`RTR-${s.code} Gi1/0/1 169 R ISR4461 Gi0/0/0`,`AP-WiFi-1 Gi1/0/33 145 T C9130AXI Gig0`,`AP-WiFi-2 Gi1/0/34 145 T C9130AXI Gig0`].join('<br>');
+      if(command==='show cdp neighbors') return h+['Capability Codes: R - Router, S - Switch, H - Host','Device ID Local Intrfce Holdtme Capability Platform Port ID',`RTR-${s.code} Gi1/0/1 169 R C8300 Gi0/0/0`,`AP-WiFi-1 Gi1/0/33 145 T C9130AXI Gig0`,`AP-WiFi-2 Gi1/0/34 145 T C9130AXI Gig0`].join('<br>');
       return null;
     }
 
     function genFWCommand(s, command){
       const n=s.num, p=`PA-${s.code}>`, head=()=>`${p} <span class="ios-cmd">${command}</span><br><br>`;
       const interfaceLines=Array.from({length:18},(_,i)=>`ethernet1/${i+1} ${i<4?' '+(i===1?`10.70.${n}.82/28`:'DHCP'):'unknown'} ${i<4?'1000/full/up':'unknown/unknown/down'} 00:1b:17:8a:2b:${String(0x10+i).padStart(2,'0')}`);
-      if(command==='show system info') return head()+[`hostname: PA-${s.code}`,`ip-address: 10.70.${n}.82`,`public-ip-address: 200.27.${n}.82`,'netmask: 255.255.255.240',`default-gateway: 10.70.${n}.81`,'time: Wed Sep 15 14:23:51 2026',`uptime: ${UPTIME}`,'family: 3000','model: PA-850',`serial: 012345${String(n).padStart(4,'0')}`,'sw-version: 11.1.2','app-version: 8856-8477','av-version: 4487-5241','wildfire-version: 887456-891234','threat-version: 8856-8477','url-db: Palo_Alto_Networks_URL_List_2024.09.15','url-filtering-version: 20240915.001','logdb-version: 11.1.4','global-protect-client-package-version: 6.2.1','vpn-disable-mode: off','operational-mode: normal','device-certificate-status: Valid'].join('<br>');
+      if(command==='show system info') return head()+[`hostname: PA-${s.code}`,`ip-address: 10.70.${n}.82`,`public-ip-address: 200.27.${n}.82`,'netmask: 255.255.255.240',`default-gateway: 10.70.${n}.81`,'time: Wed Sep 15 14:23:51 2026',`uptime: ${UPTIME}`,'family: 3000','model: PA-1410',`serial: 012345${String(n).padStart(4,'0')}`,'sw-version: 11.1.2','app-version: 8856-8477','av-version: 4487-5241','wildfire-version: 887456-891234','threat-version: 8856-8477','url-db: Palo_Alto_Networks_URL_List_2024.09.15','url-filtering-version: 20240915.001','logdb-version: 11.1.4','global-protect-client-package-version: 6.2.1','vpn-disable-mode: off','operational-mode: normal','device-certificate-status: Valid'].join('<br>');
       if(command==='show interface all') return head()+['total configured hardware interfaces: 22','name id speed/duplex/state mac address',...interfaceLines,'tunnel 0 N/A/up 00:1b:17:8a:2b:99','vlan 1 N/A/up 00:1b:17:8a:2b:98','loopback 1 N/A/up 00:1b:17:8a:2b:97'].join('<br>');
       if(command==='show routing route') return head()+['flags: A:active, ?:loose, C:connect, H:host, S:static, ~:internal, R:rip, T:ospf, I:isis, B:bgp, O:other','total routes shown: 18','virtual-router: default','destination nexthop metric flags age interface',
         `10.70.${n}.0/24 10.70.${n}.81 0 A S 1234d ethernet1/2`,`10.70.0.0/24 10.70.${n}.81 10 A S 1234d ethernet1/2`,`10.70.15.0/24 10.70.${n}.81 10 A S 1234d ethernet1/2`,
@@ -4650,8 +4650,8 @@ function genSwitchRunningConfig(s, swN=1){
   ]);
   const lines=['Building configuration...','Current configuration : 6421 bytes','version 17.9',`hostname ${host}`,
     'aaa new-model','aaa authentication login default group tacacs+ local','aaa authorization exec default group tacacs+ local',
-    'aaa accounting exec default start-stop group tacacs+','clock timezone CLT -4 0','switch 1 provision c9200-48u','switch 2 provision c9200-48u',
-    'stackwise-virtual',' domain '+n,' link 1','ip domain name financierapacifico.cl','ip name-server 10.70.0.10','ip name-server 10.70.0.11',
+    'aaa accounting exec default start-stop group tacacs+','clock timezone CLT -4 0','switch 1 provision c9200l-48t-4g','switch 2 provision c9200l-48t-4g',
+    '! StackWise Virtual no se modela en C9200L; dos switches independientes','ip domain name financierapacifico.cl','ip name-server 10.70.0.10','ip name-server 10.70.0.11',
     'login on-success log','login on-failure log','spanning-tree mode rapid-pvst','spanning-tree extend system-id','spanning-tree vlan 1-4094 priority 32768',
     'vlan 10',' name DATOS-Usuarios','vlan 20',' name VOIP-Telefonia','vlan 30',' name GESTION-Red','vlan 40',' name INVITADOS-DMZ','vlan 999',' name NATIVE-NONE',
     'interface Port-channel1',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
@@ -4721,7 +4721,7 @@ function genFWCommand(s,command){
     while(lines.length<65) lines.push(`set rulebase security rules LAB-RULE-${lines.length} log-setting NOC-SYSLOG`);
     return h+lines.join('<br>');
   }
-  if(command==='show system info') return h+[`hostname: PA-${s.code}`,`ip-address: 10.70.${n}.82`,'model: PA-850','sw-version: 11.1.2',`uptime: ${UPTIME}`,'operational-mode: normal','device-certificate-status: Valid'].join('<br>');
+  if(command==='show system info') return h+[`hostname: PA-${s.code}`,`ip-address: 10.70.${n}.82`,'model: PA-1410','sw-version: 11.1.2',`uptime: ${UPTIME}`,'operational-mode: normal','device-certificate-status: Valid'].join('<br>');
   if(command==='show session all'||command==='show session info') return h+['Total active sessions: 847','12478920 ssl ACTIVE FLOW web-browsing 10.70.'+n+'.15:54821 104.18.32.5:443','12478921 dns ACTIVE FLOW dns 10.70.'+n+'.22:33012 8.8.8.8:53','12478922 core-financial ACTIVE FLOW unknown-tcp 10.70.'+n+'.15:49932 10.70.0.20:8820','12478923 sip ACTIVE FLOW sip 10.70.'+n+'.33:5060 10.70.0.5:5060','12478924 rtp ACTIVE FLOW rtp 10.70.'+n+'.33:16384 10.70.0.5:16384'].join('<br>');
   if(command==='show routing route') return h+['flags: A:active, C:connect, S:static','total routes shown: 18','virtual-router: default',`10.70.${n}.0/24 10.70.${n}.81 0 A S 1234d ethernet1/2`,'0.0.0.0/0 10.70.'+n+'.81 10 A S 1234d ethernet1/2'].join('<br>');
   if(command==='show zone') return h+['zone type interfaces','trust zone ethernet1/2','untrust zone tunnel.100, tunnel.200, tunnel.300, tunnel.400','guest zone ethernet1/4','management zone ethernet1/3','dmz zone ethernet1/5'].join('<br>');
@@ -5357,7 +5357,7 @@ function genFWCommandSummary(s, command){
   const active = activeLink(s.id) || 'starlink';
   const prompt = `PA-${s.code}>`;
   const head = `${prompt} <span class="ios-cmd">${command}</span><br><br>`;
-  if(command === 'show system info') return `${head}hostname: PA-${s.code}<br>ip-address: 10.70.${n}.82<br>model: PA-850<br>serial: 012345${String(n).padStart(4,'0')}<br>sw-version: 11.1.2<br>uptime: ${UPTIME}<br>operational-mode: normal`;
+  if(command === 'show system info') return `${head}hostname: PA-${s.code}<br>ip-address: 10.70.${n}.82<br>model: PA-1410<br>serial: 012345${String(n).padStart(4,'0')}<br>sw-version: 11.1.2<br>uptime: ${UPTIME}<br>operational-mode: normal`;
   if(command === 'show routing summary') return `${head}virtual-router: default<br>total routes: 18<br>active routes: 18<br>connected: 6  static: 12`;
   if(command === 'show routing route') return `${head}Flags: A active, C connected, S static<br>Destination        Nexthop          Metric Flags Interface<br>0.0.0.0/0          ${active}             10     A S    ethernet1/1<br>10.70.${n}.0/24     connected          0      A C    ethernet1/2<br>10.70.0.0/24        10.70.${n}.81       10     A S    ethernet1/2`;
   if(command === 'show session all' || command === 'show session info') return `${head}Total active sessions: ${42 + n}<br><span class="ios-hdr">ID  Application     State   From             To</span><br>12478920 ssl             ACTIVE  10.70.${n}.15:54821 104.18.32.5:443<br>12478921 dns             ACTIVE  10.70.${n}.22:33012 8.8.8.8:53<br>12478922 core-financial  ACTIVE  10.70.${n}.15:49932 10.70.0.20:8820`;
@@ -5424,7 +5424,7 @@ IP SLA Responder: <span class="ios-up">Enabled</span> · Port 1967 · Authentica
 <span class="ios-hdr">Port        Temperature  Voltage  Tx Power  Rx Power</span><br>
 Gi0/0/1     31.2 C       3.31 V   -2.1 dBm  -3.4 dBm`;
   if(command === 'show controllers') return `RTR-${s.code}> <span class="ios-cmd">${command}</span><br><br>
-GigabitEthernet0/0/0: hardware is ISR4461, link diagnostics <span class="ios-up">PASS</span>`;
+GigabitEthernet0/0/0: hardware is C8300, link diagnostics <span class="ios-up">PASS</span>`;
   if(command === 'show logging') return `RTR-${s.code}> <span class="ios-cmd">${command}</span><br><br>
 %LINK-3-UPDOWN: Interface GigabitEthernet0/0/0, changed state to up<br>%SYS-5-CONFIG_I: Configured from console by admin`;
   return `RTR-${s.code}> <span class="ios-cmd">${command}</span><br><br>
@@ -5472,7 +5472,7 @@ function genShowBrief(s, type, command){
     if(command === 'show memory statistics') return `${prompt} ${header}Processor Pool Total: 8192M Used: 2470M Free: 5722M`;
     if(command === 'show cdp neighbors detail' || command === 'show lldp neighbors') return `${prompt} ${header}Device ID: SW-${s.code}-01<br>Interface: Gi0/0/2 · Port ID: Gi1/0/1<br>IP address: 10.70.${n}.2 · Platform: Cisco C9200L-48T-4G-E`;
     if(command === 'show vlan brief') return `${prompt} ${header}10  DATOS-Usuarios  active  Gi0/0/2.10<br>20  VOIP-Telefonia  active  Gi0/0/2.20<br>30  GESTION-Red     active  Gi0/0/2.30<br>40  INVITADOS-DMZ   active  Gi0/0/2.40`;
-    if(command === 'show inventory') return `${prompt} ${header}NAME: "Chassis", DESCR: "Cisco Catalyst C8300-2N2S-4T2X"<br>PID: ISR4461/K9 · SN: FOC-LAB-${String(n).padStart(3,'0')}<br>NAME: "NIM-5G-LTE-GA", DESCR: "Cellular module"`;
+    if(command === 'show inventory') return `${prompt} ${header}NAME: "Chassis", DESCR: "Cisco Catalyst C8300-2N2S-4T2X"<br>PID: C8300-2N2S-4T2X · SN: FOC-LAB-${String(n).padStart(3,'0')}<br>NAME: "NIM-5G-LTE-GA", DESCR: "Cellular module"`;
     if(command === 'show environment') return `${prompt} ${header}Temperature: <span class="ios-up">Normal</span> · CPU: 18% · Power supplies: 2/2 OK · Fans: OK`;
     if(command === 'show redundancy') return `${prompt} ${header}Redundancy mode: Stateful Switchover<br>              Active             Standby<br>RP state:     <span class="ios-up">ACTIVE</span>             READY`;
     if(command === 'show standby brief') return `${prompt} ${header}<span class="ios-hdr">                     P indicates configured to preempt.</span><br>Gi0/0/2.10  10.70.${n}.1  local  Active  Standby  10.70.${n}.2`;
@@ -6572,7 +6572,7 @@ function openComparativa(){
       <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px">✓ DESPUÉS — Rediseño 2026</div>
       <div class="drow"><span class="dkey">Routers</span><span class="dval" style="color:var(--green)">Cisco Catalyst C8300-2N2S-4T2X + NIM-5G</span></div>
       <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--green)">C9200L-48T-4G-E x2 (stack)</span></div>
-      <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--green)">22x PA-850</span></div>
+      <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--green)">22x PA-1410</span></div>
       <div class="drow"><span class="dkey">WAN</span><span class="dval" style="color:var(--green)">4 enlaces inalámbricos</span></div>
       <div class="drow"><span class="dkey">Uptime</span><span class="dval" style="color:var(--green)">99.99999%</span></div>
       <div class="drow"><span class="dkey">RTO</span><span class="dval" style="color:var(--green)">&lt;1 minuto</span></div>
