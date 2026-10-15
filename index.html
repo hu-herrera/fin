@@ -1321,7 +1321,7 @@ Modulación:         ${esG5 ? '256-QAM DL / 64-QAM UL' : '64-QAM DL / 16-QAM UL'
 MIMO:               ${esG5 ? '4x4 MIMO' : '2x2 MIMO'}
 
 <span class="ios-hdr">INTEGRACIÓN CON ROUTER</span>
-Módulo requerido:   NIM-5G-LTE-GA
+Módulo requerido:   gateway 5G externo compatible (modelo por validar)
 Interfaz:           Cellular 0/1/${esG5 ? '0' : '1'}
 
 <span class="ios-hdr">ESTADO</span>
@@ -2908,6 +2908,7 @@ function sc_e7(){
   SEDES.forEach(s=>{
     if(ST.links[s.id].starlink==='caido'){
       ST.links[s.id].starlink='standby';
+      recompute(s.id);
       ST.failback[s.id] = { startedAt: Date.now(), durationMs: 5000, pending: true };
       n++;
     }
@@ -2926,9 +2927,7 @@ function runFailbackCountdown(){
   pending.forEach(([id, state])=>{
     if(now - state.startedAt >= state.durationMs){
       state.pending = false;
-      const previous = activeLink(id);
-      if(previous && previous !== 'starlink') ST.links[id][previous] = 'standby';
-      ST.links[id].starlink = 'activo';
+      ST.links[id].starlink = 'standby';
       recompute(id);
       addLog(`[FAILBACK] ${SEDES.find(s=>s.id===id)?.code || id}: retorno a Starlink tras 5 segundos de estabilidad simulada`,'ok');
       changed = true;
@@ -3505,7 +3504,7 @@ function renderTopoTab(s){
   <text x="650" y="207" text-anchor="middle" font-size="19" fill="${rtCol}" font-weight="700" font-family="system-ui" onclick="openDevice('router','${s.id}')" style="cursor:pointer">
     🔧 ${s.isCM?'RTR-CM-01 (activo)':'RTR-'+s.code} — Cisco Catalyst C8300-2N2S-4T2X
   </text>
-  <text x="650" y="230" text-anchor="middle" font-size="13" fill="#8a93a6" font-family="system-ui">NIM-5G-LTE-GA · IOS-XE 17.9.4 · OSPF · IPsec · BFD</text>
+  <text x="650" y="230" text-anchor="middle" font-size="13" fill="#8a93a6" font-family="system-ui">gateway 5G externo compatible (modelo por validar) · IOS-XE 17.9.4 · OSPF · IPsec · BFD</text>
 
   <line x1="650" y1="251" x2="650" y2="285" stroke="${rtCol}" stroke-width="2.5"/>
 
@@ -3655,7 +3654,7 @@ function openDevice(type, sedeId){
       sw2:`SW-${s.code}-02 — Cisco Catalyst C9200L-48T-4G-E`,
     };
     models = {
-      router:'Cisco Catalyst C8300-2N2S-4T2X · NIM-5G-LTE-GA · IOS-XE 17.9.4a',
+      router:'Cisco Catalyst C8300-2N2S-4T2X · gateway 5G externo compatible (modelo por validar) · IOS-XE 17.9.4a',
       fw:'Palo Alto PA-1410 · PAN-OS 11.1.2',
       sw1:'Cisco Catalyst C9200L-48T-4G-E · IOS-XE 17.9.4',
       sw2:'Cisco Catalyst C9200L-48T-4G-E · IOS-XE 17.9.4',
@@ -3777,7 +3776,7 @@ RTR-${s.code} uptime is ${UPTIME}
 Cisco Catalyst C8300-2N2S-4T2X (2RU) processor
 
 <span class="ios-hdr">HARDWARE MÓVIL INSTALADO</span>
-Módulo: NIM-5G-LTE-GA (Network Interface Module)
+Módulo: gateway 5G externo compatible (modelo por validar) (Network Interface Module)
 Ranuras SIM: 2 (SIM1=Entel 5G, SIM2=GTD 4G)
 Bandas: n78 (3.5 GHz), B7 (2600 MHz), B28 (700 MHz)
 
@@ -4457,9 +4456,9 @@ function handleTermCmd(ev,sedeId,pcIdx){
         ' switchport mode access',' switchport access vlan 10',' switchport voice vlan 20',' spanning-tree portfast',
         ' spanning-tree bpduguard enable',' ip dhcp snooping limit rate 10',' storm-control broadcast level 5.00',
         ' storm-control multicast level 10.00','interface GigabitEthernet1/0/33',' description AP-WiFi-1 C9130AXI',
-        ' switchport mode trunk',' switchport trunk allowed vlan 10,40',' power inline auto',' spanning-tree portfast trunk',
+        ' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
         'interface GigabitEthernet1/0/34',' description AP-WiFi-2 C9130AXI',' switchport mode trunk',
-        ' switchport trunk allowed vlan 10,40',' power inline auto',' spanning-tree portfast trunk',
+        ' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
         'interface GigabitEthernet1/0/45',' description Enlace entre switches (sin StackWise Virtual)',' switchport mode trunk',
         'interface GigabitEthernet2/0/45',' description Enlace entre switches (sin StackWise Virtual)',' switchport mode trunk',
         `interface Vlan30`,` ip address 10.70.${n}.66 255.255.255.240`,` ip default-gateway 10.70.${n}.65`,
@@ -4658,8 +4657,8 @@ function genSwitchRunningConfig(s, swN=1){
     'interface GigabitEthernet1/0/1',' description Uplink-Router',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',' channel-group 1 mode active',' mka policy MKA-UPLINK',
     'interface GigabitEthernet1/0/2',' description Uplink-Stack',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',' channel-group 1 mode active',' mka policy MKA-UPLINK',
     ...accessPortConfig,
-    'interface GigabitEthernet1/0/33',' description AP-WiFi-1 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' power inline auto',' spanning-tree portfast trunk',
-    'interface GigabitEthernet1/0/34',' description AP-WiFi-2 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' power inline auto',' spanning-tree portfast trunk',
+    'interface GigabitEthernet1/0/33',' description AP-WiFi-1 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
+    'interface GigabitEthernet1/0/34',' description AP-WiFi-2 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
     'interface GigabitEthernet1/0/45',' switchport mode trunk','interface GigabitEthernet2/0/45',' switchport mode trunk',`interface Vlan30`,` ip address 10.70.${n}.66 255.255.255.240`,` ip default-gateway 10.70.${n}.65`,
     'ip dhcp snooping','ip dhcp snooping vlan 10,20,30','ip dhcp snooping database flash:dhcp_snoop.db','ip arp inspection vlan 10,20,30',
     'mka policy MKA-UPLINK',' macsec-cipher-suite gcm-aes-256',' key-server priority 100','snmp-server community MONITOR-RO RO','snmp-server group MONITOR-GROUP v3 priv',
@@ -5472,7 +5471,7 @@ function genShowBrief(s, type, command){
     if(command === 'show memory statistics') return `${prompt} ${header}Processor Pool Total: 8192M Used: 2470M Free: 5722M`;
     if(command === 'show cdp neighbors detail' || command === 'show lldp neighbors') return `${prompt} ${header}Device ID: SW-${s.code}-01<br>Interface: Gi0/0/2 · Port ID: Gi1/0/1<br>IP address: 10.70.${n}.2 · Platform: Cisco C9200L-48T-4G-E`;
     if(command === 'show vlan brief') return `${prompt} ${header}10  DATOS-Usuarios  active  Gi0/0/2.10<br>20  VOIP-Telefonia  active  Gi0/0/2.20<br>30  GESTION-Red     active  Gi0/0/2.30<br>40  INVITADOS-DMZ   active  Gi0/0/2.40`;
-    if(command === 'show inventory') return `${prompt} ${header}NAME: "Chassis", DESCR: "Cisco Catalyst C8300-2N2S-4T2X"<br>PID: C8300-2N2S-4T2X · SN: FOC-LAB-${String(n).padStart(3,'0')}<br>NAME: "NIM-5G-LTE-GA", DESCR: "Cellular module"`;
+    if(command === 'show inventory') return `${prompt} ${header}NAME: "Chassis", DESCR: "Cisco Catalyst C8300-2N2S-4T2X"<br>PID: C8300-2N2S-4T2X · SN: FOC-LAB-${String(n).padStart(3,'0')}<br>NAME: "gateway 5G externo compatible (modelo por validar)", DESCR: "Cellular module"`;
     if(command === 'show environment') return `${prompt} ${header}Temperature: <span class="ios-up">Normal</span> · CPU: 18% · Power supplies: 2/2 OK · Fans: OK`;
     if(command === 'show redundancy') return `${prompt} ${header}Redundancy mode: Stateful Switchover<br>              Active             Standby<br>RP state:     <span class="ios-up">ACTIVE</span>             READY`;
     if(command === 'show standby brief') return `${prompt} ${header}<span class="ios-hdr">                     P indicates configured to preempt.</span><br>Gi0/0/2.10  10.70.${n}.1  local  Active  Standby  10.70.${n}.2`;
