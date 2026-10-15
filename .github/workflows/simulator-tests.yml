@@ -20,7 +20,7 @@ jobs:
       - name: Probar logica WAN
         run: node tests/wan.test.cjs
       - name: Probar simulador en navegador
-        run: npx playwright test tests/browser.spec.cjs --browser chromium --reporter=line --trace retain-on-failure --screenshot only-on-failure
+        run: npx playwright test tests/browser.spec.cjs --browser chromium --reporter=line --trace retain-on-failure
       - name: Guardar diagnóstico de fallos
         if: failure()
         uses: actions/upload-artifact@v4
