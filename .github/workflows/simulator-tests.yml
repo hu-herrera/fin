@@ -1,0 +1,23 @@
+name: Validacion del simulador
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar Playwright y Chromium
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Probar logica WAN
+        run: node tests/wan.test.cjs
+      - name: Probar simulador en navegador
+        run: npx playwright test tests/browser.spec.cjs --browser chromium --reporter=line
