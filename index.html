@@ -4175,11 +4175,8 @@ function genSWPorts(s,swN){
 }
 
 function genMACsec(s,swN){
-  return `SW-${s.code}-0${swN}> <span class="ios-cmd">show mka sessions</span>
-
-<span class="ios-hdr">Interface    Policy-Name         Audit-Status</span>
-Gi1/0/1      MACsec-Uplink    <span class="ios-up">Active</span>
-Gi1/0/2      MACsec-Uplink    <span class="ios-up">Active</span>`;
+ return 'SW-'+s.code+'-0'+swN+'> <span class="ios-cmd">show mka sessions</span><br>'+
+ 'No active MACsec/MKA sessions: feature not configured in this laboratory profile.';
 }
 
 function genPCConfig(s,pc){
@@ -4262,7 +4259,7 @@ function genRouterVersionFull(s){
     'Cisco C8300-2N2S-4T2X (2RU) processor with 7999296K/6147K bytes of memory.',
     'Processor board ID FDO2345A1BC',
     '3 Virtual Ethernet interfaces',
-    '16 Gigabit Ethernet interfaces',
+    '4 Gigabit Ethernet RJ-45 + 2 puertos SFP+ 1/10G (por validar cableado/transceptores)',
     'External 5G/4G gateways connected through WAN Ethernet interfaces',
     '32768K bytes of non-volatile configuration memory.',
     '16777216K bytes of physical memory.',
@@ -4311,9 +4308,9 @@ function genRouterRunningConfig(s, startup=false){
     ' dpd 10 3 on-demand',' nat force-encap','crypto ipsec transform-set IPSEC-TS esp-gcm 256',' mode tunnel',
     'crypto ipsec profile IPSEC-PROFILE',' set transform-set IPSEC-TS',' set ikev2-profile IKEV2-PROFILE',' set pfs group14','!',
     'interface Loopback0',' description Gestion y Router-ID',` ip address ${id.loopback} 255.255.255.255`,' ip ospf 1 area 0','!',
-    'interface GigabitEthernet0/0/0',' description Trunk to C9200L access switches',' no ip address',' negotiation auto',' no mop enabled',' no mop sysid'
+    'interface GigabitEthernet0/0/0',' description Troncal LAN a PA-1410 ethernet1/1 en virtual-wire',' no ip address',' negotiation auto',' no mop enabled',' no mop sysid'
   ];
-  [['.10','Datos','10','10.70.'+n+'.1','10.70.0.10'],['.20','VoIP','20','10.70.'+n+'.129','10.70.0.20'],
+  [['.10','Datos','10','10.70.'+n+'.1',''],['.20','VoIP','20','10.70.'+n+'.129',''],
    ['.30','Gestion','30','10.70.'+n+'.161',''],['.40','Invitados','40','10.70.'+n+'.177','']].forEach(([sub,name,vlan,ip,helper])=>{
     lines.push('!',`interface GigabitEthernet0/0/0${sub}`,` description VLAN ${vlan} - ${name}`,
       ` encapsulation dot1Q ${vlan}`,` ip address ${ip} ${vlan==='10'?'255.255.255.128':vlan==='20'?'255.255.255.224':'255.255.255.240'}`,
@@ -4360,7 +4357,7 @@ function genRouterRunningConfig(s, startup=false){
     '! Clase CRITICAL depende de ACL de aplicaciones financieras por definir','class-map match-any BULK',' match dscp cs1',
     'policy-map WAN-OUT',' class VOIP','  priority percent 20',' class VIDEO','  bandwidth remaining percent 15','! Prioridad financiera de aplicaciones pendiente de definir',
     ' class BULK','  shape average 5000000',' class class-default','  fair-queue',
-    'snmp-server engineID local 800000090300F4CFE28A2B10','snmp-server group MONITOR-GROUP v3 priv',
+    'snmp-server group MONITOR-GROUP v3 priv',
     'snmp-server view MONITOR iso included','snmp-server user monitor-ro MONITOR-GROUP v3 auth sha LAB-ONLY-SNMP-AUTH priv aes 128 LAB-ONLY-SNMP-PRIV',
     'snmp-server host 10.70.0.101 version 3 priv monitor-ro','snmp-server enable traps snmp authentication linkup linkdown coldstart',
     'snmp-server enable traps ospf state-change','snmp-server enable traps ip sla','tacacs server ISE-01',' address ipv4 10.70.0.20',' key LAB-ONLY-TACACS-KEY',' timeout 5',
@@ -4456,7 +4453,7 @@ function handleTermCmd(ev,sedeId,pcIdx){
         `interface Vlan30`,` ip address 10.70.${n}.${swN === 1 ? 162 : 163} 255.255.255.240`,` ip default-gateway 10.70.${n}.161`,
         'ip dhcp snooping','ip dhcp snooping vlan 10,20,30','ip dhcp snooping database flash:dhcp_snoop.db',
         'ip arp inspection vlan 10,20,30','mka policy MKA-UPLINK',' macsec-cipher-suite gcm-aes-256',' key-server priority 100',
-        'snmp-server community MONITOR-RO RO','snmp-server group MONITOR-GROUP v3 priv',
+        'snmp-server group MONITOR-GROUP v3 priv',
         'snmp-server user monitor-ro MONITOR-GROUP v3 auth sha LAB-ONLY-SNMP-AUTH priv aes 128 LAB-ONLY-SNMP-PRIV',
         'snmp-server host 10.70.0.101 version 3 priv monitor-ro','tacacs server ISE-01',' address ipv4 10.70.0.20',
         ' key LAB-ONLY-TACACS-KEY',' timeout 5','line con 0',' logging synchronous','line vty 0 4',' transport input ssh',
@@ -4664,7 +4661,7 @@ function genSwitchRunningConfig(s, swN=1){
     'interface Vlan30',` ip address 10.70.${n}.${swN===1?162:163} 255.255.255.240`,
     ' no shutdown','!',`ip default-gateway 10.70.${n}.161`,
     'no ip routing','ip dhcp snooping','ip dhcp snooping vlan 10,20',
-    'ip dhcp snooping database flash:dhcp_snoop.db','ip arp inspection vlan 10,20','snmp-server community MONITOR-RO RO','snmp-server group MONITOR-GROUP v3 priv',
+    'ip dhcp snooping database flash:dhcp_snoop.db','ip arp inspection vlan 10,20','snmp-server group MONITOR-GROUP v3 priv',
     'snmp-server user monitor-ro MONITOR-GROUP v3 auth sha LAB-ONLY-SNMP-AUTH priv aes 128 LAB-ONLY-SNMP-PRIV','snmp-server host 10.70.0.101 version 3 priv monitor-ro',
     'tacacs server ISE-01',' address ipv4 10.70.0.20',' key LAB-ONLY-TACACS-KEY',' timeout 5','line con 0',' logging synchronous','line vty 0 4',' transport input ssh','ntp server 10.70.0.1 prefer'];
   lines.push('end');
@@ -6561,20 +6558,20 @@ function openComparativa(){
       <div class="drow"><span class="dkey">Routers</span><span class="dval" style="color:var(--legacy)">Cisco 1921 / 2901 (EOL)</span></div>
       <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--legacy)">C2960-24TT-L / C3750-X (EOL)</span></div>
       <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--red)">Solo ASA 5512-X (EOL 2017)</span></div>
-      <div class="drow"><span class="dkey">WAN</span><span class="dval" style="color:var(--red)">MPLS único 10 Mbps</span></div>
+      <div class="drow"><span class="dkey">WAN</span><span class="dval" style="color:var(--red)">24 enlaces MPLS (100 Mbps c/u, escenario heredado)</span></div>
       <div class="drow"><span class="dkey">Uptime</span><span class="dval" style="color:var(--red)">99.5%</span></div>
-      <div class="drow"><span class="dkey">RTO</span><span class="dval" style="color:var(--red)">180 min</span></div>
+      <div class="drow"><span class="dkey">RTO</span><span class="dval" style="color:var(--red)">180 min (supuesto)</span></div>
       <div class="drow"><span class="dkey">Años sin soporte</span><span class="dval" style="color:var(--red)">6-9</span></div>
     </div>
     <div style="background:#0a2010;border:1px solid var(--green);border-radius:6px;padding:14px">
       <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px">✓ DESPUÉS — Rediseño 2026</div>
       <div class="drow"><span class="dkey">Routers</span><span class="dval" style="color:var(--green)">Cisco Catalyst C8300-2N2S-4T2X + gateway 5G externo (modelo por validar)</span></div>
-      <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--green)">C9200L-48T-4G-E x2 (stack)</span></div>
-      <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--green)">22x PA-1410</span></div>
+      <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--green)">C9200L-48T-4G-E x2 (independientes)</span></div>
+      <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--green)">24x PA-1410 (2 CM + 22 sedes)</span></div>
       <div class="drow"><span class="dkey">WAN</span><span class="dval" style="color:var(--green)">4 enlaces inalámbricos</span></div>
       <div class="drow"><span class="dkey">Uptime</span><span class="dval" style="color:var(--green)">99.95% (meta)</span></div>
-      <div class="drow"><span class="dkey">RTO</span><span class="dval" style="color:var(--green)">&le;5 min (meta)uto</span></div>
-      <div class="drow"><span class="dkey">Soporte</span><span class="dval" style="color:var(--green)">Vigente hasta 2031</span></div>
+      <div class="drow"><span class="dkey">RTO</span><span class="dval" style="color:var(--green)">&le;5 min (meta)</span></div>
+      <div class="drow"><span class="dkey">Soporte</span><span class="dval" style="color:var(--green)">Soporte 5 años: por cotizar</span></div>
       <div class="drow"><span class="dkey">Sedes offline</span><span class="dval" style="color:${down>0?'var(--red)':'var(--green)'}">${down} ahora</span></div>
     </div>`;
   document.getElementById('modal-comp').classList.add('vis');
