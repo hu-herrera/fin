@@ -3995,51 +3995,39 @@ Gi1/0/6   PC-004            <span class="ios-up">connected </span> 10`;
 }
 
 function genIfBrief(s){
-  const n=s.num, lk=ST.links[s.id], cov=COV[s.id]||{};
-  const slSt=lk.starlink==='caido'?'<span class="ios-down">down           down</span>':'<span class="ios-up">up               up</span>';
-  const kuiperSt=lk.kuiper  ==='caido'?'<span class="ios-down">down           down</span>':'<span class="ios-up">up               up</span>';
-  const g5St=cov.g5?(lk.g5==='caido'?'<span class="ios-down">down           down</span>':'<span class="ios-up">up               up</span>'):'<span class="ios-dim">disabled       down</span>';
-  const g4St=lk.g4==='caido'?'<span class="ios-down">down           down</span>':'<span class="ios-up">up               up</span>';
-  return `RTR-${s.code}> <span class="ios-cmd">show ip interface brief</span>
-<span class="ios-hdr">Interface                  IP-Address        OK? Method Status           Protocol</span>
-GigabitEthernet0/0/2.10    10.70.${n}.1      YES manual up               up
-GigabitEthernet0/0/2.20    10.70.${n}.129     YES manual up               up
-GigabitEthernet0/0/2.30    10.70.${n}.161     YES manual up               up
-GigabitEthernet0/0/2.40    10.70.${n}.177     YES manual up               up
-GigabitEthernet0/0/1       dhcp              YES DHCP   ${slSt}
-GigabitEthernet0/0/2       dhcp              YES DHCP   ${kuiperSt}
-Cellular0/1/0 (Entel 5G)   dhcp              YES DHCP   ${g5St}
-Cellular0/1/1 (GTD 4G)     dhcp              YES DHCP   ${g4St}
-Loopback0                  10.70.${n}.254    YES other  up               up`;
+ const n=s.num,id=routerIdentity(s);
+ const rows=[['GigabitEthernet0/0/0','unassigned',!isDeviceInterfaceAdminDown(s.id,'router','GigabitEthernet0/0/0'),'Troncal LAN']];
+ for(const [vlan,host] of [[10,1],[20,129],[30,161],[40,177]]){
+   const name='GigabitEthernet0/0/0.'+vlan;
+   rows.push([name,'10.70.'+n+'.'+host,!isDeviceInterfaceAdminDown(s.id,'router','GigabitEthernet0/0/0')&&!isDeviceInterfaceAdminDown(s.id,'router',name),'VLAN '+vlan]);
+ }
+ for(const [key,ip] of [['starlink',id.wanStar],['kuiper',id.wanKuiper],['g5',id.wan5g],['g4',id.wan4g]]){
+   rows.push([routerWanInterface(key),ip,!['caido','inactivo','recuperando'].includes(ST.links[s.id]?.[key])&&!isWanInterfaceAdminDown(s.id,key),'WAN '+key]);
+ }
+ rows.push(['Loopback0',id.loopback,true,'Router ID']);
+ return 'RTR-'+s.code+'> <span class="ios-cmd">show ip interface brief</span><br><br>'+
+ '<span class="ios-hdr">Interface IP-Address OK? Method Status Protocol</span><br>'+
+ rows.map(([name,ip,up,label])=>name.padEnd(28)+' '+ip.padEnd(17)+' YES manual '+(up?'up up':'administratively down down')+' ('+label+')').join('<br>');
 }
 
 function genRouterVLAN(s){
-  const n=s.num;
-  return `RTR-${s.code}> <span class="ios-cmd">show vlan brief</span>
-
-<span class="ios-hdr">Subinterface         Encap  VLAN   IP-Address        Descripción</span>
-Gig0/0/2.10          dot1Q  10     10.70.${n}.1/24   DATOS
-Gig0/0/2.20          dot1Q  20     10.70.${n}.129/27  VOIP
-Gig0/0/2.30          dot1Q  30     10.70.${n}.161/28  GESTION
-Gig0/0/2.40          dot1Q  40     10.70.${n}.177/28  INVITADOS`;
+ const n=s.num;
+ return 'RTR-'+s.code+'> <span class="ios-cmd">show vlan brief</span><br>'+
+ '<span class="ios-hdr">Subinterfaz  VLAN Dirección/máscara Uso</span><br>'+
+ ['Gi0/0/0.10 10 10.70.'+n+'.1/25 Usuarios',
+  'Gi0/0/0.20 20 10.70.'+n+'.129/27 Voz',
+  'Gi0/0/0.30 30 10.70.'+n+'.161/28 Gestión',
+  'Gi0/0/0.40 40 10.70.'+n+'.177/28 Invitados'].join('<br>');
 }
 
 function genWANFailover(s){
-  const lk=ST.links[s.id];
-  const trackSt=(k)=>lk[k]==='caido'?'<span class="ios-down">Down</span>':'<span class="ios-up">Up</span>';
-  return `RTR-${s.code}> <span class="ios-cmd">show track</span>
-<span class="ios-hdr">Track 1 — Starlink</span>     State: ${trackSt('starlink')}
-<span class="ios-hdr">Track 2 — Amazon Leo Kuiper</span>       State: ${trackSt('kuiper')}
-<span class="ios-hdr">Track 3 — 5G Entel</span>     State: ${trackSt('g5')}
-<span class="ios-hdr">Track 4 — 4G GTD</span>       State: ${trackSt('g4')}
-
-<span class="ios-hdr">TRANSPORTE WAN</span>
-WAN address: 100.64.${s.num}.2/10 (CGNAT)
-IPsec: IKEv2 · NAT-T enabled · UDP/4500
-
-<span class="ios-hdr">CONFIGURACIÓN MÓVIL</span>
-cellular 0/1/0 lte profile create 1 im.entel.cl
-cellular 0/1/1 lte profile create 1 bam.gtd.cl`;
+ const descriptions=[['starlink','Starlink'],['kuiper','Amazon Leo (futuro)'],['g5','Entel 5G (gateway externo)'],['g4','GTD 4G (gateway externo)']];
+ return 'RTR-'+s.code+'> <span class="ios-cmd">show track</span><br><br>'+
+ descriptions.map(([key,label],i)=>{
+   const ok=!['caido','inactivo','recuperando'].includes(ST.links[s.id]?.[key])&&!isWanInterfaceAdminDown(s.id,key);
+   return 'Track '+(i+1)+' '+label+' — '+(ok?'Up':'Down')+' ('+routerWanInterface(key)+')';
+ }).join('<br>')+
+ '<br>IPsec IKEv2 · Enlaces 5G/4G por gateway externo Ethernet · Parámetros WAN ilustrativos';
 }
 
 function genCryptoSA(s){
@@ -4076,11 +4064,10 @@ WildFire:              <span class="ios-up">Active</span>`;
 }
 
 function genFWIfaces(s){
-  return `PA-${s.code}> <span class="ios-cmd">show interface all</span>
-<span class="ios-hdr">Name         IPv4 Address      Zone      Status     Speed</span>
-ethernet1/1  DHCP             untrust   <span class="ios-up">up</span>        1Gbps
-ethernet1/2  10.70.${s.num}.1/24 trust  <span class="ios-up">up</span>        1Gbps
-ethernet1/3  10.70.${s.num}.81/28 guest <span class="ios-up">up</span>        1Gbps`;
+ return 'PA-'+s.code+'> <span class="ios-cmd">show interface all</span><br>'+
+ 'management 10.70.'+s.num+'.164/28 (VLAN30)<br>'+
+ 'ethernet1/1 unassigned (interconexión de inspección pendiente de validar)<br>'+
+ 'ethernet1/2 unassigned (interconexión de inspección pendiente de validar)';
 }
 
 function genFWZones(s){
@@ -5326,62 +5313,11 @@ function genRouterRoutes(s){
 ${rows.map(escapeCLI).join('<br>')}`;
 }
 
-function genRouterRunningConfigSummary(s, startup = false){
-  const n = s.num;
-  const active = activeLink(s.id);
-  const hostname = `RTR-${s.code}`;
-  const loopback = s.isCM ? '10.70.100.1' : `10.70.100.${n + 10}`;
-  const wan = [
-    ['GigabitEthernet0/0/1','Starlink Business','1440','Tunnel100',10],
-    ['GigabitEthernet0/0/2','Amazon Leo Kuiper','1440','Tunnel200',20],
-    ['Cellular0/1/0','5G Entel','1400','Tunnel300',30],
-    ['Cellular0/1/1','4G GTD','1400','Tunnel400',40],
-  ];
-  const interfaces = wan.map(([iface, label, mtu, tunnel, cost]) => `!
-interface ${iface}
- description Uplink ${label}
- ip address negotiated
- ip mtu ${mtu}
- ip nat outside
- no shutdown
-!
-interface ${tunnel}
- description IPsec sobre ${label} hacia CM
- ip address 172.16.${n}.${tunnel === 'Tunnel100' ? 1 : tunnel === 'Tunnel200' ? 5 : tunnel === 'Tunnel300' ? 9 : 13} 255.255.255.252
- ip ospf 1 area 0
- ip ospf cost ${cost}
- ip ospf bfd
- tunnel mode ipsec ipv4
- tunnel protection ipsec profile IPSEC-PROFILE`).join('\n');
-  return `${hostname}${startup ? ' startup-config' : ''}> <span class="ios-cmd">show ${startup ? 'startup-config' : 'running-config'}</span><br><br>
-Building configuration...<br>${startup ? '!! NVRAM config last updated at 14:23:53 CLT Wed Sep 15 2026 by admin' : '!! Last configuration change at 14:23:51 CLT Wed Sep 15 2026 by admin'}<br>
-version 17.9<br>service timestamps debug datetime msec localtime show-timezones<br>service timestamps log datetime msec localtime show-timezone<br>hostname ${hostname}<br>aaa new-model<br>no ip domain lookup<br>ip domain name financierapacifico.cl<br>ip name-server 10.70.0.10<br>crypto ikev2 proposal IKEV2-PROP<br> encryption aes-gcm-256<br> integrity sha256<br> group 14<br>crypto ipsec profile IPSEC-PROFILE<br> set transform-set IPSEC-TS<br>interface Loopback0<br> description Gestion y Router-ID<br> ip address ${loopback} 255.255.255.255<br> ip ospf 1 area 0<br>interface GigabitEthernet0/0/0<br> description Trunk to C9200L access switches<br> no ip address<br> no shutdown<br>interface GigabitEthernet0/0/0.10<br> description VLAN 10 - Datos<br> encapsulation dot1Q 10<br> ip address 10.70.${n}.1 255.255.255.128<br> ip ospf 1 area 0<br>interface GigabitEthernet0/0/0.20<br> description VLAN 20 - VoIP<br> encapsulation dot1Q 20<br> ip address 10.70.${n}.129 255.255.255.224<br> ip ospf 1 area 0<br>${interfaces}<br>router ospf 1<br> router-id ${loopback}<br> log-adjacency-changes detail<br> passive-interface default<br> no passive-interface Tunnel100<br> no passive-interface Tunnel200<br> no passive-interface Tunnel300<br> no passive-interface Tunnel400<br>ip nat inside source list NAT-ACL interface ${active === 'kuiper' ? 'GigabitEthernet0/0/2' : active === 'g5' ? 'Cellular0/1/0' : active === 'g4' ? 'Cellular0/1/1' : 'GigabitEthernet0/0/1'} overload<br>ip access-list standard NAT-ACL<br> permit 10.70.${n}.0 0.0.0.127<br> permit 192.168.${n}.0 0.0.0.255<br>end`;
-}
+// Las vistas abreviadas usan la configuración principal para evitar contradicciones.
+function genRouterRunningConfigSummary(s, startup=false){return genRouterRunningConfig(s,startup);}
+function genSwitchRunningConfigSummary(s, swN=1){return genSwitchRunningConfig(s,swN);}
 
-function genSwitchRunningConfigSummary(s, swN = 1){
-  return `SW-${s.code}-0${swN}> <span class="ios-cmd">show running-config</span><br><br>
-Building configuration...<br>version 17.9<br>hostname SW-${s.code}-0${swN}<br>aaa new-model<br>spanning-tree mode rapid-pvst<br>spanning-tree extend system-id<br>vlan 10<br> name DATOS-Usuarios<br>vlan 20<br> name VOIP-Telefonia<br>vlan 30<br> name GESTION-Red<br>vlan 40<br> name INVITADOS-DMZ<br>interface GigabitEthernet1/0/1<br> description Uplink-to-Router<br> switchport mode trunk<br> switchport trunk allowed vlan 10,20,30,40<br> spanning-tree portfast disable<br>interface range GigabitEthernet1/0/3 - 46<br> switchport mode access<br> switchport access vlan 10<br> spanning-tree portfast<br> spanning-tree bpduguard enable<br>interface GigabitEthernet1/0/47<br> channel-group 1 mode active<br>interface Port-channel1<br> switchport mode trunk<br>logging host 10.70.0.100<br>end`;
-}
-
-function genFWCommandSummary(s, command){
-  const n = s.num;
-  const active = activeLink(s.id);
-  const prompt = `PA-${s.code}>`;
-  const head = `${prompt} <span class="ios-cmd">${command}</span><br><br>`;
-  if(command === 'show system info') return `${head}hostname: PA-${s.code}<br>ip-address: 10.70.${n}.178<br>model: PA-1410<br>serial: 012345${String(n).padStart(4,'0')}<br>sw-version: 11.1.2<br>uptime: ${UPTIME}<br>operational-mode: normal`;
-  if(command === 'show routing summary') return `${head}virtual-router: default<br>total routes: 18<br>active routes: 18<br>connected: 6  static: 12`;
-  if(command === 'show routing route') return `${head}Flags: A active, C connected, S static<br>Destination        Nexthop          Metric Flags Interface<br>${active ? `0.0.0.0/0          ${active}             10     A S    ethernet1/1<br>` : ''}10.70.${n}.0/25     connected          0      A C    ethernet1/2<br>10.70.0.0/24        10.70.${n}.177       10     A S    ethernet1/2`;
-  if(command === 'show session all' || command === 'show session info') return `${head}Total active sessions: ${42 + n}<br><span class="ios-hdr">ID  Application     State   From             To</span><br>12478920 ssl             ACTIVE  10.70.${n}.15:54821 104.18.32.5:443<br>12478921 dns             ACTIVE  10.70.${n}.22:33012 8.8.8.8:53<br>12478922 core-financial  ACTIVE  10.70.${n}.15:49932 10.70.0.20:8820`;
-  if(command === 'show zone') return `${head}trust      ethernet1/2<br>untrust    tunnel.100, tunnel.200, tunnel.300, tunnel.400<br>guest      ethernet1/4<br>management ethernet1/3<br>dmz        ethernet1/5`;
-  if(command === 'show vpn ike-sa') return `${head}GW-CM-Starlink  200.27.1.10  ESTABLISHED  100.64.${n}.2<br>GW-CM-Kuiper    200.27.1.11  ESTABLISHED  100.64.${n}.6<br>GW-CM-5G        200.27.1.12  ESTABLISHED  100.85.${n}.2<br>GW-CM-4G        200.27.1.13  ESTABLISHED  100.92.${n}.2`;
-  if(command === 'show vpn ipsec-sa') return `${head}GW-CM-Starlink  Tunnel100  ACTIVE  SPI 0x4a2b3c4d<br>GW-CM-Kuiper    Tunnel200  ACTIVE  SPI 0x8a2b3c4e<br>GW-CM-5G        Tunnel300  ACTIVE  SPI 0xca2b3c4f<br>GW-CM-4G        Tunnel400  ACTIVE  SPI 0xea2b3c50`;
-  if(command === 'show system resources') return `${head}CPU: 12.4% user, 3.2% system, 84.1% idle<br>Memory: 18.2% used, 81.8% free<br>Tasks: 187 total, 1 running`;
-  if(command === 'show high-availability state') return `${head}Group ID: 1<br>Mode: Active-Passive<br>State: ${s.isCM ? 'active' : 'disabled'}<br>Peer State: ${s.isCM ? 'passive' : 'n/a'}<br>Preemptive: yes`;
-  if(command === 'show log traffic') return `${head}${new Date().toISOString()} 10.70.${n}.15 104.18.32.5 web-browsing allow<br>${new Date().toISOString()} 10.70.${n}.22 8.8.8.8 dns allow`;
-  if(command === 'show log threat') return `${head}${new Date().toISOString()} 10.70.${n}.55 45.33.32.156 vulnerability BLOCK TCP`;
-  if(command === 'show running-config' || command === 'show startup-config') return `${head}set deviceconfig system hostname PA-${s.code}<br>set deviceconfig system type static<br>set network interface ethernet ethernet1/2 layer3 ip 10.70.${n}.178/28<br>set rulebase security rules Allow-Web-Trust action allow<br>set rulebase security rules Default-Deny-All action deny`;
-  return null;
-}
+function genFWCommandSummary(s, command){return genFWCommand(s,command);}
 
 function genHSRP(s){
   const active = s.isCM && ST.cmActive === 'rtr1';
