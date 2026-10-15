@@ -5240,7 +5240,7 @@ function genRouterTrackOutput(s, command){
     ['g4','4G GTD'],
   ];
   const rows = links.flatMap(([type, label], index) => {
-    const up = !['caido','inactivo'].includes(ST.links[s.id]?.[type]) &&
+    const up = !['caido','inactivo','recuperando'].includes(ST.links[s.id]?.[type]) &&
       !isWanInterfaceAdminDown(s.id, type);
     const state = up ? '<span class="ios-up">Up</span>' : '<span class="ios-down">Down</span>';
     const rtt = up ? `${getLinkLatency(s, type)} ms` : 'N/A';
@@ -5891,9 +5891,7 @@ IKEv2 policy: 10<br>  encryption aes-gcm-256<br>  integrity sha512<br>  group 20
       : destination ? [] : null;
     const reachable = destination
       ? Boolean(route?.length)
-      : isValidIPv4(address) && (ST.mode === 'antes'
-        ? ST.mpls[s.id] === 'activo'
-        : Boolean(activeLink(s.id)));
+      : false; // No inventar respuestas ICMP de destinos no modelados
     const latency = destination
       ? Math.max(1, getLinkLatency(s) + getLinkLatency(destination) + 8)
       : getLinkLatency(s);
