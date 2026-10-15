@@ -4361,8 +4361,8 @@ function genRouterRunningConfig(s, startup=false){
     'ip sla 4',' icmp-echo 10.92.0.1 source-interface Cellular0/1/1',' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 4 life forever start-time now',
     'track 1 ip sla 1 reachability',' delay down 10 up 300','track 2 ip sla 2 reachability',' delay down 10 up 300',
     'track 3 ip sla 3 reachability',' delay down 10 up 300','track 4 ip sla 4 reachability',' delay down 10 up 300',
-    'ip route 0.0.0.0 0.0.0.0 100.64.0.1 track 1','ip route 0.0.0.0 0.0.0.0 100.64.0.5 10 track 2',
-    'ip route 0.0.0.0 0.0.0.0 100.85.0.1 20 track 3','ip route 0.0.0.0 0.0.0.0 100.92.0.1 30 track 4',
+    `ip route 0.0.0.0 0.0.0.0 100.64.${n}.1 track 1`,`ip route 0.0.0.0 0.0.0.0 100.64.${n}.5 10 track 2`,
+    `ip route 0.0.0.0 0.0.0.0 100.85.${n}.1 20 track 3`,`ip route 0.0.0.0 0.0.0.0 100.92.${n}.1 30 track 4`,
     'bfd slow-timers 1000','bfd interval 100 min_rx 100 multiplier 3',
     'class-map match-any VOIP',' match dscp ef','class-map match-any VIDEO',' match dscp af41',
     'class-map match-any CRITICAL',' match access-group name CRITICAL-ACL','class-map match-any BULK',' match dscp cs1',
@@ -5282,7 +5282,6 @@ function genRouterRoutes(s){
     { name: 'GigabitEthernet0/0/0.20', network: `10.70.${n}.128/27`, address: `10.70.${n}.129/32` },
     { name: 'GigabitEthernet0/0/0.30', network: `10.70.${n}.160/28`, address: `10.70.${n}.161/32` },
     { name: 'GigabitEthernet0/0/0.40', network: `10.70.${n}.176/28`, address: `10.70.${n}.177/32` },
-    { name: 'GigabitEthernet0/0/0.99', network: `192.168.${n}.0/24`, address: `192.168.${n}.1/32` },
   ];
   const lanRoutes = interfaces
     .filter(iface => !isDeviceInterfaceAdminDown(s.id, 'router', 'GigabitEthernet0/0/0') &&
