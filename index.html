@@ -5889,9 +5889,9 @@ IKEv2 policy: 10<br>  encryption aes-gcm-256<br>  integrity sha512<br>  group 20
     const destination = destinationPC?.site || findDeviceTargetSite(address);
     const destinationGateway = destination && [
       `10.70.${destination.num}.1`,
-      `10.70.${destination.num}.33`,
-      `10.70.${destination.num}.65`,
-      `10.70.${destination.num}.81`,
+      `10.70.${destination.num}.129`,
+      `10.70.${destination.num}.161`,
+      `10.70.${destination.num}.177`,
     ].includes(address);
     const destinationHost = destinationPC?.pc ||
       (destinationGateway ? getPCs(destination).find(pc => isPCNetworkAvailable(destination.id, pc)) : null);
