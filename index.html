@@ -4648,26 +4648,24 @@ function genSwitchRunningConfig(s, swN=1){
     ' storm-control broadcast level 5.00',
     ' storm-control multicast level 10.00',
   ]);
-  const lines=['Building configuration...','Current configuration : 6421 bytes','version 17.9',`hostname ${host}`,
+  const lines=['Building configuration...','version 17.9',`hostname ${host}`,
     'aaa new-model','aaa authentication login default group tacacs+ local','aaa authorization exec default group tacacs+ local',
     'aaa accounting exec default start-stop group tacacs+','clock timezone CLT -4 0','switch 1 provision c9200l-48t-4g',
     '! Switch independiente, enlace Ethernet hacia par','ip domain name financierapacifico.cl','ip name-server 10.70.0.10','ip name-server 10.70.0.11',
     'login on-success log','login on-failure log','spanning-tree mode rapid-pvst','spanning-tree extend system-id','spanning-tree vlan 1-4094 priority 32768',
     'vlan 10',' name DATOS-Usuarios','vlan 20',' name VOIP-Telefonia','vlan 30',' name GESTION-Red','vlan 40',' name INVITADOS-DMZ','vlan 999',' name NATIVE-NONE',
-    'interface Port-channel1',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
-    'interface GigabitEthernet1/0/1',' description Uplink-Router',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',' channel-group 1 mode active',' mka policy MKA-UPLINK',
+    
+    'interface GigabitEthernet1/0/1',' description Uplink-Router',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
     'interface GigabitEthernet1/0/2',' description Uplink-Switch-Peer',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',' channel-group 1 mode active',' mka policy MKA-UPLINK',
     ...accessPortConfig,
     'interface GigabitEthernet1/0/33',' description AP-WiFi-1 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
     'interface GigabitEthernet1/0/34',' description AP-WiFi-2 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
-    'interface GigabitEthernet1/0/45',' switchport mode trunk','interface GigabitEthernet2/0/45',' switchport mode trunk',`interface Vlan30`,` ip address 10.70.${n}.${swN === 1 ? 162 : 163} 255.255.255.240`,` ip default-gateway 10.70.${n}.161`,
+    'interface GigabitEthernet1/0/45',' description Enlace Ethernet entre switches',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',`interface Vlan30`,` ip address 10.70.${n}.${swN === 1 ? 162 : 163} 255.255.255.240`,` ip default-gateway 10.70.${n}.161`,
     'ip dhcp snooping','ip dhcp snooping vlan 10,20,30','ip dhcp snooping database flash:dhcp_snoop.db','ip arp inspection vlan 10,20,30',
     'mka policy MKA-UPLINK',' macsec-cipher-suite gcm-aes-256',' key-server priority 100','snmp-server community MONITOR-RO RO','snmp-server group MONITOR-GROUP v3 priv',
     'snmp-server user monitor-ro MONITOR-GROUP v3 auth sha LAB-ONLY-SNMP-AUTH priv aes 128 LAB-ONLY-SNMP-PRIV','snmp-server host 10.70.0.101 version 3 priv monitor-ro',
     'tacacs server ISE-01',' address ipv4 10.70.0.20',' key LAB-ONLY-TACACS-KEY',' timeout 5','line con 0',' logging synchronous','line vty 0 4',' transport input ssh','ntp server 10.70.0.1 prefer'];
-  while(lines.length<85) lines.push(`! interface GigabitEthernet1/0/${(lines.length%48)+1} defaults`);
   lines.push('end');
-  lines[1]=`Current configuration : ${lines.slice(2).join('\r\n').length} bytes`;
   return cliText(`${host}>`,'show running-config',lines);
 }
 
@@ -4703,10 +4701,10 @@ function genSwitchDetail(s,type,command){
     'show mac address-table':['Vlan Mac Address Type Ports','10 001a.2b3c.4d5e DYNAMIC Gi1/0/5','10 3c97.0e8a.2b11 DYNAMIC Gi1/0/8','10 001b.21a4.c8d2 DYNAMIC Gi1/0/12','10 3c97.0e8a.2b45 DYNAMIC Gi1/0/15','20 001a.2b3c.4d61 DYNAMIC Gi1/0/5','20 001a.2b3c.4d62 DYNAMIC Gi1/0/7','20 001a.2b3c.4d63 DYNAMIC Gi1/0/9','30 f4cf.e28a.2b10 DYNAMIC Gi1/0/1','40 f018.9812.34ab DYNAMIC Gi1/0/33','Total Mac Addresses for this criterion: 9'],
     'show spanning-tree':['VLAN0010','Spanning tree enabled protocol rstp','Root ID Priority 24586 Address 001a.2b3c.4d5e','Bridge ID Priority 32778 Address 001a.2b3c.4d5e','Gi1/0/1 Root FWD 4 128.1 P2p','Gi1/0/33 Desg FWD 4 128.33 P2p Edge','Gi1/0/34 Desg FWD 4 128.34 P2p Edge'],
     'show power inline':['Available:0.0(w) Used:0.0(w) Remaining:0.0(w)','Interface Admin Oper Power Device Class','C9200L-48T-4G-E no suministra PoE: alimentación externa requerida'],
-    'show etherchannel summary':['Group Port-channel Protocol Ports','1 Po1(SD) LACP Gi1/0/1(P) Gi1/0/2(P)'],
+    'show etherchannel summary':['Group Port-channel Protocol Ports','No EtherChannels configured (independent uplinks)'],
     'show interfaces trunk':['Port Mode Encapsulation Status Native vlan','Gi1/0/1 on 802.1q trunking 999','Gi1/0/2 on 802.1q trunking 999','Gi1/0/45 on 802.1q trunking 999','Gi1/0/33 on 802.1q trunking 999','Gi1/0/34 on 802.1q trunking 999','Vlans allowed on trunk: 10,20,30,40','Vlans allowed and active in management domain: 10,20,30,40','Vlans in spanning tree forwarding state and not pruned: 10,20,30,40'],
-    'show stack':['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Mac persistency wait time: Indefinite','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','2 Standby 14 Ready C9200L-48T-4G-E 17.9.4a'],
-    'show switch':['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','2 Standby 14 Ready C9200L-48T-4G-E 17.9.4a']};
+    'show stack':['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Mac persistency wait time: Indefinite','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','Cada switch es independiente; no hay StackWise ni miembro 2'],
+    'show switch':['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','Cada switch es independiente; no hay StackWise ni miembro 2']};
   return rows[command] ? h+rows[command].join('<br>') : null;
 }
 
