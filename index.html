@@ -4732,13 +4732,43 @@ function genFWCommand(s,command){
 }
 
 function genRouterDetail(s,command){
-  const n=s.num, p=`RTR-${s.code}>`, h=cmd=>`${p} <span class="ios-cmd">${cmd}</span><br><br>`;
-  const id=routerIdentity(s);
-  if(command==='show ip route') return h(command)+['Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP','D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area','N1/N2 - OSPF NSSA external, E1/E2 - OSPF external','i - IS-IS, su - IS-IS summary, L1/L2 - IS-IS level','ia - IS-IS inter area, * - candidate default, U - per-user static route','o - ODR, P - periodic downloaded static route, H - NHRP, l - LISP','a - application route, - replicated route, % next hop override, p PfR',`Gateway of last resort is ${id.wanStar} to network 0.0.0.0`,`S* 0.0.0.0/0 [1/0] via ${id.wanStar}, GigabitEthernet0/0/1`,`[10/0] via ${id.wanKuiper}, GigabitEthernet0/0/2`,`[20/0] via ${id.wan5g}, Cellular0/1/0`,`[30/0] via ${id.wan4g}, Cellular0/1/1`,`C 10.70.${n}.0/25 is directly connected, Gi0/0/0.10`,`L 10.70.${n}.1/32 is directly connected, Gi0/0/0.10`,`C 10.70.${n}.128/27 is directly connected, Gi0/0/0.20`,`L 10.70.${n}.129/32 is directly connected, Gi0/0/0.20`,`C 10.70.${n}.160/28 is directly connected, Gi0/0/0.30`,`L 10.70.${n}.161/32 is directly connected, Gi0/0/0.30`,`O 10.70.0.0/24 [110/20] via 172.16.${n}.2, 00:08:12, Tunnel100`,`O IA 10.70.15.0/24 [110/30] via 172.16.${n}.2, 00:08:12, Tunnel100`,`L ${id.loopback}/32 is directly connected, Loopback0`,`C 172.16.${n}.0/30 is directly connected, Tunnel100`,`L 172.16.${n}.1/32 is directly connected, Tunnel100`,`C 172.16.${n}.4/30 is directly connected, Tunnel200`,`L 172.16.${n}.5/32 is directly connected, Tunnel200`,`C 172.16.${n}.8/30 is directly connected, Tunnel300`,`C 172.16.${n}.12/30 is directly connected, Tunnel400`,`C 192.168.${n}.0/24 is directly connected, Gi0/0/0.40`,`L 192.168.${n}.1/32 is directly connected, Gi0/0/0.40`].join('<br>');
-  if(command==='show crypto ikev2 sa') return h(command)+['IPv4 Crypto IKEv2 SA','Tunnel-id Local Remote fvrf/ivrf Status',`1 ${id.wanStar}/4500 200.27.1.10/4500 none/none READY`,'Encr: AES-GCM, Prf: SHA256, Hash: SHA256, DH Grp:14, Auth sign: PSK','Auth verify: PSK','Life/Active Time: 86400/3821 sec','NAT-T: Yes','DPD: 10s x 3',`2 ${id.wanKuiper}/4500 200.27.1.11/4500 none/none READY`,'Encr: AES-GCM, Prf: SHA256, Hash: SHA256, DH Grp:14, Auth sign: PSK','NAT-T: Yes',`3 ${id.wan5g}/4500 200.27.1.12/4500 none/none READY`,'NAT-T: Yes',`4 ${id.wan4g}/4500 200.27.1.13/4500 none/none READY`,'NAT-T: Yes'].join('<br>');
-  if(command==='show track') return h(command)+['Track 1 IP SLA 1 reachability','Reachability is Up','Delay up 300 secs, down 10 secs','Latest operation return code: OK','Latest RTT (millisecs) 27','Track 2 IP SLA 2 reachability','Reachability is Up','Latest RTT (millisecs) 36','Track 3 IP SLA 3 reachability','Reachability is Up','Latest RTT (millisecs) 18','Track 4 IP SLA 4 reachability','Reachability is Up','Latest RTT (millisecs) 41'].join('<br>');
-  if(command==='show bfd neighbors') return h(command)+['IPv4 Sessions','NeighAddr LD/RD RH/RS State Int',`172.16.${n}.2 4098/4097 Up Up Tu100`,`172.16.${n}.6 4099/4098 Up Up Tu200`,`172.16.${n}.10 4100/4099 Up Up Tu300`,`172.16.${n}.14 4101/4100 Up Up Tu400`,'Session State is UP and using echo function with 100 ms interval.'].join('<br>');
-  if(command==='show interfaces Tunnel100') return h(command)+['Tunnel100 is up, line protocol is up','Hardware is Tunnel','Description: IPsec sobre Starlink hacia CM',`Internet address is 172.16.${n}.1/30`,'MTU 1440 bytes, BW 100 Kbit/sec, DLY 50000 usec, reliability 255/255, txload 12/255, rxload 8/255','Encapsulation TUNNEL, tunnel protocol/transport IPSEC/IP',`Tunnel source ${id.wanStar}, destination 200.27.1.10`,'Tunnel protection via IPSEC-PROFILE','5 minute input rate 32000 bits/sec, 12 packets/sec','5 minute output rate 48000 bits/sec, 18 packets/sec','1247892 packets input, 912847362 bytes, 0 no buffer','0 input errors, 0 CRC, 0 frame, 0 overrun, 0 ignored','892341 packets output, 632847291 bytes, 0 underruns','0 output errors, 0 collisions, 0 interface resets'].join('<br>');
+  const n=s.num, prefix='RTR-'+s.code+'> <span class="ios-cmd">'+escapeCLI(command)+'</span><br><br>';
+  const identities={starlink:['Tunnel100',2,'200.27.1.10'],kuiper:['Tunnel200',6,'200.27.1.11'],g5:['Tunnel300',10,'200.27.1.12'],g4:['Tunnel400',14,'200.27.1.13']};
+  const available=key=>!['caido','inactivo','recuperando'].includes(ST.links[s.id]?.[key]) && !isWanInterfaceAdminDown(s.id,key);
+  const active=activeLink(s.id);
+  const tunnel=active ? identities[active] : null;
+  if(command==='show ip route')return genRouterRoutes(s);
+  if(command==='show track')return genRouterTrackOutput(s,command);
+  if(command==='show ip ospf neighbor'||command==='show ip ospf neighbor detail')
+    return prefix+(tunnel&&isSiteLanAvailable(s.id)
+      ? 'Neighbor 172.16.'+n+'.'+tunnel[1]+' State FULL (SIMULADO) via '+tunnel[0]+'<br>Adyacencia didáctica: no se intercambian mensajes OSPF reales.'
+      : 'No OSPF neighbors reachable (WAN sin camino activo o LAN aislada).');
+  if(command==='show ip ospf interface brief')
+    return prefix+['Loopback0 Router-ID '+routerIdentity(s).loopback+'/32',
+      'Gi0/0/0.10 10.70.'+n+'.1/25 passive',
+      'Gi0/0/0.20 10.70.'+n+'.129/27 passive',
+      'Gi0/0/0.30 10.70.'+n+'.161/28 passive',
+      ...Object.entries(identities).filter(([key])=>available(key)).map(([key,[iface]])=>iface+' area 0 point-to-point (LAB '+key+')')].join('<br>');
+  if(command==='show ip protocols')
+    return prefix+'Routing protocol: OSPF 1 (modelo de rutas, no protocolo real)<br>'+
+      'Router-ID '+routerIdentity(s).loopback+'<br>LAN: 10.70.'+n+'.0/25, 10.70.'+n+'.128/27, 10.70.'+n+'.160/28<br>'+
+      'LAN interfaces passive; overlay Tunnel100/200/300/400';
+  if(command==='show standby'||command==='show standby brief')
+    return prefix+(s.isCM?'CM: failover de routers simulado. HSRP/VRRP real pendiente de diseñar y validar.':
+      'HSRP no configurado (router único en sucursal).');
+  if(command==='show ip bgp'||command==='show ip bgp summary')
+    return prefix+'BGP is not configured: this scenario uses OSPF overlay (simulated).';
+  if(command==='show crypto ikev2 sa')
+    return prefix+'IKEv2 SA: emulación visual, NO verificación de negociación criptográfica real.<br>'+
+      Object.entries(identities).map(([key,[iface,,peer]])=>
+        iface+' -> '+peer+' '+(available(key)?'ENLACE DISPONIBLE':'ENLACE NO DISPONIBLE')).join('<br>');
+  if(command==='show bfd neighbors')
+    return prefix+'BFD con temporizadores y sesiones reales no probado. La disponibilidad modelada se obtiene de enlaces/tracking.';
+  if(command==='show interfaces Tunnel100')
+    return prefix+'Tunnel100 is '+(available('starlink')?'up (simulated)':'down')+
+      '<br>Internet address 172.16.'+n+'.1/30<br>Tunnel source GigabitEthernet0/0/1'+
+      '<br>Tunnel destination 200.27.1.10 (ejemplo no contratado)'+
+      '<br>Cifrado y contadores de hardware no comprobados.';
   return null;
 }
 
@@ -5431,7 +5461,7 @@ function genShowBrief(s, type, command){
     if(command === 'show ip sla configuration') return `${prompt} ${header}IP SLA operation 1<br>Type: icmp-echo · Target: 8.8.8.8 · Frequency: 30 seconds<br>Track 1 state: <span class="ios-up">Up</span>`;
     if(command === 'show bfd neighbors') return `${prompt} ${header}<span class="ios-hdr">OurAddr        NeighAddr      LD/RD  RH/RS  State</span><br>10.100.${n}.1   10.100.${n}.2   4097/4097 Up     <span class="ios-up">Up</span>`;
     if(command === 'show crypto ikev2 sa') return `${prompt} ${header}Tunnel0  ${active}  IKEv2  ESTABLISHED  AES-GCM-256<br>Local WAN: 100.64.${n}.2/10  · NAT-T: Yes  · UDP/4500`;
-    if(command === 'show crypto ipsec sa') return `${prompt} ${header}interface: Tunnel0<br>  protected vrf: (none)<br>  #pkts encaps: 18420, #pkts encrypt: 18420, #pkts decaps: 18192`;
+    if(command === 'show crypto ipsec sa') return `${prompt} ${header}Túneles IPsec: modelo lógico asociado a ${activeLink(s.id)||'sin WAN activa'}<br>SA/encaps/decaps no medidos en dispositivos reales.`;
     if(command === 'show crypto isakmp policy') return `${prompt} ${header}IKEv2 policy 10<br>encryption aes-gcm-256 · integrity sha512 · group 20 · lifetime 86400`;
     if(command === 'show crypto session') return `${prompt} ${header}Interface: Tunnel0<br>Session status: <span class="ios-up">UP-ACTIVE</span><br>IKEv2 SA: ESTABLISHED · IPsec: UP`;
     if(command === 'show processes cpu') return `${prompt} ${header}CPU utilization for five seconds: 18%/2%; one minute: 16%; five minutes: 14%`;
