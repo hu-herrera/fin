@@ -5455,9 +5455,13 @@ function genShowBrief(s, type, command){
     ];
     if(command.includes('interfaces description')) return `${prompt}> ${header}<span class="ios-hdr">Interface              Status  Protocol  Description</span><br>${rows.map(r=>r.replace(/  .*?  YES NVRAM  /,'  <span class="ios-up">up</span>      <span class="ios-up">up</span>       ')).join('<br>')}`;
     if(command.includes('counters errors')) return `${prompt} ${header}<span class="ios-hdr">Interface              Align  FCS  Xmit  Rcv  Giants</span><br>Gi0/0/0                0      0    0     0    0<br>Gi0/0/2                0      0    0     0    0`;
-    if(command === 'show ip route connected') return `${prompt} ${header}<span class="ios-hdr">Connected routes</span><br>C    10.70.${n}.0/25 is directly connected, Gi0/0/2.10<br>C    10.70.${n}.128/27 is directly connected, Gi0/0/2.20<br>C    10.70.${n}.160/28 is directly connected, Gi0/0/2.30`;
-    if(command === 'show ip route static') return `${prompt} ${header}<span class="ios-hdr">Static routes</span><br>S*   0.0.0.0/0 [1/0] via ${active}<br>S    10.100.0.0/16 [10/0] via Tunnel0`;
-    if(command === 'show ip route ospf') return `${prompt} ${header}O    10.200.0.0/16 [110/20] via 10.100.${n}.2, Tunnel0`;
+    if(['show ip route connected','show ip route static','show ip route ospf'].includes(command)) {
+      const routeLines = genRouterRoutes(s).replace(/<br\s*\/?\s*>/gi, '\n').split('\n');
+      const prefix = command === 'show ip route connected' ? /^(?:C|L)\s/ :
+        command === 'show ip route static' ? /^S\*?\s/ : /^O(?:\s|\*)/;
+      const matching = routeLines.filter(line => prefix.test(line.trim()));
+      return `${prompt} ${header}${matching.length ? matching.join('<br>') : 'No matching routes installed'}`;
+    }
     if(command === 'show ip ospf') return `${prompt} ${header}Routing Process "ospf 1" with ID 10.70.${n}.254<br>Area 0, SPF runs 12, interfaces in area: 2<br>Reference bandwidth unit is 100 mbps`;
     if(command === 'show ip ospf neighbor') return `${prompt} ${header}<span class="ios-hdr">Neighbor ID       Pri   State       Dead Time   Address       Interface</span><br>10.70.0.1          1     FULL/ -     00:00:34    10.70.0.1     Tunnel0`;
     if(command === 'show ip ospf interface brief') return `${prompt} ${header}<span class="ios-hdr">Interface        PID   Area  IP Address/Mask       Cost  State</span><br>Tunnel0          1     0     10.100.${n}.1/30       10    P2P<br>Gi0/0/2.10       1     0     10.70.${n}.1/24         10    DR`;
