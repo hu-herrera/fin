@@ -2887,6 +2887,8 @@ function sc_e3(){
 function sc_e4(){
   if(needDespues()) return;
   PRIORITY.forEach(k=>{ if(ST.links['s19'][k]!=='inactivo') ST.links['s19'][k]='caido'; });
+  if(ST.failback['s19']) ST.failback['s19'].pending=false;
+  recompute('s19');
   ST.evCount++;
   addLog('E4: Caída total S19 Coyhaique — Los 4 enlaces caídos — SIN SERVICIO','alert');
   _refresh(); selectSede('s19');
