@@ -2851,6 +2851,7 @@ function sc_dropLink(lk, silent){
     if(ST.links[s.id][lk]==='inactivo') return;
     const prev=activeLink(s.id);
     ST.links[s.id][lk]='caido';
+    if(lk === 'starlink' && ST.failback[s.id]) ST.failback[s.id].pending = false;
     recompute(s.id);
     if(activeLink(s.id)!==prev) sw++;
   });
@@ -2864,7 +2865,7 @@ function sc_e1(){
   recompute('s08');
   const al=activeLink('s08');
   ST.evCount++;
-  addLog(`E1: Falla Starlink S08 Antofagasta — Failover a ${LK_NAME[al]||'— SIN SERVICIO'} en <1s`,'ok');
+  addLog(`E1: Falla Starlink S08 Antofagasta — Failover a ${LK_NAME[al]||'— SIN SERVICIO'} en tiempo acelerado de simulación`,'ok');
   _refresh(); selectSede('s08');
 }
 function sc_e2(){
@@ -2897,9 +2898,9 @@ function sc_e5(){
 }
 function sc_e6(){
   if(needDespues()) return;
-  SEDES.forEach(s=>{ ST.links[s.id].starlink='caido'; ST.links[s.id].kuiper='caido'; recompute(s.id); });
+  SEDES.forEach(s=>{ ST.links[s.id].starlink='caido'; ST.links[s.id].kuiper='caido'; if(ST.failback[s.id]) ST.failback[s.id].pending=false; recompute(s.id); });
   ST.evCount++;
-  addLog('E6: Starlink+Amazon Leo Kuiper caídos — Todas las sedes operan por 5G Entel / 4G GTD','warn');
+  addLog('E6: Starlink+Amazon Leo Kuiper caídos — se intenta respaldo 5G Entel / 4G GTD según disponibilidad simulada','warn');
   _refresh();
 }
 function sc_e7(){
@@ -2927,6 +2928,7 @@ function runFailbackCountdown(){
   pending.forEach(([id, state])=>{
     if(now - state.startedAt >= state.durationMs){
       state.pending = false;
+      if(ST.links[id].starlink !== 'recuperando') return;
       ST.links[id].starlink = 'standby';
       recompute(id);
       addLog(`[FAILBACK] ${SEDES.find(s=>s.id===id)?.code || id}: retorno a Starlink tras 5 segundos de estabilidad simulada`,'ok');
