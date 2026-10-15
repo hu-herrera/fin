@@ -5273,10 +5273,11 @@ function genRouterRoutes(s){
   const available = PRIORITY.filter(type =>
     !['caido','inactivo','recuperando'].includes(ST.links[s.id]?.[type]) &&
     !isWanInterfaceAdminDown(s.id, type));
-  const wanRows = available.map(type => {
-    const preference = { starlink: 1, kuiper: 10, g5: 20, g4: 30 }[type];
-    return `${type === active ? 'S*' : 'S '} 0.0.0.0/0 [${preference}/0] via ${wan[type].nextHop}, ${routerWanInterface(type)}`;
-  });
+  // IOS XE muestra en la RIB la ruta elegida; las rutas de respaldo
+  // permanecen configuradas pero no instaladas simultáneamente.
+  const wanRows = active && available.includes(active)
+    ? [`S* 0.0.0.0/0 [1/0] via ${wan[active].nextHop}, ${routerWanInterface(active)}`]
+    : [];
   const interfaces = [
     { name: 'GigabitEthernet0/0/0.10', network: `10.70.${n}.0/26`, address: `10.70.${n}.1/32` },
     { name: 'GigabitEthernet0/0/0.20', network: `10.70.${n}.32/27`, address: `10.70.${n}.33/32` },
@@ -5293,7 +5294,7 @@ function genRouterRoutes(s){
   const tunnelRoutes = available
     .filter(type => !isDeviceInterfaceAdminDown(s.id, 'router', wan[type].tunnel))
     .flatMap(type => [
-      `C 172.16.${n}.${wan[type].local}/30 is directly connected, ${wan[type].tunnel}`,
+      `C 172.16.${n}.${wan[type].local - 1}/30 is directly connected, ${wan[type].tunnel}`,
       `L 172.16.${n}.${wan[type].local}/32 is directly connected, ${wan[type].tunnel}`,
     ]);
   const activeTunnel = active && !isDeviceInterfaceAdminDown(s.id, 'router', wan[active].tunnel)
