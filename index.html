@@ -2490,10 +2490,10 @@ function renderDetail(id){
   const panel = document.getElementById('detail-panel');
   const n = s.num;
   const vlans=[
-    {id:10,name:'Datos',    net:`10.70.${n}.0/24`,   gw:`10.70.${n}.1`},
-    {id:20,name:'VoIP',     net:`10.70.${n}.32/27`,  gw:`10.70.${n}.33`},
-    {id:30,name:'Gestión',  net:`10.70.${n}.64/28`,  gw:`10.70.${n}.65`},
-    {id:40,name:'Invitados',net:`10.70.${n}.80/28`,  gw:`10.70.${n}.81`},
+    {id:10,name:'Datos',    net:`10.70.${n}.0/25`,   gw:`10.70.${n}.1`},
+    {id:20,name:'VoIP',     net:`10.70.${n}.128/27`,  gw:`10.70.${n}.129`},
+    {id:30,name:'Gestión',  net:`10.70.${n}.160/28`,  gw:`10.70.${n}.161`},
+    {id:40,name:'Invitados',net:`10.70.${n}.176/28`,  gw:`10.70.${n}.177`},
   ];
   const esAntes = ST.mode === 'antes';
   let linksHTML='';
@@ -3823,17 +3823,17 @@ function genIfBriefLegacy(s){
 GigabitEthernet0/0/0       dhcp              YES NVRAM  <span class="ios-up">up</span>               <span class="ios-up">up</span>   (MPLS Entel)
 GigabitEthernet0/0/1       dhcp              YES NVRAM  <span class="ios-up">up</span>               <span class="ios-up">up</span>   (MPLS Movistar)
 GigabitEthernet0/1.10      10.70.${n}.1      YES NVRAM  up               up   (VLAN Datos)
-GigabitEthernet0/1.20      10.70.${n}.33     YES NVRAM  up               up   (VLAN VoIP)
-GigabitEthernet0/1.30      10.70.${n}.65     YES NVRAM  up               up   (VLAN Gestión)
-GigabitEthernet0/1.40      10.70.${n}.81     YES NVRAM  up               up   (VLAN Invitados)`;
+GigabitEthernet0/1.20      10.70.${n}.129     YES NVRAM  up               up   (VLAN VoIP)
+GigabitEthernet0/1.30      10.70.${n}.161     YES NVRAM  up               up   (VLAN Gestión)
+GigabitEthernet0/1.40      10.70.${n}.177     YES NVRAM  up               up   (VLAN Invitados)`;
   }
   return `RTR-${s.code}> <span class="ios-cmd">show ip interface brief</span>
 <span class="ios-hdr">Interface                  IP-Address        OK? Method Status           Protocol</span>
 GigabitEthernet0/0/0       dhcp              YES NVRAM  ${mplsSt}   (MPLS Único)
 GigabitEthernet0/1.10      10.70.${n}.1      YES NVRAM  up               up   (VLAN Datos)
-GigabitEthernet0/1.20      10.70.${n}.33     YES NVRAM  up               up   (VLAN VoIP)
-GigabitEthernet0/1.30      10.70.${n}.65     YES NVRAM  up               up   (VLAN Gestión)
-GigabitEthernet0/1.40      10.70.${n}.81     YES NVRAM  up               up   (VLAN Invitados)
+GigabitEthernet0/1.20      10.70.${n}.129     YES NVRAM  up               up   (VLAN VoIP)
+GigabitEthernet0/1.30      10.70.${n}.161     YES NVRAM  up               up   (VLAN Gestión)
+GigabitEthernet0/1.40      10.70.${n}.177     YES NVRAM  up               up   (VLAN Invitados)
 
 <span class="ios-hdr">⚠ PUNTO ÚNICO DE FALLA</span>
 Solo 1 interfaz WAN. Si cae MPLS, no hay ruta alternativa.`;
@@ -4001,9 +4001,9 @@ function genIfBrief(s){
   return `RTR-${s.code}> <span class="ios-cmd">show ip interface brief</span>
 <span class="ios-hdr">Interface                  IP-Address        OK? Method Status           Protocol</span>
 GigabitEthernet0/0/2.10    10.70.${n}.1      YES manual up               up
-GigabitEthernet0/0/2.20    10.70.${n}.33     YES manual up               up
-GigabitEthernet0/0/2.30    10.70.${n}.65     YES manual up               up
-GigabitEthernet0/0/2.40    10.70.${n}.81     YES manual up               up
+GigabitEthernet0/0/2.20    10.70.${n}.129     YES manual up               up
+GigabitEthernet0/0/2.30    10.70.${n}.161     YES manual up               up
+GigabitEthernet0/0/2.40    10.70.${n}.177     YES manual up               up
 GigabitEthernet0/0/1       dhcp              YES DHCP   ${slSt}
 GigabitEthernet0/0/2       dhcp              YES DHCP   ${kuiperSt}
 Cellular0/1/0 (Entel 5G)   dhcp              YES DHCP   ${g5St}
@@ -4017,9 +4017,9 @@ function genRouterVLAN(s){
 
 <span class="ios-hdr">Subinterface         Encap  VLAN   IP-Address        Descripción</span>
 Gig0/0/2.10          dot1Q  10     10.70.${n}.1/24   DATOS
-Gig0/0/2.20          dot1Q  20     10.70.${n}.33/27  VOIP
-Gig0/0/2.30          dot1Q  30     10.70.${n}.65/28  GESTION
-Gig0/0/2.40          dot1Q  40     10.70.${n}.81/28  INVITADOS`;
+Gig0/0/2.20          dot1Q  20     10.70.${n}.129/27  VOIP
+Gig0/0/2.30          dot1Q  30     10.70.${n}.161/28  GESTION
+Gig0/0/2.40          dot1Q  40     10.70.${n}.177/28  INVITADOS`;
 }
 
 function genWANFailover(s){
@@ -4056,9 +4056,9 @@ function genACLs(s){
   return `RTR-${s.code}> <span class="ios-cmd">show ip access-lists</span>
 
 Extended IP access list ACL-DATOS-IN
-    10 permit ip 10.70.${n}.0 0.0.0.255 10.70.${n}.32 0.0.0.31 (VoIP)
-    20 deny   ip 10.70.${n}.0 0.0.0.255 10.70.${n}.64 0.0.0.15 (Gestión)
-    30 deny   ip 10.70.${n}.0 0.0.0.255 10.70.${n}.80 0.0.0.15 (Invitados)`;
+    10 permit ip 10.70.${n}.0 0.0.0.127 10.70.${n}.128 0.0.0.31 (VoIP)
+    20 deny   ip 10.70.${n}.0 0.0.0.127 10.70.${n}.160 0.0.0.15 (Gestión)
+    30 deny   ip 10.70.${n}.0 0.0.0.127 10.70.${n}.176 0.0.0.15 (Invitados)`;
 }
 
 function genFWOverview(s){
@@ -4348,11 +4348,11 @@ function genRouterRunningConfig(s, startup=false){
   });
   lines.push('!','router ospf 1',` router-id ${id.loopback}`,' log-adjacency-changes detail',' passive-interface default',
     ' no passive-interface Tunnel100',' no passive-interface Tunnel200',' no passive-interface Tunnel300',' no passive-interface Tunnel400',
-    ` network 10.70.${n}.0 0.0.0.255 area 0`,` network 10.70.${n}.32 0.0.0.31 area 0`,` network ${id.loopback} 0.0.0.0 area 0`,' bfd all-interfaces',
+    ` network 10.70.${n}.0 0.0.0.127 area 0`,` network 10.70.${n}.128 0.0.0.31 area 0`,` network ${id.loopback} 0.0.0.0 area 0`,' bfd all-interfaces',
     '!','ip local pool VPN-POOL 10.70.250.1 10.70.250.100','ip forward-protocol nd','no ip http server','no ip http secure-server',
     'ip nat inside source list NAT-ACL interface GigabitEthernet0/0/1 overload','ip nat inside source list NAT-ACL interface GigabitEthernet0/0/2 overload',
     'ip nat inside source list NAT-ACL interface Cellular0/1/0 overload','ip nat inside source list NAT-ACL interface Cellular0/1/1 overload',
-    '!','ip access-list standard NAT-ACL',` permit 10.70.${n}.0 0.0.0.255`,` permit 192.168.${n}.0 0.0.0.255`,
+    '!','ip access-list standard NAT-ACL',` permit 10.70.${n}.0 0.0.0.127`,` permit 192.168.${n}.0 0.0.0.255`,
     'ip access-list extended MGMT-ACL',' permit tcp 10.70.0.0 0.0.0.255 any eq 22',' deny ip any any log',
     'ip access-list extended GUEST-ACL',' deny ip 192.168.0.0 0.0.255.255 10.70.0.0 0.0.255.255',' permit tcp any any eq 80',' permit tcp any any eq 443',' deny ip any any log',
     'ip sla 1',' icmp-echo 8.8.8.8 source-interface Loopback0',' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 1 life forever start-time now',
@@ -4463,7 +4463,7 @@ function handleTermCmd(ev,sedeId,pcIdx){
         ' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
         'interface GigabitEthernet1/0/45',' description Enlace entre switches (sin StackWise Virtual)',' switchport mode trunk',
         'interface GigabitEthernet2/0/45',' description Enlace entre switches (sin StackWise Virtual)',' switchport mode trunk',
-        `interface Vlan30`,` ip address 10.70.${n}.66 255.255.255.240`,` ip default-gateway 10.70.${n}.65`,
+        `interface Vlan30`,` ip address 10.70.${n}.66 255.255.255.240`,` ip default-gateway 10.70.${n}.161`,
         'ip dhcp snooping','ip dhcp snooping vlan 10,20,30','ip dhcp snooping database flash:dhcp_snoop.db',
         'ip arp inspection vlan 10,20,30','mka policy MKA-UPLINK',' macsec-cipher-suite gcm-aes-256',' key-server priority 100',
         'snmp-server community MONITOR-RO RO','snmp-server group MONITOR-GROUP v3 priv',
@@ -4504,11 +4504,11 @@ function handleTermCmd(ev,sedeId,pcIdx){
     function genFWCommand(s, command){
       const n=s.num, p=`PA-${s.code}>`, head=()=>`${p} <span class="ios-cmd">${command}</span><br><br>`;
       const interfaceLines=Array.from({length:18},(_,i)=>`ethernet1/${i+1} ${i<4?' '+(i===1?`10.70.${n}.82/28`:'DHCP'):'unknown'} ${i<4?'1000/full/up':'unknown/unknown/down'} 00:1b:17:8a:2b:${String(0x10+i).padStart(2,'0')}`);
-      if(command==='show system info') return head()+[`hostname: PA-${s.code}`,`ip-address: 10.70.${n}.82`,`public-ip-address: 200.27.${n}.82`,'netmask: 255.255.255.240',`default-gateway: 10.70.${n}.81`,'time: Wed Sep 15 14:23:51 2026',`uptime: ${UPTIME}`,'family: 3000','model: PA-1410',`serial: 012345${String(n).padStart(4,'0')}`,'sw-version: 11.1.2','app-version: 8856-8477','av-version: 4487-5241','wildfire-version: 887456-891234','threat-version: 8856-8477','url-db: Palo_Alto_Networks_URL_List_2024.09.15','url-filtering-version: 20240915.001','logdb-version: 11.1.4','global-protect-client-package-version: 6.2.1','vpn-disable-mode: off','operational-mode: normal','device-certificate-status: Valid'].join('<br>');
+      if(command==='show system info') return head()+[`hostname: PA-${s.code}`,`ip-address: 10.70.${n}.82`,`public-ip-address: 200.27.${n}.82`,'netmask: 255.255.255.240',`default-gateway: 10.70.${n}.177`,'time: Wed Sep 15 14:23:51 2026',`uptime: ${UPTIME}`,'family: 3000','model: PA-1410',`serial: 012345${String(n).padStart(4,'0')}`,'sw-version: 11.1.2','app-version: 8856-8477','av-version: 4487-5241','wildfire-version: 887456-891234','threat-version: 8856-8477','url-db: Palo_Alto_Networks_URL_List_2024.09.15','url-filtering-version: 20240915.001','logdb-version: 11.1.4','global-protect-client-package-version: 6.2.1','vpn-disable-mode: off','operational-mode: normal','device-certificate-status: Valid'].join('<br>');
       if(command==='show interface all') return head()+['total configured hardware interfaces: 22','name id speed/duplex/state mac address',...interfaceLines,'tunnel 0 N/A/up 00:1b:17:8a:2b:99','vlan 1 N/A/up 00:1b:17:8a:2b:98','loopback 1 N/A/up 00:1b:17:8a:2b:97'].join('<br>');
       if(command==='show routing route') return head()+['flags: A:active, ?:loose, C:connect, H:host, S:static, ~:internal, R:rip, T:ospf, I:isis, B:bgp, O:other','total routes shown: 18','virtual-router: default','destination nexthop metric flags age interface',
-        `10.70.${n}.0/24 10.70.${n}.81 0 A S 1234d ethernet1/2`,`10.70.0.0/24 10.70.${n}.81 10 A S 1234d ethernet1/2`,`10.70.15.0/24 10.70.${n}.81 10 A S 1234d ethernet1/2`,
-        `0.0.0.0/0 10.70.${n}.81 10 A S 1234d ethernet1/2`,`10.70.100.${n+10}/32 10.70.${n}.81 0 A S 1234d ethernet1/2`,`192.168.${n}.0/24 192.168.${n}.1 0 A C 1234d ethernet1/4`].join('<br>');
+        `10.70.${n}.0/25 10.70.${n}.177 0 A S 1234d ethernet1/2`,`10.70.0.0/24 10.70.${n}.177 10 A S 1234d ethernet1/2`,`10.70.15.0/24 10.70.${n}.177 10 A S 1234d ethernet1/2`,
+        `0.0.0.0/0 10.70.${n}.177 10 A S 1234d ethernet1/2`,`10.70.100.${n+10}/32 10.70.${n}.177 0 A S 1234d ethernet1/2`,`192.168.${n}.0/24 192.168.${n}.1 0 A C 1234d ethernet1/4`].join('<br>');
       if(command==='show session all' || command==='show session info') return head()+['Total active sessions: 847','ID Application State Type App From To','12478920 ssl ACTIVE FLOW web-browsing 10.70.'+n+'.15:54821 104.18.32.5:443','12478921 dns ACTIVE FLOW dns 10.70.'+n+'.22:33012 8.8.8.8:53','12478922 core-financial ACTIVE FLOW unknown-tcp 10.70.'+n+'.15:49932 10.70.0.20:8820','12478923 sip ACTIVE FLOW sip 10.70.'+n+'.33:5060 10.70.0.5:5060','12478924 rtp ACTIVE FLOW rtp 10.70.'+n+'.33:16384 10.70.0.5:16384'].join('<br>');
       if(command==='show zone') return head()+['zone type interfaces','trust zone ethernet1/2','untrust zone tunnel.100, tunnel.200, tunnel.300, tunnel.400','guest zone ethernet1/4','management zone ethernet1/3','dmz zone ethernet1/5'].join('<br>');
       if(command==='show vpn ike-sa') return head()+['IKEv2 SAs:','Gateway Name Peer Role State Local IP',`GW-CM-Starlink 200.27.1.10 Init ESTABLISHED 100.64.${n}.2`,`GW-CM-Kuiper 200.27.1.11 Init ESTABLISHED 100.64.${n}.6`,`GW-CM-5G 200.27.1.12 Init ESTABLISHED 100.85.${n}.2`,`GW-CM-4G 200.27.1.13 Init ESTABLISHED 100.92.${n}.2`].join('<br>');
@@ -4518,7 +4518,7 @@ function handleTermCmd(ev,sedeId,pcIdx){
       if(command==='show log traffic') return head()+Array.from({length:10},(_,i)=>`2026-09-15 14:23:${String(48-i*2).padStart(2,'0')} 10.70.${n}.${15+i} ${i%2?'8.8.8.8':'104.18.32.5'} ${i%3?'dns':'web-browsing'} allow`).join('<br>');
       if(command==='show log threat') return head()+['2026-09-15 13:45:22 10.70.'+n+'.55 45.33.32.156 vulnerability BLOCK TCP','2026-09-15 12:18:34 10.70.'+n+'.12 185.220.101.4 spyware BLOCK HTTP','2026-09-15 11:52:11 10.70.'+n+'.30 91.219.236.2 url-filtering BLOCK HTTPS','2026-09-15 10:14:56 10.70.'+n+'.18 198.98.51.189 virus BLOCK SMTP','2026-09-15 09:33:42 10.70.'+n+'.21 103.75.190.11 wildfire BLOCK HTTPS'].join('<br>');
       if(command==='show running-config' || command==='show startup-config'){
-        const lines=['set deviceconfig system hostname PA-'+s.code,`set deviceconfig system ip-address 10.70.${n}.82`,`set deviceconfig system netmask 255.255.255.240`,`set deviceconfig system default-gateway 10.70.${n}.81`,'set deviceconfig system dns-setting servers primary 10.70.0.10','set deviceconfig system ntp-servers primary-ntp-server 10.70.0.1','set deviceconfig system timezone America/Santiago'];
+        const lines=['set deviceconfig system hostname PA-'+s.code,`set deviceconfig system ip-address 10.70.${n}.82`,`set deviceconfig system netmask 255.255.255.240`,`set deviceconfig system default-gateway 10.70.${n}.177`,'set deviceconfig system dns-setting servers primary 10.70.0.10','set deviceconfig system ntp-servers primary-ntp-server 10.70.0.1','set deviceconfig system timezone America/Santiago'];
         for(let i=1;i<=4;i++) lines.push(`set network interface ethernet ethernet1/${i} layer3 ip 10.70.${n}.${80+i}/28`,`set network interface ethernet ethernet1/${i} comment "WAN/LAN interface ${i}"`);
         ['Allow-VoIP-Out','Allow-Web-Trust','Allow-DNS-Trust','Allow-Core-Financial','Deny-Trust-to-Manage','Allow-Manage-To-All','Allow-Guest-Internet','Deny-Guest-Internal','Default-Deny-All'].forEach((r,i)=>lines.push(`set rulebase security rules ${r} from ${i<5?'trust':'guest'} to ${i===4?'management':'untrust'} action ${r.startsWith('Deny')||r==='Default-Deny-All'?'deny':'allow'}`));
         ['virus','spyware','vulnerability','url-filtering','file-blocking'].forEach(x=>lines.push(`set profiles ${x} default-${x} action alert`));
@@ -4544,9 +4544,9 @@ function handleTermCmd(ev,sedeId,pcIdx){
         `S* 0.0.0.0/0 [1/0] via ${id.wanStar}, GigabitEthernet0/0/1`,
         `[10/0] via ${id.wanKuiper}, GigabitEthernet0/0/2`,`[20/0] via ${id.wan5g}, Cellular0/1/0`,`[30/0] via ${id.wan4g}, Cellular0/1/1`,
         '10.0.0.0/8 is variably subnetted, 12 subnets, 4 masks',
-        `C 10.70.${n}.0/24 is directly connected, GigabitEthernet0/0/0.10`,`L 10.70.${n}.1/32 is directly connected, GigabitEthernet0/0/0.10`,
-        `C 10.70.${n}.32/27 is directly connected, GigabitEthernet0/0/0.20`,`L 10.70.${n}.33/32 is directly connected, GigabitEthernet0/0/0.20`,
-        `C 10.70.${n}.64/28 is directly connected, GigabitEthernet0/0/0.30`,`L 10.70.${n}.65/32 is directly connected, GigabitEthernet0/0/0.30`,
+        `C 10.70.${n}.0/25 is directly connected, GigabitEthernet0/0/0.10`,`L 10.70.${n}.1/32 is directly connected, GigabitEthernet0/0/0.10`,
+        `C 10.70.${n}.128/27 is directly connected, GigabitEthernet0/0/0.20`,`L 10.70.${n}.129/32 is directly connected, GigabitEthernet0/0/0.20`,
+        `C 10.70.${n}.160/28 is directly connected, GigabitEthernet0/0/0.30`,`L 10.70.${n}.161/32 is directly connected, GigabitEthernet0/0/0.30`,
         `O 10.70.0.0/24 [110/20] via 172.16.${n}.2, 00:08:12, Tunnel100`,`O IA 10.70.15.0/24 [110/30] via 172.16.${n}.2, 00:08:12, Tunnel100`,
         `L ${id.loopback}/32 is directly connected, Loopback0`,'172.16.0.0/16 is variably subnetted, 8 subnets, 2 masks',
         `C 172.16.${n}.0/30 is directly connected, Tunnel100`,`L 172.16.${n}.1/32 is directly connected, Tunnel100`,
@@ -4661,7 +4661,7 @@ function genSwitchRunningConfig(s, swN=1){
     ...accessPortConfig,
     'interface GigabitEthernet1/0/33',' description AP-WiFi-1 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
     'interface GigabitEthernet1/0/34',' description AP-WiFi-2 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
-    'interface GigabitEthernet1/0/45',' switchport mode trunk','interface GigabitEthernet2/0/45',' switchport mode trunk',`interface Vlan30`,` ip address 10.70.${n}.66 255.255.255.240`,` ip default-gateway 10.70.${n}.65`,
+    'interface GigabitEthernet1/0/45',' switchport mode trunk','interface GigabitEthernet2/0/45',' switchport mode trunk',`interface Vlan30`,` ip address 10.70.${n}.66 255.255.255.240`,` ip default-gateway 10.70.${n}.161`,
     'ip dhcp snooping','ip dhcp snooping vlan 10,20,30','ip dhcp snooping database flash:dhcp_snoop.db','ip arp inspection vlan 10,20,30',
     'mka policy MKA-UPLINK',' macsec-cipher-suite gcm-aes-256',' key-server priority 100','snmp-server community MONITOR-RO RO','snmp-server group MONITOR-GROUP v3 priv',
     'snmp-server user monitor-ro MONITOR-GROUP v3 auth sha LAB-ONLY-SNMP-AUTH priv aes 128 LAB-ONLY-SNMP-PRIV','snmp-server host 10.70.0.101 version 3 priv monitor-ro',
@@ -4714,7 +4714,7 @@ function genSwitchDetail(s,type,command){
 function genFWCommand(s,command){
   const n=s.num, p=`PA-${s.code}>`, h=`${p} <span class="ios-cmd">${command}</span><br><br>`;
   if(command==='show running-config'||command==='show startup-config'){
-    const lines=[`set deviceconfig system hostname PA-${s.code}`,`set deviceconfig system ip-address 10.70.${n}.82`,`set deviceconfig system netmask 255.255.255.240`,`set deviceconfig system default-gateway 10.70.${n}.81`,'set deviceconfig system dns-setting servers primary 10.70.0.10','set deviceconfig system ntp-servers primary-ntp-server 10.70.0.1','set deviceconfig system timezone America/Santiago','set network ike gateway GW-CM-01 protocol ikev2','set network ike gateway GW-CM-01 protocol ikev2 nat-traversal enable','set network ike crypto-profiles ike-crypto-profiles IKEv2-PROFILE hash sha256','set network ike crypto-profiles ike-crypto-profiles IKEv2-PROFILE encryption aes-256-gcm','set network ike crypto-profiles ipsec-crypto-profiles IPSEC-PROFILE esp aes-256-gcm'];
+    const lines=[`set deviceconfig system hostname PA-${s.code}`,`set deviceconfig system ip-address 10.70.${n}.82`,`set deviceconfig system netmask 255.255.255.240`,`set deviceconfig system default-gateway 10.70.${n}.177`,'set deviceconfig system dns-setting servers primary 10.70.0.10','set deviceconfig system ntp-servers primary-ntp-server 10.70.0.1','set deviceconfig system timezone America/Santiago','set network ike gateway GW-CM-01 protocol ikev2','set network ike gateway GW-CM-01 protocol ikev2 nat-traversal enable','set network ike crypto-profiles ike-crypto-profiles IKEv2-PROFILE hash sha256','set network ike crypto-profiles ike-crypto-profiles IKEv2-PROFILE encryption aes-256-gcm','set network ike crypto-profiles ipsec-crypto-profiles IPSEC-PROFILE esp aes-256-gcm'];
     for(let i=1;i<=4;i++) lines.push(`set network interface ethernet ethernet1/${i} layer3 ip 10.70.${n}.${80+i}/28`,`set network interface ethernet ethernet1/${i} comment "Interface ${i}"`);
     ['Allow-VoIP-Out','Allow-Web-Trust','Allow-DNS-Trust','Allow-Core-Financial','Deny-Trust-to-Manage','Allow-Manage-To-All','Allow-Guest-Internet','Deny-Guest-Internal','Default-Deny-All'].forEach((r,i)=>lines.push(`set rulebase security rules ${r} from ${i<5?'trust':'guest'} to ${i===4?'management':'untrust'} action ${r.startsWith('Deny')||r==='Default-Deny-All'?'deny':'allow'}`));
     ['virus','spyware','vulnerability','url-filtering','file-blocking'].forEach(x=>lines.push(`set profiles ${x} default-${x} action alert`));
@@ -4724,7 +4724,7 @@ function genFWCommand(s,command){
   }
   if(command==='show system info') return h+[`hostname: PA-${s.code}`,`ip-address: 10.70.${n}.82`,'model: PA-1410','sw-version: 11.1.2',`uptime: ${UPTIME}`,'operational-mode: normal','device-certificate-status: Valid'].join('<br>');
   if(command==='show session all'||command==='show session info') return h+['Total active sessions: 847','12478920 ssl ACTIVE FLOW web-browsing 10.70.'+n+'.15:54821 104.18.32.5:443','12478921 dns ACTIVE FLOW dns 10.70.'+n+'.22:33012 8.8.8.8:53','12478922 core-financial ACTIVE FLOW unknown-tcp 10.70.'+n+'.15:49932 10.70.0.20:8820','12478923 sip ACTIVE FLOW sip 10.70.'+n+'.33:5060 10.70.0.5:5060','12478924 rtp ACTIVE FLOW rtp 10.70.'+n+'.33:16384 10.70.0.5:16384'].join('<br>');
-  if(command==='show routing route') return h+['flags: A:active, C:connect, S:static','total routes shown: 18','virtual-router: default',`10.70.${n}.0/24 10.70.${n}.81 0 A S 1234d ethernet1/2`,'0.0.0.0/0 10.70.'+n+'.81 10 A S 1234d ethernet1/2'].join('<br>');
+  if(command==='show routing route') return h+['flags: A:active, C:connect, S:static','total routes shown: 18','virtual-router: default',`10.70.${n}.0/25 10.70.${n}.177 0 A S 1234d ethernet1/2`,'0.0.0.0/0 10.70.'+n+'.81 10 A S 1234d ethernet1/2'].join('<br>');
   if(command==='show zone') return h+['zone type interfaces','trust zone ethernet1/2','untrust zone tunnel.100, tunnel.200, tunnel.300, tunnel.400','guest zone ethernet1/4','management zone ethernet1/3','dmz zone ethernet1/5'].join('<br>');
   if(command==='show vpn ike-sa') return h+['IKEv2 SAs:','GW-CM-Starlink 200.27.1.10 Init ESTABLISHED 100.64.'+n+'.2','GW-CM-Kuiper 200.27.1.11 Init ESTABLISHED 100.64.'+n+'.6','GW-CM-5G 200.27.1.12 Init ESTABLISHED 100.85.'+n+'.2','GW-CM-4G 200.27.1.13 Init ESTABLISHED 100.92.'+n+'.2'].join('<br>');
   if(command==='show vpn ipsec-sa') return h+['IPSec SAs:','GW-CM-Starlink Tunnel100 ACTIVE SPI 0x4a2b3c4d/0x5e6f7081','GW-CM-Kuiper Tunnel200 ACTIVE SPI 0x8a2b3c4e/0x9e6f7082','GW-CM-5G Tunnel300 ACTIVE SPI 0xca2b3c4f/0xde6f7083','GW-CM-4G Tunnel400 ACTIVE SPI 0xea2b3c50/0xfe6f7084'].join('<br>');
@@ -4738,7 +4738,7 @@ function genFWCommand(s,command){
 function genRouterDetail(s,command){
   const n=s.num, p=`RTR-${s.code}>`, h=cmd=>`${p} <span class="ios-cmd">${cmd}</span><br><br>`;
   const id=routerIdentity(s);
-  if(command==='show ip route') return h(command)+['Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP','D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area','N1/N2 - OSPF NSSA external, E1/E2 - OSPF external','i - IS-IS, su - IS-IS summary, L1/L2 - IS-IS level','ia - IS-IS inter area, * - candidate default, U - per-user static route','o - ODR, P - periodic downloaded static route, H - NHRP, l - LISP','a - application route, - replicated route, % next hop override, p PfR',`Gateway of last resort is ${id.wanStar} to network 0.0.0.0`,`S* 0.0.0.0/0 [1/0] via ${id.wanStar}, GigabitEthernet0/0/1`,`[10/0] via ${id.wanKuiper}, GigabitEthernet0/0/2`,`[20/0] via ${id.wan5g}, Cellular0/1/0`,`[30/0] via ${id.wan4g}, Cellular0/1/1`,`C 10.70.${n}.0/24 is directly connected, Gi0/0/0.10`,`L 10.70.${n}.1/32 is directly connected, Gi0/0/0.10`,`C 10.70.${n}.32/27 is directly connected, Gi0/0/0.20`,`L 10.70.${n}.33/32 is directly connected, Gi0/0/0.20`,`C 10.70.${n}.64/28 is directly connected, Gi0/0/0.30`,`L 10.70.${n}.65/32 is directly connected, Gi0/0/0.30`,`O 10.70.0.0/24 [110/20] via 172.16.${n}.2, 00:08:12, Tunnel100`,`O IA 10.70.15.0/24 [110/30] via 172.16.${n}.2, 00:08:12, Tunnel100`,`L ${id.loopback}/32 is directly connected, Loopback0`,`C 172.16.${n}.0/30 is directly connected, Tunnel100`,`L 172.16.${n}.1/32 is directly connected, Tunnel100`,`C 172.16.${n}.4/30 is directly connected, Tunnel200`,`L 172.16.${n}.5/32 is directly connected, Tunnel200`,`C 172.16.${n}.8/30 is directly connected, Tunnel300`,`C 172.16.${n}.12/30 is directly connected, Tunnel400`,`C 192.168.${n}.0/24 is directly connected, Gi0/0/0.40`,`L 192.168.${n}.1/32 is directly connected, Gi0/0/0.40`].join('<br>');
+  if(command==='show ip route') return h(command)+['Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP','D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area','N1/N2 - OSPF NSSA external, E1/E2 - OSPF external','i - IS-IS, su - IS-IS summary, L1/L2 - IS-IS level','ia - IS-IS inter area, * - candidate default, U - per-user static route','o - ODR, P - periodic downloaded static route, H - NHRP, l - LISP','a - application route, - replicated route, % next hop override, p PfR',`Gateway of last resort is ${id.wanStar} to network 0.0.0.0`,`S* 0.0.0.0/0 [1/0] via ${id.wanStar}, GigabitEthernet0/0/1`,`[10/0] via ${id.wanKuiper}, GigabitEthernet0/0/2`,`[20/0] via ${id.wan5g}, Cellular0/1/0`,`[30/0] via ${id.wan4g}, Cellular0/1/1`,`C 10.70.${n}.0/25 is directly connected, Gi0/0/0.10`,`L 10.70.${n}.1/32 is directly connected, Gi0/0/0.10`,`C 10.70.${n}.128/27 is directly connected, Gi0/0/0.20`,`L 10.70.${n}.129/32 is directly connected, Gi0/0/0.20`,`C 10.70.${n}.160/28 is directly connected, Gi0/0/0.30`,`L 10.70.${n}.161/32 is directly connected, Gi0/0/0.30`,`O 10.70.0.0/24 [110/20] via 172.16.${n}.2, 00:08:12, Tunnel100`,`O IA 10.70.15.0/24 [110/30] via 172.16.${n}.2, 00:08:12, Tunnel100`,`L ${id.loopback}/32 is directly connected, Loopback0`,`C 172.16.${n}.0/30 is directly connected, Tunnel100`,`L 172.16.${n}.1/32 is directly connected, Tunnel100`,`C 172.16.${n}.4/30 is directly connected, Tunnel200`,`L 172.16.${n}.5/32 is directly connected, Tunnel200`,`C 172.16.${n}.8/30 is directly connected, Tunnel300`,`C 172.16.${n}.12/30 is directly connected, Tunnel400`,`C 192.168.${n}.0/24 is directly connected, Gi0/0/0.40`,`L 192.168.${n}.1/32 is directly connected, Gi0/0/0.40`].join('<br>');
   if(command==='show crypto ikev2 sa') return h(command)+['IPv4 Crypto IKEv2 SA','Tunnel-id Local Remote fvrf/ivrf Status',`1 ${id.wanStar}/4500 200.27.1.10/4500 none/none READY`,'Encr: AES-GCM, Prf: SHA256, Hash: SHA256, DH Grp:14, Auth sign: PSK','Auth verify: PSK','Life/Active Time: 86400/3821 sec','NAT-T: Yes','DPD: 10s x 3',`2 ${id.wanKuiper}/4500 200.27.1.11/4500 none/none READY`,'Encr: AES-GCM, Prf: SHA256, Hash: SHA256, DH Grp:14, Auth sign: PSK','NAT-T: Yes',`3 ${id.wan5g}/4500 200.27.1.12/4500 none/none READY`,'NAT-T: Yes',`4 ${id.wan4g}/4500 200.27.1.13/4500 none/none READY`,'NAT-T: Yes'].join('<br>');
   if(command==='show track') return h(command)+['Track 1 IP SLA 1 reachability','Reachability is Up','Delay up 300 secs, down 10 secs','Latest operation return code: OK','Latest RTT (millisecs) 27','Track 2 IP SLA 2 reachability','Reachability is Up','Latest RTT (millisecs) 36','Track 3 IP SLA 3 reachability','Reachability is Up','Latest RTT (millisecs) 18','Track 4 IP SLA 4 reachability','Reachability is Up','Latest RTT (millisecs) 41'].join('<br>');
   if(command==='show bfd neighbors') return h(command)+['IPv4 Sessions','NeighAddr LD/RD RH/RS State Int',`172.16.${n}.2 4098/4097 Up Up Tu100`,`172.16.${n}.6 4099/4098 Up Up Tu200`,`172.16.${n}.10 4100/4099 Up Up Tu300`,`172.16.${n}.14 4101/4100 Up Up Tu400`,'Session State is UP and using echo function with 100 ms interval.'].join('<br>');
@@ -5279,9 +5279,9 @@ function genRouterRoutes(s){
     ? [`S* 0.0.0.0/0 [1/0] via ${wan[active].nextHop}, ${routerWanInterface(active)}`]
     : [];
   const interfaces = [
-    { name: 'GigabitEthernet0/0/0.10', network: `10.70.${n}.0/26`, address: `10.70.${n}.1/32` },
-    { name: 'GigabitEthernet0/0/0.20', network: `10.70.${n}.32/27`, address: `10.70.${n}.33/32` },
-    { name: 'GigabitEthernet0/0/0.30', network: `10.70.${n}.64/28`, address: `10.70.${n}.65/32` },
+    { name: 'GigabitEthernet0/0/0.10', network: `10.70.${n}.0/25`, address: `10.70.${n}.1/32` },
+    { name: 'GigabitEthernet0/0/0.20', network: `10.70.${n}.128/27`, address: `10.70.${n}.129/32` },
+    { name: 'GigabitEthernet0/0/0.30', network: `10.70.${n}.160/28`, address: `10.70.${n}.161/32` },
     { name: 'GigabitEthernet0/0/0.40', network: `192.168.${n}.0/24`, address: `192.168.${n}.1/32` },
   ];
   const lanRoutes = interfaces
@@ -5351,7 +5351,7 @@ interface ${tunnel}
  tunnel protection ipsec profile IPSEC-PROFILE`).join('\n');
   return `${hostname}${startup ? ' startup-config' : ''}> <span class="ios-cmd">show ${startup ? 'startup-config' : 'running-config'}</span><br><br>
 Building configuration...<br>Current configuration : ${startup ? '8734' : '8842'} bytes<br>${startup ? '!! NVRAM config last updated at 14:23:53 CLT Wed Sep 15 2026 by admin' : '!! Last configuration change at 14:23:51 CLT Wed Sep 15 2026 by admin'}<br>
-version 17.9<br>service timestamps debug datetime msec localtime show-timezones<br>service timestamps log datetime msec localtime show-timezone<br>hostname ${hostname}<br>aaa new-model<br>no ip domain lookup<br>ip domain name financierapacifico.cl<br>ip name-server 10.70.0.10<br>crypto ikev2 proposal IKEV2-PROP<br> encryption aes-gcm-256<br> integrity sha256<br> group 14<br>crypto ipsec profile IPSEC-PROFILE<br> set transform-set IPSEC-TS<br>interface Loopback0<br> description Gestion y Router-ID<br> ip address ${loopback} 255.255.255.255<br> ip ospf 1 area 0<br>interface GigabitEthernet0/0/0<br> description Trunk to C9200 Stack<br> no ip address<br> no shutdown<br>interface GigabitEthernet0/0/0.10<br> description VLAN 10 - Datos<br> encapsulation dot1Q 10<br> ip address 10.70.${n}.1 255.255.255.0<br> ip ospf 1 area 0<br>interface GigabitEthernet0/0/0.20<br> description VLAN 20 - VoIP<br> encapsulation dot1Q 20<br> ip address 10.70.${n}.33 255.255.255.224<br> ip ospf 1 area 0<br>${interfaces}<br>router ospf 1<br> router-id ${loopback}<br> log-adjacency-changes detail<br> passive-interface default<br> no passive-interface Tunnel100<br> no passive-interface Tunnel200<br> no passive-interface Tunnel300<br> no passive-interface Tunnel400<br>ip nat inside source list NAT-ACL interface ${active === 'kuiper' ? 'GigabitEthernet0/0/2' : active === 'g5' ? 'Cellular0/1/0' : active === 'g4' ? 'Cellular0/1/1' : 'GigabitEthernet0/0/1'} overload<br>ip access-list standard NAT-ACL<br> permit 10.70.${n}.0 0.0.0.255<br> permit 192.168.${n}.0 0.0.0.255<br>end`;
+version 17.9<br>service timestamps debug datetime msec localtime show-timezones<br>service timestamps log datetime msec localtime show-timezone<br>hostname ${hostname}<br>aaa new-model<br>no ip domain lookup<br>ip domain name financierapacifico.cl<br>ip name-server 10.70.0.10<br>crypto ikev2 proposal IKEV2-PROP<br> encryption aes-gcm-256<br> integrity sha256<br> group 14<br>crypto ipsec profile IPSEC-PROFILE<br> set transform-set IPSEC-TS<br>interface Loopback0<br> description Gestion y Router-ID<br> ip address ${loopback} 255.255.255.255<br> ip ospf 1 area 0<br>interface GigabitEthernet0/0/0<br> description Trunk to C9200 Stack<br> no ip address<br> no shutdown<br>interface GigabitEthernet0/0/0.10<br> description VLAN 10 - Datos<br> encapsulation dot1Q 10<br> ip address 10.70.${n}.1 255.255.255.128<br> ip ospf 1 area 0<br>interface GigabitEthernet0/0/0.20<br> description VLAN 20 - VoIP<br> encapsulation dot1Q 20<br> ip address 10.70.${n}.129 255.255.255.224<br> ip ospf 1 area 0<br>${interfaces}<br>router ospf 1<br> router-id ${loopback}<br> log-adjacency-changes detail<br> passive-interface default<br> no passive-interface Tunnel100<br> no passive-interface Tunnel200<br> no passive-interface Tunnel300<br> no passive-interface Tunnel400<br>ip nat inside source list NAT-ACL interface ${active === 'kuiper' ? 'GigabitEthernet0/0/2' : active === 'g5' ? 'Cellular0/1/0' : active === 'g4' ? 'Cellular0/1/1' : 'GigabitEthernet0/0/1'} overload<br>ip access-list standard NAT-ACL<br> permit 10.70.${n}.0 0.0.0.127<br> permit 192.168.${n}.0 0.0.0.255<br>end`;
 }
 
 function genSwitchRunningConfigSummary(s, swN = 1){
@@ -5366,7 +5366,7 @@ function genFWCommandSummary(s, command){
   const head = `${prompt} <span class="ios-cmd">${command}</span><br><br>`;
   if(command === 'show system info') return `${head}hostname: PA-${s.code}<br>ip-address: 10.70.${n}.82<br>model: PA-1410<br>serial: 012345${String(n).padStart(4,'0')}<br>sw-version: 11.1.2<br>uptime: ${UPTIME}<br>operational-mode: normal`;
   if(command === 'show routing summary') return `${head}virtual-router: default<br>total routes: 18<br>active routes: 18<br>connected: 6  static: 12`;
-  if(command === 'show routing route') return `${head}Flags: A active, C connected, S static<br>Destination        Nexthop          Metric Flags Interface<br>0.0.0.0/0          ${active}             10     A S    ethernet1/1<br>10.70.${n}.0/24     connected          0      A C    ethernet1/2<br>10.70.0.0/24        10.70.${n}.81       10     A S    ethernet1/2`;
+  if(command === 'show routing route') return `${head}Flags: A active, C connected, S static<br>Destination        Nexthop          Metric Flags Interface<br>0.0.0.0/0          ${active}             10     A S    ethernet1/1<br>10.70.${n}.0/25     connected          0      A C    ethernet1/2<br>10.70.0.0/24        10.70.${n}.177       10     A S    ethernet1/2`;
   if(command === 'show session all' || command === 'show session info') return `${head}Total active sessions: ${42 + n}<br><span class="ios-hdr">ID  Application     State   From             To</span><br>12478920 ssl             ACTIVE  10.70.${n}.15:54821 104.18.32.5:443<br>12478921 dns             ACTIVE  10.70.${n}.22:33012 8.8.8.8:53<br>12478922 core-financial  ACTIVE  10.70.${n}.15:49932 10.70.0.20:8820`;
   if(command === 'show zone') return `${head}trust      ethernet1/2<br>untrust    tunnel.100, tunnel.200, tunnel.300, tunnel.400<br>guest      ethernet1/4<br>management ethernet1/3<br>dmz        ethernet1/5`;
   if(command === 'show vpn ike-sa') return `${head}GW-CM-Starlink  200.27.1.10  ESTABLISHED  100.64.${n}.2<br>GW-CM-Kuiper    200.27.1.11  ESTABLISHED  100.64.${n}.6<br>GW-CM-5G        200.27.1.12  ESTABLISHED  100.85.${n}.2<br>GW-CM-4G        200.27.1.13  ESTABLISHED  100.92.${n}.2`;
@@ -5450,13 +5450,13 @@ function genShowBrief(s, type, command){
       `GigabitEthernet0/0/1  10.100.${n}.1       YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (Transit)`,
       `GigabitEthernet0/0/2  unassigned          YES unset   <span class="ios-up">up</span>  <span class="ios-up">up</span>  (LAN trunk)`,
       `GigabitEthernet0/0/2.10 10.70.${n}.1      YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (Datos)`,
-      `GigabitEthernet0/0/2.20 10.70.${n}.33     YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (VoIP)`,
-      `GigabitEthernet0/0/2.30 10.70.${n}.65     YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (Gestion)`,
-      `GigabitEthernet0/0/2.40 10.70.${n}.81     YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (Invitados)`
+      `GigabitEthernet0/0/2.20 10.70.${n}.129     YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (VoIP)`,
+      `GigabitEthernet0/0/2.30 10.70.${n}.161     YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (Gestion)`,
+      `GigabitEthernet0/0/2.40 10.70.${n}.177     YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (Invitados)`
     ];
     if(command.includes('interfaces description')) return `${prompt}> ${header}<span class="ios-hdr">Interface              Status  Protocol  Description</span><br>${rows.map(r=>r.replace(/  .*?  YES NVRAM  /,'  <span class="ios-up">up</span>      <span class="ios-up">up</span>       ')).join('<br>')}`;
     if(command.includes('counters errors')) return `${prompt} ${header}<span class="ios-hdr">Interface              Align  FCS  Xmit  Rcv  Giants</span><br>Gi0/0/0                0      0    0     0    0<br>Gi0/0/2                0      0    0     0    0`;
-    if(command === 'show ip route connected') return `${prompt} ${header}<span class="ios-hdr">Connected routes</span><br>C    10.70.${n}.0/24 is directly connected, Gi0/0/2.10<br>C    10.70.${n}.32/27 is directly connected, Gi0/0/2.20<br>C    10.70.${n}.64/28 is directly connected, Gi0/0/2.30`;
+    if(command === 'show ip route connected') return `${prompt} ${header}<span class="ios-hdr">Connected routes</span><br>C    10.70.${n}.0/25 is directly connected, Gi0/0/2.10<br>C    10.70.${n}.128/27 is directly connected, Gi0/0/2.20<br>C    10.70.${n}.160/28 is directly connected, Gi0/0/2.30`;
     if(command === 'show ip route static') return `${prompt} ${header}<span class="ios-hdr">Static routes</span><br>S*   0.0.0.0/0 [1/0] via ${active}<br>S    10.100.0.0/16 [10/0] via Tunnel0`;
     if(command === 'show ip route ospf') return `${prompt} ${header}O    10.200.0.0/16 [110/20] via 10.100.${n}.2, Tunnel0`;
     if(command === 'show ip ospf') return `${prompt} ${header}Routing Process "ospf 1" with ID 10.70.${n}.254<br>Area 0, SPF runs 12, interfaces in area: 2<br>Reference bandwidth unit is 100 mbps`;
@@ -5468,7 +5468,7 @@ function genShowBrief(s, type, command){
     if(command === 'show ip ospf database') return `${prompt} ${header}<span class="ios-hdr">Router Link States (Area 0)</span><br>10.70.${n}.254  age 321  seq# 0x8000000c  links 4`;
     if(command === 'show ip bgp summary') return `${prompt} ${header}<span class="ios-hdr">Neighbor        V    AS MsgRcvd MsgSent State/PfxRcd</span><br>10.100.${n}.2     4 65000     1240    1261 Established  18`;
     if(command === 'show arp') return `${prompt} ${header}<span class="ios-hdr">Protocol  Address          Age  Hardware Addr   Type  Interface</span><br>Internet  10.70.${n}.10       2   001a.2b${String(n).padStart(2,'0')}0a.ff ARPA  Gi0/0/2.10<br>Internet  10.70.${n}.1        -   00aa.bbcc.${String(n).padStart(2,'0')} ARPA  Gi0/0/2.10`;
-    if(command === 'show ip cef') return `${prompt} ${header}<span class="ios-hdr">Prefix                  Next Hop        Interface</span><br>0.0.0.0/0                ${active}          Gi0/0/0<br>10.70.${n}.0/24          attached        Gi0/0/2.10`;
+    if(command === 'show ip cef') return `${prompt} ${header}<span class="ios-hdr">Prefix                  Next Hop        Interface</span><br>0.0.0.0/0                ${active}          Gi0/0/0<br>10.70.${n}.0/25          attached        Gi0/0/2.10`;
     if(command === 'show ip sla configuration') return `${prompt} ${header}IP SLA operation 1<br>Type: icmp-echo · Target: 8.8.8.8 · Frequency: 30 seconds<br>Track 1 state: <span class="ios-up">Up</span>`;
     if(command === 'show bfd neighbors') return `${prompt} ${header}<span class="ios-hdr">OurAddr        NeighAddr      LD/RD  RH/RS  State</span><br>10.100.${n}.1   10.100.${n}.2   4097/4097 Up     <span class="ios-up">Up</span>`;
     if(command === 'show crypto ikev2 sa') return `${prompt} ${header}Tunnel0  ${active}  IKEv2  ESTABLISHED  AES-GCM-256<br>Local WAN: 100.64.${n}.2/10  · NAT-T: Yes  · UDP/4500`;
@@ -5501,7 +5501,7 @@ function genShowBrief(s, type, command){
     if(command === 'show interfaces counters errors') return `${base}<span class="ios-hdr">Port        Align-Err  FCS-Err  Xmit-Err  Rcv-Err</span><br>${portRows.map(({port})=>`Gi1/0/${port}  0          0        0         0`).join('<br>')}`;
     if(command === 'show interfaces trunk') return `${base}<span class="ios-hdr">Port        Mode         Encapsulation  Status        Native vlan</span><br>Gi1/0/1     on           802.1q          trunking      99<br><br>Vlans allowed on trunk: 10,20,30,40,99`;
     if(command === 'show ip interface brief') return `${base}<span class="ios-hdr">Interface        IP-Address      OK? Method Status Protocol</span><br>Vlan10           10.70.${n}.2      YES DHCP   <span class="ios-up">up</span>     <span class="ios-up">up</span><br>Vlan30           10.70.${n}.66     YES DHCP   <span class="ios-up">up</span>     <span class="ios-up">up</span>`;
-    if(command === 'show ip route') return `${base}C    10.70.${n}.0/24 is directly connected, Vlan10<br>S*   0.0.0.0/0 [1/0] via 10.70.${n}.1`;
+    if(command === 'show ip route') return `${base}C    10.70.${n}.0/25 is directly connected, Vlan10<br>S*   0.0.0.0/0 [1/0] via 10.70.${n}.1`;
     if(command.includes('mac address-table')) return `${base}<span class="ios-hdr">Vlan    Mac Address       Type       Ports</span><br>10      001a.2b${String(n).padStart(2,'0')}0a.ff DYNAMIC    Gi1/0/3<br>30      001a.2b${String(n).padStart(2,'0')}0b.ff DYNAMIC    Gi1/0/1`;
     if(command === 'show spanning-tree' || command === 'show spanning-tree brief' || command === 'show spanning-tree root') return `${base}VLAN0010  Root bridge: SW-${s.code}-01  Priority 24586<br>Gi1/0/1 Forwarding · Gi1/0/2 Forwarding`;
     if(command === 'show cdp neighbors detail' || command === 'show lldp neighbors detail') return `${base}Device ID: RTR-${s.code}<br>Interface: Gi1/0/1 · Port ID: Gi0/0/2<br>IP address: 10.70.${n}.1 · Platform: Cisco Catalyst C8300-2N2S-4T2X`;
