@@ -214,3 +214,50 @@ test('Comandos de diagnóstico de router, switch y firewall sin excepciones', as
   expect(results.count).toBeGreaterThanOrEqual(20);
   expect(errors).toEqual([]);
 });
+
+test('Switches independientes: configuración, EtherChannel, PoE y troncales', async ({page}) => {
+  await page.goto(url);
+  const audit=await page.evaluate(()=>{
+    const issues=[];
+    for(const site of SEDES){
+      for(const swN of [1,2]){
+        const type='sw'+swN;
+        const config=genSwitchRunningConfig(site,swN);
+        const ether=genSwitchDetail(site,type,'show etherchannel summary');
+        const power=genSwitchDetail(site,type,'show power inline');
+        const stack=genSwitchDetail(site,type,'show switch');
+        const trunk=genSwitchDetail(site,type,'show interfaces trunk');
+        if(config.includes('channel-group 1')||config.includes('interface Port-channel1'))issues.push(site.id+type+' LACP inconsistente');
+        if(!config.includes('interface GigabitEthernet1/0/45')||!config.includes(' switchport trunk allowed vlan 10,20,30,40'))issues.push(site.id+type+' troncal incorrecta');
+        if(ether.includes('Po1(SD)')||!ether.includes('No EtherChannels'))issues.push(site.id+type+' salida EtherChannel obsoleta');
+        if(power.includes('Used:186.4')||!power.includes('alimentación externa'))issues.push(site.id+type+' PoE ficticio');
+        if(stack.includes('2 Standby'))issues.push(site.id+type+' stack ficticio');
+        if(trunk.includes('Po1 on'))issues.push(site.id+type+' troncal Po1 ficticia');
+      }
+    }
+    return {issues,devices:SEDES.length*2};
+  });
+  expect(audit.devices).toBeGreaterThanOrEqual(46);
+  expect(audit.issues).toEqual([]);
+});
+test('Consola switch real: configuración, comandos y persistencia local', async ({page}) => {
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(url);
+  await page.evaluate(()=>{
+    ST.mode='despues';
+    const site=SEDES.find(s=>s.id==='s01');
+    const host=document.createElement('div');host.innerHTML=genDeviceCLI(site,'sw1');document.body.appendChild(host);
+  });
+  const input=page.locator('#device-term-input'),out=page.locator('#device-term-out');
+  const send=async cmd=>{await input.fill(cmd);await input.press('Enter')};
+  await send('terminal length 0');
+  await send('show power inline');await expect(out).toContainText('alimentación externa');
+  await send('show etherchannel summary');await expect(out).toContainText('No EtherChannels');
+  await send('show interfaces trunk');await expect(out).toContainText('Gi1/0/45');
+  await send('enable');await send('configure terminal');await send('hostname SW-LAB-TEST');await send('end');
+  await send('write memory');
+  await expect(out).toContainText('SW-LAB-TEST');
+  const stored=await page.evaluate(()=>localStorage.getItem('financiera-pacifico-cli-v1:s01:sw1'));
+  expect(stored).toContain('SW-LAB-TEST');
+  expect(errors).toEqual([]);
+});
