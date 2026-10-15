@@ -5297,10 +5297,15 @@ function genRouterRoutes(s){
   const activeTunnel = active && !isDeviceInterfaceAdminDown(s.id, 'router', wan[active].tunnel)
     ? wan[active].tunnel
     : null;
-  const ospfRoutes = activeTunnel ? [
-    `O 10.70.0.0/24 [110/20] via 172.16.${n}.${wan[active].peer}, ${activeTunnel}`,
-    `O IA 10.70.15.0/24 [110/30] via 172.16.${n}.${wan[active].peer}, ${activeTunnel}`,
-  ] : [];
+  // Las rutas remotas dependen del estado de conectividad, no de sedes fijas.
+  const ospfRoutes = activeTunnel ? SEDES
+    .filter(remote => remote.id !== s.id)
+    .filter(remote => isSiteLanAvailable(remote.id))
+    .filter(remote => ST.mode === 'antes'
+      ? ST.mpls[remote.id] === 'activo'
+      : Boolean(activeLink(remote.id)))
+    .map(remote => `O IA 10.70.${remote.num}.0/24 [110/30] via 172.16.${n}.${wan[active].peer}, ${activeTunnel}`)
+    : [];
   const rows = [
     `Gateway of last resort is ${active ? wan[active].nextHop : 'not set'} to network 0.0.0.0`,
     ...wanRows,
