@@ -198,7 +198,7 @@ test('Comandos de diagnóstico de router, switch y firewall sin excepciones', as
       router:['show version','show ip interface brief','show ip route','show ip ospf neighbor','show ip protocols','show ip sla statistics','show crypto session','show running-config'],
       sw1:['show version','show vlan brief','show interfaces status','show mac address-table','show spanning-tree','show etherchannel summary','show running-config'],
       sw2:['show version','show vlan brief','show interfaces status','show running-config'],
-      fw:['show system info','show routing route','show session all','show interface all','show running-config']
+      fw:['show system info','show routing route','show session info','show interface all','show running-config']
     };
     const issues=[];
     for(const [type,commands] of Object.entries(checks)){
