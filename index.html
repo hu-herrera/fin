@@ -4656,7 +4656,7 @@ function genSwitchRunningConfig(s, swN=1){
     'vlan 10',' name DATOS-Usuarios','vlan 20',' name VOIP-Telefonia','vlan 30',' name GESTION-Red','vlan 40',' name INVITADOS-DMZ','vlan 999',' name NATIVE-NONE',
     
     'interface GigabitEthernet1/0/1',' description Uplink-Router',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
-    'interface GigabitEthernet1/0/2',' description Uplink-Switch-Peer',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',' channel-group 1 mode active',' mka policy MKA-UPLINK',
+    'interface GigabitEthernet1/0/2',' description Uplink-Switch-Peer',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
     ...accessPortConfig,
     'interface GigabitEthernet1/0/33',' description AP-WiFi-1 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
     'interface GigabitEthernet1/0/34',' description AP-WiFi-2 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
