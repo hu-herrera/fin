@@ -2913,7 +2913,7 @@ function sc_e7(){
     }
   });
   ST.evCount++;
-  addLog(`E7: Retorno controlado — Starlink restaurado; estabilidad requerida 5:00 en ${n} sedes`,'ok');
+  addLog(`E7: Retorno controlado — Starlink restaurado; espera didáctica de 5 segundos (no 5 minutos reales) en ${n} sedes`,'ok');
   _refresh();
   if(n) runFailbackCountdown();
 }
@@ -2930,7 +2930,7 @@ function runFailbackCountdown(){
       if(previous && previous !== 'starlink') ST.links[id][previous] = 'standby';
       ST.links[id].starlink = 'activo';
       recompute(id);
-      addLog(`[FAILBACK] ${SEDES.find(s=>s.id===id)?.code || id}: enlace restaurado y estable 5 min simulados`,'ok');
+      addLog(`[FAILBACK] ${SEDES.find(s=>s.id===id)?.code || id}: retorno a Starlink tras 5 segundos de estabilidad simulada`,'ok');
       changed = true;
     }
   });
