@@ -4449,20 +4449,18 @@ function handleTermCmd(ev,sedeId,pcIdx){
         'ip name-server 10.70.0.10','ip name-server 10.70.0.11','login on-success log','login on-failure log',
         'spanning-tree mode rapid-pvst','spanning-tree extend system-id','spanning-tree vlan 1-4094 priority 32768',
         'vlan 10',' name DATOS-Usuarios','vlan 20',' name VOIP-Telefonia','vlan 30',' name GESTION-Red',
-        'vlan 40',' name INVITADOS-DMZ','vlan 999',' name NATIVE-NONE','interface Port-channel1',
-        ' description Uplink to Router',' switchport mode trunk',' switchport trunk native vlan 999',
-        ' switchport trunk allowed vlan 10,20,30,40','interface GigabitEthernet1/0/1',' description Uplink-Router',
+        'vlan 40',' name INVITADOS-DMZ','vlan 999',' name NATIVE-NONE','interface GigabitEthernet1/0/1',' description Uplink-Router',
         ' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
-        ' channel-group 1 mode active',' mka policy MKA-UPLINK','interface GigabitEthernet1/0/2',' description Uplink-Switch-Peer',
+        'interface GigabitEthernet1/0/2',' description Uplink-Switch-Peer',
         ' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
-        ' channel-group 1 mode active',' mka policy MKA-UPLINK','interface GigabitEthernet1/0/3',' description PC-USER-001',
+        'interface GigabitEthernet1/0/3',' description PC-USER-001',
         ' switchport mode access',' switchport access vlan 10',' switchport voice vlan 20',' spanning-tree portfast',
         ' spanning-tree bpduguard enable',' ip dhcp snooping limit rate 10',' storm-control broadcast level 5.00',
         ' storm-control multicast level 10.00','interface GigabitEthernet1/0/33',' description AP-WiFi-1 C9130AXI',
         ' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
         'interface GigabitEthernet1/0/34',' description AP-WiFi-2 C9130AXI',' switchport mode trunk',
         ' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
-        'interface GigabitEthernet1/0/45',' description Enlace Ethernet entre switches',' switchport mode trunk',
+        'interface GigabitEthernet1/0/45',' description Enlace Ethernet entre switches',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
         
         `interface Vlan30`,` ip address 10.70.${n}.${swN === 1 ? 162 : 163} 255.255.255.240`,` ip default-gateway 10.70.${n}.161`,
         'ip dhcp snooping','ip dhcp snooping vlan 10,20,30','ip dhcp snooping database flash:dhcp_snoop.db',
@@ -4486,17 +4484,17 @@ function handleTermCmd(ev,sedeId,pcIdx){
         'Base Ethernet MAC Address       : 001a.2b3c.4d5e','Motherboard Assembly Number     : 68-101234-01',
         'Model Number                    : C9200L-48T-4G-E','Configuration register is 0x102',
         'Switch/Stack Mac Address : 001a.2b3c.4d5e','H/W Current','Switch# Role Priority State Model Version',
-        '1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','2 Standby 14 Ready C9200L-48T-4G-E 17.9.4a','SW Image: CAT9K_IOSXE']);
+        '1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','Cada switch es independiente; no hay StackWise ni miembro 2','SW Image: CAT9K_IOSXE']);
     }
 
     function genSwitchDetail(s, type, command){
       const p=devicePrompt(s,type), n=s.num, h=`${p} <span class="ios-cmd">${command}</span><br><br>`;
       if(command==='show vlan brief') return h+['VLAN Name Status Ports','1 default active Gi1/0/35-44,Gi1/0/47,Gi1/0/48','10 DATOS-Usuarios active Gi1/0/3-30','20 VOIP-Telefonia active','30 GESTION-Red active Gi1/0/31,Gi1/0/32','40 INVITADOS-DMZ active','1002 fddi-default act/unsup','1003 token-ring-default act/unsup','1004 fddinet-default act/unsup','1005 trnet-default act/unsup'].join('<br>');
       if(command==='show mac address-table') return h+['Vlan Mac Address Type Ports','10 001a.2b3c.4d5e DYNAMIC Gi1/0/5','10 3c97.0e8a.2b11 DYNAMIC Gi1/0/8','10 001b.21a4.c8d2 DYNAMIC Gi1/0/12','10 3c97.0e8a.2b45 DYNAMIC Gi1/0/15','20 001a.2b3c.4d61 DYNAMIC Gi1/0/5','20 001a.2b3c.4d62 DYNAMIC Gi1/0/7','20 001a.2b3c.4d63 DYNAMIC Gi1/0/9','30 f4cf.e28a.2b10 DYNAMIC Gi1/0/1','40 f018.9812.34ab DYNAMIC Gi1/0/33','Total Mac Addresses for this criterion: 9'].join('<br>');
-      if(command==='show spanning-tree' || command==='show spanning-tree brief') return h+['VLAN0010',' Spanning tree enabled protocol rstp',' Root ID Priority 24586','          Address 001a.2b3c.4d5e','          Cost 4','          Port 1 (Port-channel1)',' Bridge ID Priority 32778','          Address 001a.2b3c.4d5e','Interface Role Sts Cost Prio.Nbr Type','Po1 Root FWD 4 128.56 P2p','Gi1/0/33 Desg FWD 4 128.33 P2p Edge','Gi1/0/34 Desg FWD 4 128.34 P2p Edge'].join('<br>');
-      if(command==='show power inline') return h+['Available:370.0(w) Used:186.4(w) Remaining:183.6(w)','Interface Admin Oper Power Device Class','Gi1/0/5 auto on 6.3W IP Phone 8845 3','Gi1/0/8 auto on 6.3W IP Phone 8845 3','Gi1/0/33 auto on 30.0W AP C9130AXI 4','Gi1/0/34 auto on 30.0W AP C9130AXI 4'].join('<br>');
-      if(command==='show etherchannel summary' || command==='show port-channel summary') return h+['Group Port-channel Protocol Ports','1 Po1(SD) LACP Gi1/0/1(P) Gi1/0/2(P)'].join('<br>');
-      if(command==='show interfaces trunk') return h+['Port Mode Encapsulation Status Native vlan','Po1 on 802.1q trunking 999','Gi1/0/33 on 802.1q trunking 999','Gi1/0/34 on 802.1q trunking 999','Vlans allowed on trunk: 10,20,30,40','Vlans allowed and active in management domain: 10,20,30,40','Vlans in spanning tree forwarding state and not pruned: 10,20,30,40'].join('<br>');
+      if(command==='show spanning-tree' || command==='show spanning-tree brief') return h+['VLAN0010',' Spanning tree enabled protocol rstp',' Root ID Priority 24586','          Address 001a.2b3c.4d5e','          Cost 4','          Port 1 (GigabitEthernet1/0/1)',' Bridge ID Priority 32778','          Address 001a.2b3c.4d5e','Interface Role Sts Cost Prio.Nbr Type','Gi1/0/1 Root FWD 4 128.1 P2p','Gi1/0/33 Desg FWD 4 128.33 P2p Edge','Gi1/0/34 Desg FWD 4 128.34 P2p Edge'].join('<br>');
+      if(command==='show power inline') return h+['Available:0.0(w) Used:0.0(w) Remaining:0.0(w)','Interface Admin Oper Power Device Class','C9200L-48T-4G-E no suministra PoE: alimentación externa requerida'].join('<br>');
+      if(command==='show etherchannel summary' || command==='show port-channel summary') return h+['Group Port-channel Protocol Ports','No EtherChannels configured (independent uplinks)'].join('<br>');
+      if(command==='show interfaces trunk') return h+['Port Mode Encapsulation Status Native vlan','Gi1/0/1 on 802.1q trunking 999','Gi1/0/2 on 802.1q trunking 999','Gi1/0/45 on 802.1q trunking 999','Gi1/0/33 on 802.1q trunking 999','Gi1/0/34 on 802.1q trunking 999','Vlans allowed on trunk: 10,20,30,40','Vlans allowed and active in management domain: 10,20,30,40','Vlans in spanning tree forwarding state and not pruned: 10,20,30,40'].join('<br>');
       if(command==='show switch' || command==='show stack') return h+['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Mac persistency wait time: Indefinite','H/W Current','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','2 Standby 14 Ready C9200L-48T-4G-E 17.9.4a'].join('<br>');
       if(command==='show cdp neighbors') return h+['Capability Codes: R - Router, S - Switch, H - Host','Device ID Local Intrfce Holdtme Capability Platform Port ID',`RTR-${s.code} Gi1/0/1 169 R C8300 Gi0/0/0`,`AP-WiFi-1 Gi1/0/33 145 T C9130AXI Gig0`,`AP-WiFi-2 Gi1/0/34 145 T C9130AXI Gig0`].join('<br>');
       return null;
