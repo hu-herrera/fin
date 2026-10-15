@@ -55,3 +55,43 @@ test('Consolas usan subredes válidas y switches con IP distinta', async ({page}
   expect(values.sw1).toContain('10.70.1.162 255.255.255.240');
   expect(values.sw2).toContain('10.70.1.163 255.255.255.240');
 });
+
+test('Auditoría de todas las sedes: VLAN, gateways, switches y rutas sin enlaces', async ({page}) => {
+  await page.goto(url);
+  const audit = await page.evaluate(() => {
+    const issues = [];
+    const expected = [
+      {network:0,mask:25,gateway:1},
+      {network:128,mask:27,gateway:129},
+      {network:160,mask:28,gateway:161},
+      {network:176,mask:28,gateway:177}
+    ];
+    ST.mode='despues';
+    for(const site of SEDES) {
+      const n=site.num;
+      ST.links[site.id]={starlink:'activo',kuiper:'standby',g5:'standby',g4:'standby'};
+      ST.failback[site.id]={pending:false};
+      recompute(site.id);
+      const routes=genRouterRoutes(site);
+      const config=genRouterRunningConfig(site);
+      const sw1=genSwitchRunningConfig(site,1);
+      const sw2=genSwitchRunningConfig(site,2);
+      for(const vlan of expected) {
+        if(!routes.includes(`10.70.${n}.${vlan.network}/${vlan.mask}`)) issues.push(`${site.id}: falta subred ${vlan.network}/${vlan.mask}`);
+      }
+      for(const [addr,mask] of [[1,'255.255.255.128'],[129,'255.255.255.224'],[161,'255.255.255.240'],[177,'255.255.255.240']]) {
+        if(!config.includes(`10.70.${n}.${addr} ${mask}`)) issues.push(`${site.id}: gateway ${addr} inconsistente`);
+      }
+      if(!sw1.includes(`10.70.${n}.162 255.255.255.240`)) issues.push(`${site.id}: switch 1 sin gestión correcta`);
+      if(!sw2.includes(`10.70.${n}.163 255.255.255.240`)) issues.push(`${site.id}: switch 2 sin gestión correcta`);
+      if(getPCs(site).some(pc=>Number(pc.ip.split('.').at(-1))>=128)) issues.push(`${site.id}: PC fuera de VLAN 10`);
+      for(const wan of ['starlink','kuiper','g5','g4']) ST.links[site.id][wan]='caido';
+      recompute(site.id);
+      const disconnected=genRouterRoutes(site);
+      if(activeLink(site.id)!==null || disconnected.includes('S* 0.0.0.0/0')) issues.push(`${site.id}: ruta activa pese a corte total`);
+    }
+    return {sites:SEDES.length,issues};
+  });
+  expect(audit.sites).toBeGreaterThanOrEqual(23);
+  expect(audit.issues).toEqual([]);
+});
