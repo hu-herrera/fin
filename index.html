@@ -971,10 +971,10 @@ function recompute(id){
   const ord = linkPriority(id);
   let best = null;
   for(const k of ord){
-    if(lk[k]!=='caido' && lk[k]!=='inactivo' && !isWanInterfaceAdminDown(id, k)){ best=k; break; }
+    if(lk[k]!=='caido' && lk[k]!=='inactivo' && lk[k]!=='recuperando' && !isWanInterfaceAdminDown(id, k)){ best=k; break; }
   }
   PRIORITY.forEach(k=>{
-    if(lk[k]==='inactivo'||lk[k]==='caido') return;
+    if(lk[k]==='inactivo'||lk[k]==='caido'||lk[k]==='recuperando') return;
     lk[k] = k===best ? 'activo' : 'standby';
   });
 }
@@ -2907,7 +2907,7 @@ function sc_e7(){
   let n=0;
   SEDES.forEach(s=>{
     if(ST.links[s.id].starlink==='caido'){
-      ST.links[s.id].starlink='standby';
+      ST.links[s.id].starlink='recuperando';
       recompute(s.id);
       ST.failback[s.id] = { startedAt: Date.now(), durationMs: 5000, pending: true };
       n++;
