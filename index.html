@@ -4326,7 +4326,7 @@ function genRouterRunningConfig(s, startup=false){
   [['1','Starlink Business','1440','10','100.64.'+n+'.2','200.27.1.10','GigabitEthernet0/0/1'],
    ['2','Amazon Leo Kuiper','1440','20','100.64.'+n+'.6','200.27.1.11','GigabitEthernet0/0/2'],
    ['3','5G Entel (gateway externo)','1400','30','100.85.'+n+'.2','200.27.1.12','GigabitEthernet0/0/3'],
-   ['4','4G GTD (gateway externo)','1400','40','100.92.'+n+'.2','200.27.1.13','GigabitEthernet0/0/4']].forEach(([idx,name,mtu,cost,local,remote,source])=>{
+   ['4','4G GTD (gateway externo)','1400','40','100.92.'+n+'.2','200.27.1.13','TenGigabitEthernet0/0/4']].forEach(([idx,name,mtu,cost,local,remote,source])=>{
     const tun=idx==='1'?100:idx==='2'?200:idx==='3'?300:400;
     const addr=idx==='1'?1:idx==='2'?5:idx==='3'?9:13;
     lines.push('!',`interface ${source}`,` description Uplink ${name} (direccionamiento WAN de laboratorio)`,
@@ -4343,14 +4343,14 @@ function genRouterRunningConfig(s, startup=false){
     ` network 10.70.${n}.160 0.0.0.15 area 0`,` network ${id.loopback} 0.0.0.0 area 0`,' bfd all-interfaces',
     '!','ip local pool VPN-POOL 10.70.250.1 10.70.250.100','ip forward-protocol nd','no ip http server','no ip http secure-server',
     'ip nat inside source list NAT-ACL interface GigabitEthernet0/0/1 overload','ip nat inside source list NAT-ACL interface GigabitEthernet0/0/2 overload',
-    'ip nat inside source list NAT-ACL interface GigabitEthernet0/0/3 overload','ip nat inside source list NAT-ACL interface GigabitEthernet0/0/4 overload',
+    'ip nat inside source list NAT-ACL interface GigabitEthernet0/0/3 overload','ip nat inside source list NAT-ACL interface TenGigabitEthernet0/0/4 overload',
     '!','ip access-list standard NAT-ACL',` permit 10.70.${n}.0 0.0.0.127`,
     'ip access-list extended MGMT-ACL',' permit tcp 10.70.0.0 0.0.0.255 any eq 22',' deny ip any any log',
     'ip access-list extended GUEST-ACL',' deny ip any 10.70.0.0 0.0.255.255',' permit tcp any any eq 80',' permit tcp any any eq 443',' deny ip any any log',
     'ip sla 1',` icmp-echo 100.64.${n}.1 source-interface GigabitEthernet0/0/1`,' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 1 life forever start-time now',
     'ip sla 2',` icmp-echo 100.64.${n}.5 source-interface GigabitEthernet0/0/2`,' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 2 life forever start-time now',
     'ip sla 3',` icmp-echo 100.85.${n}.1 source-interface GigabitEthernet0/0/3`,' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 3 life forever start-time now',
-    'ip sla 4',` icmp-echo 100.92.${n}.1 source-interface GigabitEthernet0/0/4`,' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 4 life forever start-time now',
+    'ip sla 4',` icmp-echo 100.92.${n}.1 source-interface TenGigabitEthernet0/0/4`,' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 4 life forever start-time now',
     'track 1 ip sla 1 reachability',' delay down 10 up 300','track 2 ip sla 2 reachability',' delay down 10 up 300',
     'track 3 ip sla 3 reachability',' delay down 10 up 300','track 4 ip sla 4 reachability',' delay down 10 up 300',
     `ip route 0.0.0.0 0.0.0.0 100.64.${n}.1 track 1`,`ip route 0.0.0.0 0.0.0.0 100.64.${n}.5 10 track 2`,
@@ -4896,7 +4896,7 @@ function routerWanInterface(type){
     starlink: 'GigabitEthernet0/0/1',
     kuiper: 'GigabitEthernet0/0/2',
     g5: 'GigabitEthernet0/0/3',
-    g4: 'GigabitEthernet0/0/4',
+    g4: 'TenGigabitEthernet0/0/4',
   }[type];
 }
 
@@ -5003,6 +5003,8 @@ function canonicalDeviceInterface(name, type){
   const value = name.trim();
   if(type.startsWith('sw')) return value.replace(/^gigabitethernet/i, 'Gi').replace(/^gi/i, 'Gi');
   return value
+    .replace(/^tengigabitethernet/i, 'TenGigabitEthernet')
+    .replace(/^te(?=\d)/i, 'TenGigabitEthernet')
     .replace(/^gigabitethernet/i, 'GigabitEthernet')
     .replace(/^gi(?=\d)/i, 'GigabitEthernet')
     .replace(/^cellular/i, 'Cellular')
@@ -5021,7 +5023,7 @@ function isSupportedDeviceInterface(name, type){
       'GigabitEthernet0/0/1',
       'GigabitEthernet0/0/2',
       'GigabitEthernet0/0/3',
-      'GigabitEthernet0/0/4',
+      'TenGigabitEthernet0/0/4',
       'Loopback0',
       'Tunnel100',
       'Tunnel200',
