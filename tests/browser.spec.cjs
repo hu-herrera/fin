@@ -132,3 +132,58 @@ test('Terminal real: ejecutar comandos y comprobar cambios WAN', async ({page}) 
   await expect(output).toContainText('GigabitEthernet');
   expect(errors).toEqual([]);
 });
+
+test('Escenarios E1-E7 cambian estados de red y respetan recuperación', async ({page}) => {
+  await page.goto(url);
+  const report=await page.evaluate(()=>{
+    const issues=[];
+    const initial=()=>{ST.mode='despues'; ST.cmActive='rtr1';ST.failback={};for(const site of SEDES){ST.links[site.id]={starlink:'activo',kuiper:'standby',g5:'standby',g4:'standby'};recompute(site.id)}};
+    initial();sc_e1();
+    if(activeLink('s08')!=='kuiper')issues.push('E1 no conmuta S08 a Leo');
+    initial();sc_e2();
+    for(const id of ['s15','s16','s17'])if(ST.links[id].kuiper!=='caido'||ST.links[id].g4!=='caido')issues.push('E2 no corta '+id);
+    initial();sc_e3();
+    if(ST.cmActive!=='rtr2')issues.push('E3 no conmuta router central');
+    initial();ST.links.s19.starlink='caido';ST.failback.s19={pending:true,startedAt:Date.now()-6000,durationMs:5000};sc_e4();
+    if(activeLink('s19')!==null||ST.failback.s19.pending)issues.push('E4 deja conectividad o recuperación pendiente');
+    initial();sc_e5();
+    if(SEDES.some(site=>ST.links[site.id].starlink!=='caido'))issues.push('E5 no corta Starlink global');
+    initial();sc_e6();
+    if(SEDES.some(site=>ST.links[site.id].starlink!=='caido'||ST.links[site.id].kuiper!=='caido'))issues.push('E6 no corta ambos satélites');
+    sc_e7();
+    const recovering=SEDES.filter(site=>ST.failback[site.id]?.pending);
+    if(!recovering.length||recovering.some(site=>ST.links[site.id].starlink!=='recuperando'||activeLink(site.id)==='starlink'))issues.push('E7 conmuta antes de espera');
+    for(const site of recovering)ST.failback[site.id].startedAt-=6000;
+    runFailbackCountdown();
+    if(recovering.some(site=>activeLink(site.id)!=='starlink'))issues.push('E7 no restaura primario');
+    return {issues,scenarios:7};
+  });
+  expect(report.issues).toEqual([]);
+});
+test('CLI: ping, traceroute y configuración shutdown/no shutdown', async ({page}) => {
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(url);
+  await page.evaluate(()=>{
+    ST.mode='despues';
+    for(const site of SEDES){ST.links[site.id]={starlink:'activo',kuiper:'standby',g5:'standby',g4:'standby'};recompute(site.id)}
+    const site=SEDES.find(s=>s.id==='s01');
+    const host=document.createElement('div');host.innerHTML=genDeviceCLI(site,'router');document.body.appendChild(host);
+  });
+  const input=page.locator('#device-term-input'),out=page.locator('#device-term-out');
+  const send=async cmd=>{await input.fill(cmd);await input.press('Enter')};
+  await send('terminal length 0');
+  await send('ping 10.70.1.10');
+  await expect(out).toContainText('Success rate is 100 percent');
+  await send('ping 203.0.113.250');
+  await expect(out).toContainText('Success rate is 0 percent');
+  await send('traceroute 203.0.113.250');
+  await expect(out).toContainText('Tracing the route');
+  await send('enable');await send('configure terminal');await send('interface GigabitEthernet0/0/1');await send('shutdown');await send('end');
+  await send('show ip route');
+  await expect(out).toContainText('100.64.1.5');
+  await send('configure terminal');await send('interface GigabitEthernet0/0/1');await send('no shutdown');await send('end');
+  await send('show ip route');
+  const state=await page.evaluate(()=>activeLink('s01'));
+  expect(state).toBe('starlink');
+  expect(errors).toEqual([]);
+});
