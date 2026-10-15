@@ -288,7 +288,7 @@ test('Consola switch real: configuración, comandos y persistencia local', async
   await send('terminal length 0');
   await send('show power inline');await expect(out).toContainText('alimentación externa');
   await send('show etherchannel summary');await expect(out).toContainText('Po1(SU)');
-  await send('show interfaces trunk');await expect(out).toContainText('Gi1/0/45');
+  await send('show interfaces trunk');await expect(out).toContainText('Po1 on 802.1q trunking 999');
   await send('enable');await send('configure terminal');await send('hostname SW-LAB-TEST');await send('end');
   await send('write memory');
   await expect(out).toContainText('SW-LAB-TEST');
