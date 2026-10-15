@@ -4293,7 +4293,7 @@ function genRouterRunningConfig(s, startup=false){
     : '! Last configuration change at 14:23:51 CLT Wed Sep 15 2026 by admin';
   const lines=[
     'Building configuration...',
-    `Current configuration : ${startup?'8734':'8842'} bytes`,
+    
     stamp,'version 17.9','service timestamps debug datetime msec localtime show-timezone',
     'service timestamps log datetime msec localtime show-timezones','service password-encryption',
     'service sequence-numbers',`hostname ${id.hostname}`,'boot-start-marker','boot-end-marker','!',
@@ -5323,7 +5323,7 @@ ${rows.map(escapeCLI).join('<br>')}`;
 
 function genRouterRunningConfigSummary(s, startup = false){
   const n = s.num;
-  const active = activeLink(s.id) || 'starlink';
+  const active = activeLink(s.id);
   const hostname = `RTR-${s.code}`;
   const loopback = s.isCM ? '10.70.100.1' : `10.70.100.${n + 10}`;
   const wan = [
@@ -5355,12 +5355,12 @@ version 17.9<br>service timestamps debug datetime msec localtime show-timezones<
 
 function genSwitchRunningConfigSummary(s, swN = 1){
   return `SW-${s.code}-0${swN}> <span class="ios-cmd">show running-config</span><br><br>
-Building configuration...<br>Current configuration : 6421 bytes<br>version 17.9<br>hostname SW-${s.code}-0${swN}<br>aaa new-model<br>spanning-tree mode rapid-pvst<br>spanning-tree extend system-id<br>vlan 10<br> name DATOS-Usuarios<br>vlan 20<br> name VOIP-Telefonia<br>vlan 30<br> name GESTION-Red<br>vlan 40<br> name INVITADOS-DMZ<br>interface GigabitEthernet1/0/1<br> description Uplink-to-Router<br> switchport mode trunk<br> switchport trunk allowed vlan 10,20,30,40<br> spanning-tree portfast disable<br>interface range GigabitEthernet1/0/3 - 46<br> switchport mode access<br> switchport access vlan 10<br> spanning-tree portfast<br> spanning-tree bpduguard enable<br>interface GigabitEthernet1/0/47<br> channel-group 1 mode active<br>interface Port-channel1<br> switchport mode trunk<br>logging host 10.70.0.100<br>end`;
+Building configuration...<br>version 17.9<br>hostname SW-${s.code}-0${swN}<br>aaa new-model<br>spanning-tree mode rapid-pvst<br>spanning-tree extend system-id<br>vlan 10<br> name DATOS-Usuarios<br>vlan 20<br> name VOIP-Telefonia<br>vlan 30<br> name GESTION-Red<br>vlan 40<br> name INVITADOS-DMZ<br>interface GigabitEthernet1/0/1<br> description Uplink-to-Router<br> switchport mode trunk<br> switchport trunk allowed vlan 10,20,30,40<br> spanning-tree portfast disable<br>interface range GigabitEthernet1/0/3 - 46<br> switchport mode access<br> switchport access vlan 10<br> spanning-tree portfast<br> spanning-tree bpduguard enable<br>interface GigabitEthernet1/0/47<br> channel-group 1 mode active<br>interface Port-channel1<br> switchport mode trunk<br>logging host 10.70.0.100<br>end`;
 }
 
 function genFWCommandSummary(s, command){
   const n = s.num;
-  const active = activeLink(s.id) || 'starlink';
+  const active = activeLink(s.id);
   const prompt = `PA-${s.code}>`;
   const head = `${prompt} <span class="ios-cmd">${command}</span><br><br>`;
   if(command === 'show system info') return `${head}hostname: PA-${s.code}<br>ip-address: 10.70.${n}.178<br>model: PA-1410<br>serial: 012345${String(n).padStart(4,'0')}<br>sw-version: 11.1.2<br>uptime: ${UPTIME}<br>operational-mode: normal`;
