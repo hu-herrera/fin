@@ -4273,7 +4273,7 @@ function genRouterVersionFull(s){
     'Processor board ID FDO2345A1BC',
     '3 Virtual Ethernet interfaces',
     '16 Gigabit Ethernet interfaces',
-    '16 Cellular interfaces',
+    'External 5G/4G gateways connected through WAN Ethernet interfaces',
     '32768K bytes of non-volatile configuration memory.',
     '16777216K bytes of physical memory.',
     '1638400K bytes of Crash Files at crashinfo:.',
@@ -4332,17 +4332,19 @@ function genRouterRunningConfig(s, startup=false){
    ['.30','Gestion','30','10.70.'+n+'.161',''],['.40','Invitados','40','10.70.'+n+'.177','']].forEach(([sub,name,vlan,ip,helper])=>{
     lines.push('!',`interface GigabitEthernet0/0/0${sub}`,` description VLAN ${vlan} - ${name}`,
       ` encapsulation dot1Q ${vlan}`,` ip address ${ip} ${vlan==='10'?'255.255.255.128':vlan==='20'?'255.255.255.224':'255.255.255.240'}`,
-      ...(helper?[` ip helper-address ${helper}`]:[]),...(vlan==='10'||vlan==='20'?[' ip ospf 1 area 0',' ip ospf authentication message-digest',' ip ospf message-digest-key 1 md5 7 104D000A0618']:[]),
+      ...(helper?[` ip helper-address ${helper}`]:[]),...(vlan!=='40'?[' ip ospf 1 area 0']:[]),
+      ...(vlan==='10'||vlan==='20'?[' ip nat inside']:[]),
       ...(vlan==='30'||vlan==='40'?[` ip access-group ${vlan==='30'?'MGMT-ACL':'GUEST-ACL'} in`]:[]));
   });
   [['1','Starlink Business','1440','10','100.64.'+n+'.2','200.27.1.10','GigabitEthernet0/0/1'],
    ['2','Amazon Leo Kuiper','1440','20','100.64.'+n+'.6','200.27.1.11','GigabitEthernet0/0/2'],
-   ['3','5G Entel','1400','30','100.85.'+n+'.2','200.27.1.12','Cellular0/1/0'],
-   ['4','4G GTD','1400','40','100.92.'+n+'.2','200.27.1.13','Cellular0/1/1']].forEach(([idx,name,mtu,cost,local,remote,source])=>{
+   ['3','5G Entel (gateway externo)','1400','30','100.85.'+n+'.2','200.27.1.12','GigabitEthernet0/0/3'],
+   ['4','4G GTD (gateway externo)','1400','40','100.92.'+n+'.2','200.27.1.13','GigabitEthernet0/0/4']].forEach(([idx,name,mtu,cost,local,remote,source])=>{
     const tun=idx==='1'?100:idx==='2'?200:idx==='3'?300:400;
     const addr=idx==='1'?1:idx==='2'?5:idx==='3'?9:13;
-    lines.push('!',`interface ${source}`,` description Uplink ${name}`,` ip address negotiated`,` ip mtu ${mtu}`,
-      ' ip nat outside',...(idx<='2'?[' ip virtual-reassembly in',' zone-member security untrust',' ip tcp adjust-mss 1360']:[' encapsulation slip',' dialer in-band',' dialer idle-timeout 0',' dialer-group 1',' pulse-time 1']),' no shutdown','!',
+    lines.push('!',`interface ${source}`,` description Uplink ${name} (direccionamiento WAN de laboratorio)`,
+      ` ip address ${local} 255.255.255.252`,` ip mtu ${mtu}`,
+      ' ip nat outside',' ip tcp adjust-mss 1360',' no shutdown','!',
       `interface Tunnel${tun}`,` description IPsec sobre ${name} hacia CM`,` ip address 172.16.${n}.${addr} 255.255.255.252`,
       ` ip mtu ${mtu}`,' ip tcp adjust-mss 1360',' load-interval 30',` tunnel source ${source}`,` tunnel destination ${remote}`,
       ' tunnel mode ipsec ipv4',' tunnel protection ipsec profile IPSEC-PROFILE',' ip ospf network point-to-point',' ip ospf 1 area 0',
@@ -4350,17 +4352,18 @@ function genRouterRunningConfig(s, startup=false){
   });
   lines.push('!','router ospf 1',` router-id ${id.loopback}`,' log-adjacency-changes detail',' passive-interface default',
     ' no passive-interface Tunnel100',' no passive-interface Tunnel200',' no passive-interface Tunnel300',' no passive-interface Tunnel400',
-    ` network 10.70.${n}.0 0.0.0.127 area 0`,` network 10.70.${n}.128 0.0.0.31 area 0`,` network ${id.loopback} 0.0.0.0 area 0`,' bfd all-interfaces',
+    ` network 10.70.${n}.0 0.0.0.127 area 0`,` network 10.70.${n}.128 0.0.0.31 area 0`,
+    ` network 10.70.${n}.160 0.0.0.15 area 0`,` network ${id.loopback} 0.0.0.0 area 0`,' bfd all-interfaces',
     '!','ip local pool VPN-POOL 10.70.250.1 10.70.250.100','ip forward-protocol nd','no ip http server','no ip http secure-server',
     'ip nat inside source list NAT-ACL interface GigabitEthernet0/0/1 overload','ip nat inside source list NAT-ACL interface GigabitEthernet0/0/2 overload',
-    'ip nat inside source list NAT-ACL interface Cellular0/1/0 overload','ip nat inside source list NAT-ACL interface Cellular0/1/1 overload',
-    '!','ip access-list standard NAT-ACL',` permit 10.70.${n}.0 0.0.0.127`,` permit 192.168.${n}.0 0.0.0.255`,
+    'ip nat inside source list NAT-ACL interface GigabitEthernet0/0/3 overload','ip nat inside source list NAT-ACL interface GigabitEthernet0/0/4 overload',
+    '!','ip access-list standard NAT-ACL',` permit 10.70.${n}.0 0.0.0.127`,
     'ip access-list extended MGMT-ACL',' permit tcp 10.70.0.0 0.0.0.255 any eq 22',' deny ip any any log',
     'ip access-list extended GUEST-ACL',' deny ip any 10.70.0.0 0.0.255.255',' permit tcp any any eq 80',' permit tcp any any eq 443',' deny ip any any log',
-    'ip sla 1',' icmp-echo 8.8.8.8 source-interface Loopback0',' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 1 life forever start-time now',
-    'ip sla 2',' icmp-echo 1.1.1.1 source-interface Loopback0',' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 2 life forever start-time now',
-    'ip sla 3',' icmp-echo 10.85.0.1 source-interface Cellular0/1/0',' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 3 life forever start-time now',
-    'ip sla 4',' icmp-echo 10.92.0.1 source-interface Cellular0/1/1',' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 4 life forever start-time now',
+    'ip sla 1',` icmp-echo 100.64.${n}.1 source-interface GigabitEthernet0/0/1`,' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 1 life forever start-time now',
+    'ip sla 2',` icmp-echo 100.64.${n}.5 source-interface GigabitEthernet0/0/2`,' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 2 life forever start-time now',
+    'ip sla 3',` icmp-echo 100.85.${n}.1 source-interface GigabitEthernet0/0/3`,' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 3 life forever start-time now',
+    'ip sla 4',` icmp-echo 100.92.${n}.1 source-interface GigabitEthernet0/0/4`,' frequency 10',' timeout 1000',' threshold 500','ip sla schedule 4 life forever start-time now',
     'track 1 ip sla 1 reachability',' delay down 10 up 300','track 2 ip sla 2 reachability',' delay down 10 up 300',
     'track 3 ip sla 3 reachability',' delay down 10 up 300','track 4 ip sla 4 reachability',' delay down 10 up 300',
     `ip route 0.0.0.0 0.0.0.0 100.64.${n}.1 track 1`,`ip route 0.0.0.0 0.0.0.0 100.64.${n}.5 10 track 2`,
@@ -4905,8 +4908,8 @@ function routerWanInterface(type){
   return {
     starlink: 'GigabitEthernet0/0/1',
     kuiper: 'GigabitEthernet0/0/2',
-    g5: 'Cellular0/1/0',
-    g4: 'Cellular0/1/1',
+    g5: 'GigabitEthernet0/0/3',
+    g4: 'GigabitEthernet0/0/4',
   }[type];
 }
 
@@ -5030,8 +5033,8 @@ function isSupportedDeviceInterface(name, type){
       'GigabitEthernet0/0/0.40',
       'GigabitEthernet0/0/1',
       'GigabitEthernet0/0/2',
-      'Cellular0/1/0',
-      'Cellular0/1/1',
+      'GigabitEthernet0/0/3',
+      'GigabitEthernet0/0/4',
       'Loopback0',
       'Tunnel100',
       'Tunnel200',
@@ -5304,7 +5307,11 @@ function genRouterRoutes(s){
     .filter(remote => ST.mode === 'antes'
       ? ST.mpls[remote.id] === 'activo'
       : Boolean(activeLink(remote.id)))
-    .map(remote => `O IA 10.70.${remote.num}.0/24 [110/30] via 172.16.${n}.${wan[active].peer}, ${activeTunnel}`)
+    .flatMap(remote => [
+      `O 10.70.${remote.num}.0/25 [110/30] via 172.16.${n}.${wan[active].peer}, ${activeTunnel}`,
+      `O 10.70.${remote.num}.128/27 [110/30] via 172.16.${n}.${wan[active].peer}, ${activeTunnel}`,
+      `O 10.70.${remote.num}.160/28 [110/30] via 172.16.${n}.${wan[active].peer}, ${activeTunnel}`,
+    ])
     : [];
   const rows = [
     `Gateway of last resort is ${active ? wan[active].nextHop : 'not set'} to network 0.0.0.0`,
