@@ -261,3 +261,24 @@ test('Consola switch real: configuración, comandos y persistencia local', async
   expect(stored).toContain('SW-LAB-TEST');
   expect(errors).toEqual([]);
 });
+
+test('Rutas filtradas muestran RIB coherente tras caída de WAN', async ({page}) => {
+  await page.goto(url);
+  const audit=await page.evaluate(()=>{
+    ST.mode='despues';
+    const site=SEDES.find(s=>s.id==='s01');
+    const issues=[];
+    ST.links.s01={starlink:'activo',kuiper:'standby',g5:'standby',g4:'standby'};recompute('s01');
+    const connected=genShowBrief(site,'router','show ip route connected');
+    const statics=genShowBrief(site,'router','show ip route static');
+    if(!connected.includes('10.70.1.176/28'))issues.push('No aparece VLAN invitados en conectadas');
+    if(!statics.includes('100.64.1.1'))issues.push('Ruta primaria no coincide');
+    ST.links.s01.starlink='caido';recompute('s01');
+    if(!genShowBrief(site,'router','show ip route static').includes('100.64.1.5'))issues.push('Ruta estática no conmuta a Leo');
+    for(const key of PRIORITY)ST.links.s01[key]='caido';
+    recompute('s01');
+    if(genShowBrief(site,'router','show ip route static').includes('S* 0.0.0.0/0'))issues.push('Ruta estática inventada tras corte');
+    return issues;
+  });
+  expect(audit).toEqual([]);
+});
