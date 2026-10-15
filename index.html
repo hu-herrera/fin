@@ -4441,7 +4441,7 @@ function handleTermCmd(ev,sedeId,pcIdx){
 
     function genSwitchRunningConfig(s, swN=1){
       const n=s.num, host=`SW-${s.code}-0${swN}`;
-      const lines=['Building configuration...','Current configuration : 6421 bytes','version 17.9',`hostname ${host}`,
+      const lines=['Building configuration...','version 17.9',`hostname ${host}`,
         'aaa new-model','aaa authentication login default group tacacs+ local','aaa authorization exec default group tacacs+ local',
         'aaa accounting exec default start-stop group tacacs+','clock timezone CLT -4 0','switch 1 provision c9200l-48t-4g','! Switch de acceso independiente','ip domain name financierapacifico.cl',
         'ip name-server 10.70.0.10','ip name-server 10.70.0.11','login on-success log','login on-failure log',
@@ -4470,7 +4470,7 @@ function handleTermCmd(ev,sedeId,pcIdx){
         'snmp-server host 10.70.0.101 version 3 priv monitor-ro','tacacs server ISE-01',' address ipv4 10.70.0.20',
         ' key LAB-ONLY-TACACS-KEY',' timeout 5','line con 0',' logging synchronous','line vty 0 4',' transport input ssh',
         'ntp server 10.70.0.1 prefer','end'];
-      while(lines.length<85) lines.splice(lines.length-1,0,`! interface GigabitEthernet1/0/${lines.length-40} counters normal`);
+      // No fabricar líneas de configuración para alcanzar un tamaño fijo.
       return cliText(`${host}>`,'show running-config',lines);
     }
 
