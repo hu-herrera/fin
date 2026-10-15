@@ -471,8 +471,8 @@ body{background:var(--bg);color:var(--text);
   </div>
   <div class="tb-metrics">
     <div class="metric">
-      <span class="mval" id="m-uptime" style="color:var(--accent)">99.99999%</span>
-      <span class="mlbl">Uptime</span>
+      <span class="mval" id="m-uptime" style="color:var(--accent)">99.95% (meta)</span>
+      <span class="mlbl">Meta de disponibilidad</span>
     </div>
     <div class="metric">
       <span class="mval" id="m-op" style="color:var(--green)">23/23</span>
@@ -1437,7 +1437,7 @@ ID catálogo:         ${satId.toUpperCase()}
 Constelación:        ${tipoLbl}
 Operador:            ${tipo === 'starlink' ? 'SpaceX' : 'Amazon · Amazon Leo Kuiper'}
 Tipo órbita:         LEO
-SLA contratado:      ${tipo === 'starlink' ? '99.95%' : '99.90%'}
+SLA contratado:      SIN CONTRATO (hipótesis académica)
 Enlace intersatelital: <span class="ios-up">Láser ISL activo</span>
 
 <span class="ios-hdr">ESTADO ACTUAL</span>
@@ -1589,7 +1589,7 @@ SLA contratado con ${c.operador.toUpperCase()}:
   Respuesta:       ${tipo === 'g5' || tipo === 'g4' ? '4 h' : '24 h'}
   MTTR objetivo:   ${tipo === 'g5' ? '15 min' : tipo === 'g4' ? '30 min' : '2 h'}
 
-Uptime 30 días: ${(99.5 + Math.random()*0.4).toFixed(2)}% ✓ Cumple SLA
+Uptime 30 días: SIN MEDICIÓN REAL (simulador académico)
 Incidentes abiertos: 0
 </div>`;
   }
@@ -2321,7 +2321,7 @@ function updateMetrics(){
     document.getElementById('m-uptime').textContent='99.5%';
     document.getElementById('m-uptime').style.color='var(--red)';
   } else {
-    document.getElementById('m-uptime').textContent='99.99999%';
+    document.getElementById('m-uptime').textContent='99.95% (meta)';
     document.getElementById('m-uptime').style.color='var(--accent)';
   }
   const tb = document.getElementById('topbar');
@@ -3097,7 +3097,7 @@ function showModal(){
     <div class="m2col">
       <div class="mstat"><div class="mstat-v" style="color:var(--green)">${op}</div><div class="mstat-l">Sedes operativas</div></div>
       <div class="mstat"><div class="mstat-v" style="color:${down?'var(--red)':'var(--gray)'}">${down}</div><div class="mstat-l">Sedes caídas</div></div>
-      <div class="mstat"><div class="mstat-v" style="color:var(--accent)">${ST.mode==='despues'?'99.99999%':'99.5%'}</div><div class="mstat-l">Uptime objetivo</div></div>
+      <div class="mstat"><div class="mstat-v" style="color:var(--accent)">${ST.mode==='despues'?'99.95% (meta)':'99.5%'}</div><div class="mstat-l">Disponibilidad objetivo (no medida)</div></div>
       <div class="mstat"><div class="mstat-v" style="color:var(--blue-br)">${ST.evCount}</div><div class="mstat-l">Eventos totales</div></div>
     </div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:6px">Enlace activo AHORA</div>
@@ -3112,7 +3112,7 @@ function showModal(){
     <div style="margin-top:14px;padding:10px;background:var(--panel2);border-radius:6px;font-size:11px;color:var(--text2)">
       <div style="font-weight:700;color:var(--text);margin-bottom:6px">Cálculo de disponibilidad teórica</div>
       <div>P(falla 4 enlaces simultáneos) = 7.5 × 10⁻¹¹</div>
-      <div style="color:var(--accent);font-weight:700;margin-top:4px">→ Uptime: 99.99999%</div>
+      <div style="color:var(--accent);font-weight:700;margin-top:4px">→ Uptime: 99.95% (meta)</div>
     </div>
     <div style="margin-top:12px;display:flex;justify-content:flex-end">
       <button class="btn btn-n" onclick="closeModal()">Cerrar</button>
@@ -3603,7 +3603,7 @@ function renderKPIsTab(s){
     const mplsCaido = ST.mpls[s.id] === 'caido';
     return `
     <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">99.5%</div><div class="kpi-lbl">Disponibilidad</div></div>
+      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">99.5%</div><div class="kpi-lbl">Objetivo, no medido</div></div>
       <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">180 min</div><div class="kpi-lbl">RTO</div></div>
       <div class="kpi-card"><div class="kpi-val" style="color:var(--gray)">—</div><div class="kpi-lbl">Latencia</div></div>
       <div class="kpi-card"><div class="kpi-val" style="color:var(--gray)">—</div><div class="kpi-lbl">Jitter</div></div>
@@ -3620,8 +3620,8 @@ function renderKPIsTab(s){
   const mos=(4.5-lat/100).toFixed(2);
   return `
   <div class="kpi-grid">
-    <div class="kpi-card"><div class="kpi-val" style="color:var(--accent)">99.99999%</div><div class="kpi-lbl">Disponibilidad</div></div>
-    <div class="kpi-card"><div class="kpi-val" style="color:var(--green)">&lt;1 min</div><div class="kpi-lbl">RTO</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--accent)">99.95% (meta)</div><div class="kpi-lbl">Objetivo, no medido</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:var(--green)">&le;5 min (meta)</div><div class="kpi-lbl">RTO</div></div>
     <div class="kpi-card"><div class="kpi-val" style="color:var(--blue-cm)">${al==='—'?'—':lat+' ms'}</div><div class="kpi-lbl">Latencia</div></div>
     <div class="kpi-card"><div class="kpi-val" style="color:var(--yellow)">${al==='—'?'—':jitter+' ms'}</div><div class="kpi-lbl">Jitter</div></div>
     <div class="kpi-card"><div class="kpi-val" style="color:var(--green)">0%</div><div class="kpi-lbl">Pérdida</div></div>
@@ -6572,8 +6572,8 @@ function openComparativa(){
       <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--green)">C9200L-48T-4G-E x2 (stack)</span></div>
       <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--green)">22x PA-1410</span></div>
       <div class="drow"><span class="dkey">WAN</span><span class="dval" style="color:var(--green)">4 enlaces inalámbricos</span></div>
-      <div class="drow"><span class="dkey">Uptime</span><span class="dval" style="color:var(--green)">99.99999%</span></div>
-      <div class="drow"><span class="dkey">RTO</span><span class="dval" style="color:var(--green)">&lt;1 minuto</span></div>
+      <div class="drow"><span class="dkey">Uptime</span><span class="dval" style="color:var(--green)">99.95% (meta)</span></div>
+      <div class="drow"><span class="dkey">RTO</span><span class="dval" style="color:var(--green)">&le;5 min (meta)uto</span></div>
       <div class="drow"><span class="dkey">Soporte</span><span class="dval" style="color:var(--green)">Vigente hasta 2031</span></div>
       <div class="drow"><span class="dkey">Sedes offline</span><span class="dval" style="color:${down>0?'var(--red)':'var(--green)'}">${down} ahora</span></div>
     </div>`;
