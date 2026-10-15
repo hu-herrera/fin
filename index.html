@@ -5269,7 +5269,7 @@ function genRouterRoutes(s){
     g4: { nextHop: `100.92.${n}.1`, tunnel: 'Tunnel400', local: 13, peer: 14 },
   };
   const available = PRIORITY.filter(type =>
-    !['caido','inactivo'].includes(ST.links[s.id]?.[type]) &&
+    !['caido','inactivo','recuperando'].includes(ST.links[s.id]?.[type]) &&
     !isWanInterfaceAdminDown(s.id, type));
   const wanRows = available.map(type => {
     const preference = { starlink: 1, kuiper: 10, g5: 20, g4: 30 }[type];
@@ -6139,7 +6139,7 @@ function buildSimulationGraph(){
       }
     });
     if(isSwitchStackLinkAvailable(s.id)){
-      addSimulationEdge(graph, switchIds[0], switchIds[1], 0.5, 'STACK');
+      addSimulationEdge(graph, switchIds[0], switchIds[1], 0.5, 'INTER-SWITCH');
     }
     [1, 2].forEach(swN => {
       if(isSwitchUplinkAvailable(s.id, swN) && isRouterLanAvailable(s.id)){
