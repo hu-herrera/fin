@@ -777,7 +777,7 @@ const SEDES = [
   { id:'cm',  code:'CM',  name:'Casa Matriz / Datacenter', city:'Santiago Centro',
     lat:-33.45, lon:-70.65, ip:'10.70.0.1',  num:0,  isCM:true,
     router:'RTR-CM-01 (activo) / RTR-CM-02 (pasivo)',
-    switches:'SW-CM-01, SW-CM-02 (Catalyst C9200-48U)', ha:true,
+    switches:'SW-CM-01, SW-CM-02 (Catalyst C9200L-48T-4G-E)', ha:true,
     links:{ starlink:{bw:'180 Mbps',lat:'25 ms'}, kuiper:{bw:'130 Mbps',lat:'35 ms'}, g5:{bw:'300 Mbps',lat:'18 ms'}, g4:{bw:'60 Mbps',lat:'40 ms'} } },
   { id:'s01', code:'S01', name:'Sucursal 01', city:'Providencia', lat:-33.43, lon:-70.61, ip:'10.70.1.1', num:1,
     links:{ starlink:{bw:'180 Mbps',lat:'25 ms'}, kuiper:{bw:'130 Mbps',lat:'35 ms'}, g5:{bw:'300 Mbps',lat:'18 ms'}, g4:{bw:'60 Mbps',lat:'40 ms'} } },
@@ -2526,9 +2526,9 @@ function renderDetail(id){
     <div class="drow"><span class="dkey">Firewall</span><span class="dval">${s.isCM ? 'Cisco ASA 5512-X' : 'No instalado'}</span></div>
     <div class="drow"><span class="dkey">Soporte</span><span class="dval" style="color:var(--red)">EOL · 6-9 años sin soporte</span></div>
   ` : `
-    <div class="drow"><span class="dkey">Router</span><span class="dval">Cisco ISR 4461</span></div>
-    <div class="drow"><span class="dkey">Switches</span><span class="dval">Cisco C9200-48U (x2 stack)</span></div>
-    <div class="drow"><span class="dkey">Firewall</span><span class="dval">Palo Alto PA-850</span></div>
+    <div class="drow"><span class="dkey">Router</span><span class="dval">Cisco Catalyst C8300-2N2S-4T2X</span></div>
+    <div class="drow"><span class="dkey">Switches</span><span class="dval">Cisco C9200L-48T-4G-E (x2 stack)</span></div>
+    <div class="drow"><span class="dkey">Firewall</span><span class="dval">Palo Alto PA-1410</span></div>
     <div class="drow"><span class="dkey">Soporte</span><span class="dval" style="color:var(--green)">Soporte vigente hasta 2031</span></div>
   `;
   panel.innerHTML=`
@@ -3503,7 +3503,7 @@ function renderTopoTab(s){
   <!-- Router -->
   <rect x="440" y="175" width="420" height="76" rx="8" fill="#1a2010" stroke="${rtCol}" stroke-width="2.5"/>
   <text x="650" y="207" text-anchor="middle" font-size="19" fill="${rtCol}" font-weight="700" font-family="system-ui" onclick="openDevice('router','${s.id}')" style="cursor:pointer">
-    🔧 ${s.isCM?'RTR-CM-01 (activo)':'RTR-'+s.code} — Cisco ISR 4461
+    🔧 ${s.isCM?'RTR-CM-01 (activo)':'RTR-'+s.code} — Cisco Catalyst C8300-2N2S-4T2X
   </text>
   <text x="650" y="230" text-anchor="middle" font-size="13" fill="#8a93a6" font-family="system-ui">NIM-5G-LTE-GA · IOS-XE 17.9.4 · OSPF · IPsec · BFD</text>
 
@@ -3512,7 +3512,7 @@ function renderTopoTab(s){
   <!-- Firewall -->
   <rect x="440" y="285" width="420" height="70" rx="8" fill="#14101e" stroke="#9070cc" stroke-width="2"/>
   <text x="650" y="315" text-anchor="middle" font-size="19" fill="#9070cc" font-weight="700" font-family="system-ui" onclick="openDevice('fw','${s.id}')" style="cursor:pointer">
-    🛡 PA-${s.isCM?'CM':s.code} — Palo Alto PA-850
+    🛡 PA-${s.isCM?'CM':s.code} — Palo Alto PA-1410
   </text>
   <text x="650" y="338" text-anchor="middle" font-size="13" fill="#8a93a6" font-family="system-ui">PAN-OS 11.1 · Threat Prevention</text>
 
@@ -3522,14 +3522,14 @@ function renderTopoTab(s){
   <!-- Switch 1 -->
   <rect x="${sw1X-190}" y="${swY}" width="380" height="66" rx="8" fill="#0e1e10" stroke="#3cc878" stroke-width="2"/>
   <text x="${sw1X}" y="${swY+32}" text-anchor="middle" font-size="18" fill="#3cc878" font-weight="700" font-family="system-ui" onclick="openDevice('sw1','${s.id}')" style="cursor:pointer">
-    SW-${s.isCM?'CM':s.code}-01 — C9200-48U
+    SW-${s.isCM?'CM':s.code}-01 — C9200L-48T-4G-E
   </text>
   <text x="${sw1X}" y="${swY+54}" text-anchor="middle" font-size="13" fill="#5a6478" font-family="system-ui">${sw1pcs.length} PCs · MACsec</text>
 
   <!-- Switch 2 -->
   <rect x="${sw2X-190}" y="${swY}" width="380" height="66" rx="8" fill="#0e1e10" stroke="#3cc878" stroke-width="2"/>
   <text x="${sw2X}" y="${swY+32}" text-anchor="middle" font-size="18" fill="#3cc878" font-weight="700" font-family="system-ui" onclick="openDevice('sw2','${s.id}')" style="cursor:pointer">
-    SW-${s.isCM?'CM':s.code}-02 — C9200-48U
+    SW-${s.isCM?'CM':s.code}-02 — C9200L-48T-4G-E
   </text>
   <text x="${sw2X}" y="${swY+54}" text-anchor="middle" font-size="13" fill="#5a6478" font-family="system-ui">${sw2pcs.length} PCs · MACsec</text>
 
@@ -3558,8 +3558,8 @@ function renderCmdTab(s){
   }
   return `<div style="margin-bottom:10px">
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-b" onclick="openDevice('router','${s.id}')">🔧 Router ISR 4461</button>
-      <button class="btn btn-b" onclick="openDevice('fw','${s.id}')">🛡 Firewall PA-850</button>
+      <button class="btn btn-b" onclick="openDevice('router','${s.id}')">🔧 Router C8300</button>
+      <button class="btn btn-b" onclick="openDevice('fw','${s.id}')">🛡 Firewall PA-1410</button>
       <button class="btn btn-b" onclick="openDevice('sw1','${s.id}')">⚡ Switch 01 C9200</button>
       <button class="btn btn-b" onclick="openDevice('sw2','${s.id}')">⚡ Switch 02 C9200</button>
     </div>
@@ -3649,16 +3649,16 @@ function openDevice(type, sedeId){
     };
   } else {
     titles = {
-      router:`RTR-${s.code} — Cisco ISR 4461`,
-      fw:`PA-${s.code} — Palo Alto PA-850`,
-      sw1:`SW-${s.code}-01 — Cisco Catalyst C9200-48U`,
-      sw2:`SW-${s.code}-02 — Cisco Catalyst C9200-48U`,
+      router:`RTR-${s.code} — Cisco Catalyst C8300-2N2S-4T2X`,
+      fw:`PA-${s.code} — Palo Alto PA-1410`,
+      sw1:`SW-${s.code}-01 — Cisco Catalyst C9200L-48T-4G-E`,
+      sw2:`SW-${s.code}-02 — Cisco Catalyst C9200L-48T-4G-E`,
     };
     models = {
-      router:'Cisco ISR 4461 · NIM-5G-LTE-GA · IOS-XE 17.9.4a',
-      fw:'Palo Alto PA-850 · PAN-OS 11.1.2',
-      sw1:'Cisco Catalyst C9200-48U · IOS-XE 17.9.4',
-      sw2:'Cisco Catalyst C9200-48U · IOS-XE 17.9.4',
+      router:'Cisco Catalyst C8300-2N2S-4T2X · NIM-5G-LTE-GA · IOS-XE 17.9.4a',
+      fw:'Palo Alto PA-1410 · PAN-OS 11.1.2',
+      sw1:'Cisco Catalyst C9200L-48T-4G-E · IOS-XE 17.9.4',
+      sw2:'Cisco Catalyst C9200L-48T-4G-E · IOS-XE 17.9.4',
     };
   }
 
@@ -3774,7 +3774,7 @@ function genRouterOverview(s){
 
 Cisco IOS XE Software, Version 17.09.04a
 RTR-${s.code} uptime is ${UPTIME}
-Cisco ISR 4461 (2RU) processor
+Cisco Catalyst C8300-2N2S-4T2X (2RU) processor
 
 <span class="ios-hdr">HARDWARE MÓVIL INSTALADO</span>
 Módulo: NIM-5G-LTE-GA (Network Interface Module)
@@ -3942,7 +3942,7 @@ Años sin soporte:    9 años
 • Posible incumplimiento PCI DSS
 
 <span class="ios-hdr">CONCLUSIÓN</span>
-<span class="ios-down">⚠ Debe ser reemplazado por Palo Alto PA-850</span>`;
+<span class="ios-down">⚠ Debe ser reemplazado por Palo Alto PA-1410</span>`;
 }
 
 function genSWLegacyOverview(s){
@@ -4126,7 +4126,7 @@ function genSWOverview(s,swN){
 
 Cisco IOS XE Software, Version 17.09.04
 SW-${s.code}-0${swN} uptime is ${UPTIME}
-Model Number      : C9200-48U
+Model Number      : C9200L-48T-4G-E
 MAC entries: ${mac}
 DNA Center: <span class="ios-up">ACTIVO</span>`;
 }
@@ -4478,13 +4478,13 @@ function handleTermCmd(ev,sedeId,pcIdx){
       const host=`SW-${s.code}-0${swN}`;
       return cliText(`${host}>`,'show version',['Cisco IOS XE Software, Version 17.09.04a','Cisco IOS Software [Cupertino], Catalyst 9000 Software (CAT9K_IOSXE), Version 17.9.4a, RELEASE SOFTWARE (fc3)',
         'Technical Support: http://www.cisco.com/techsupport','Copyright (c) 1986-2024 by Cisco Systems, Inc.',
-        `${host} uptime is ${UPTIME}`,'cisco C9200-48U (ARM64) processor with 2097152K/6147K bytes of memory.',
+        `${host} uptime is ${UPTIME}`,'cisco C9200L-48T-4G-E (ARM64) processor with 2097152K/6147K bytes of memory.',
         'Processor board ID FOC2345A2BC','24 Gigabit Ethernet interfaces','4 Ten Gigabit Ethernet interfaces',
         '2048K bytes of non-volatile configuration memory.','8388608K bytes of physical memory.',
         'Base Ethernet MAC Address       : 001a.2b3c.4d5e','Motherboard Assembly Number     : 68-101234-01',
-        'Model Number                    : C9200-48U','Configuration register is 0x102',
+        'Model Number                    : C9200L-48T-4G-E','Configuration register is 0x102',
         'Switch/Stack Mac Address : 001a.2b3c.4d5e','H/W Current','Switch# Role Priority State Model Version',
-        '1 Active 15 Ready C9200-48U 17.9.4a','2 Standby 14 Ready C9200-48U 17.9.4a','SW Image: CAT9K_IOSXE']);
+        '1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','2 Standby 14 Ready C9200L-48T-4G-E 17.9.4a','SW Image: CAT9K_IOSXE']);
     }
 
     function genSwitchDetail(s, type, command){
@@ -4495,7 +4495,7 @@ function handleTermCmd(ev,sedeId,pcIdx){
       if(command==='show power inline') return h+['Available:370.0(w) Used:186.4(w) Remaining:183.6(w)','Interface Admin Oper Power Device Class','Gi1/0/5 auto on 6.3W IP Phone 8845 3','Gi1/0/8 auto on 6.3W IP Phone 8845 3','Gi1/0/33 auto on 30.0W AP C9130AXI 4','Gi1/0/34 auto on 30.0W AP C9130AXI 4'].join('<br>');
       if(command==='show etherchannel summary' || command==='show port-channel summary') return h+['Group Port-channel Protocol Ports','1 Po1(SD) LACP Gi1/0/1(P) Gi1/0/2(P)'].join('<br>');
       if(command==='show interfaces trunk') return h+['Port Mode Encapsulation Status Native vlan','Po1 on 802.1q trunking 999','Gi1/0/33 on 802.1q trunking 999','Gi1/0/34 on 802.1q trunking 999','Vlans allowed on trunk: 10,20,30,40','Vlans allowed and active in management domain: 10,20,30,40','Vlans in spanning tree forwarding state and not pruned: 10,20,30,40'].join('<br>');
-      if(command==='show switch' || command==='show stack') return h+['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Mac persistency wait time: Indefinite','H/W Current','Switch# Role Priority State Model Version','1 Active 15 Ready C9200-48U 17.9.4a','2 Standby 14 Ready C9200-48U 17.9.4a'].join('<br>');
+      if(command==='show switch' || command==='show stack') return h+['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Mac persistency wait time: Indefinite','H/W Current','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','2 Standby 14 Ready C9200L-48T-4G-E 17.9.4a'].join('<br>');
       if(command==='show cdp neighbors') return h+['Capability Codes: R - Router, S - Switch, H - Host','Device ID Local Intrfce Holdtme Capability Platform Port ID',`RTR-${s.code} Gi1/0/1 169 R ISR4461 Gi0/0/0`,`AP-WiFi-1 Gi1/0/33 145 T C9130AXI Gig0`,`AP-WiFi-2 Gi1/0/34 145 T C9130AXI Gig0`].join('<br>');
       return null;
     }
@@ -4673,7 +4673,7 @@ function genSwitchRunningConfig(s, swN=1){
 
 function genSwitchVersionFull(s, swN=1){
   const host=`SW-${s.code}-0${swN}`;
-  return cliText(`${host}>`,'show version',['Cisco IOS XE Software, Version 17.09.04a','Cisco IOS Software [Cupertino], Catalyst 9000 Software (CAT9K_IOSXE), Version 17.9.4a, RELEASE SOFTWARE (fc3)',`${host} uptime is ${UPTIME}`,'cisco C9200-48U (ARM64) processor with 2097152K/6147K bytes of memory.','Processor board ID FOC2345A2BC','24 Gigabit Ethernet interfaces','4 Ten Gigabit Ethernet interfaces','2048K bytes of non-volatile configuration memory.','8388608K bytes of physical memory.','Base Ethernet MAC Address : 001a.2b3c.4d5e','Model Number : C9200-48U','Switch/Stack Mac Address : 001a.2b3c.4d5e','Switch# Role Priority State Model Version','1 Active 15 Ready C9200-48U 17.9.4a','2 Standby 14 Ready C9200-48U 17.9.4a','SW Image: CAT9K_IOSXE','Configuration register is 0x102']);
+  return cliText(`${host}>`,'show version',['Cisco IOS XE Software, Version 17.09.04a','Cisco IOS Software [Cupertino], Catalyst 9000 Software (CAT9K_IOSXE), Version 17.9.4a, RELEASE SOFTWARE (fc3)',`${host} uptime is ${UPTIME}`,'cisco C9200L-48T-4G-E (ARM64) processor with 2097152K/6147K bytes of memory.','Processor board ID FOC2345A2BC','24 Gigabit Ethernet interfaces','4 Ten Gigabit Ethernet interfaces','2048K bytes of non-volatile configuration memory.','8388608K bytes of physical memory.','Base Ethernet MAC Address : 001a.2b3c.4d5e','Model Number : C9200L-48T-4G-E','Switch/Stack Mac Address : 001a.2b3c.4d5e','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','2 Standby 14 Ready C9200L-48T-4G-E 17.9.4a','SW Image: CAT9K_IOSXE','Configuration register is 0x102']);
 }
 
 function genSwitchDetail(s,type,command){
@@ -4705,8 +4705,8 @@ function genSwitchDetail(s,type,command){
     'show power inline':['Available:370.0(w) Used:186.4(w) Remaining:183.6(w)','Interface Admin Oper Power Device Class','Gi1/0/5 auto on 6.3W IP Phone 8845 3','Gi1/0/8 auto on 6.3W IP Phone 8845 3','Gi1/0/33 auto on 30.0W AP C9130AXI 4','Gi1/0/34 auto on 30.0W AP C9130AXI 4'],
     'show etherchannel summary':['Group Port-channel Protocol Ports','1 Po1(SD) LACP Gi1/0/1(P) Gi1/0/2(P)'],
     'show interfaces trunk':['Port Mode Encapsulation Status Native vlan','Po1 on 802.1q trunking 999','Gi1/0/33 on 802.1q trunking 999','Gi1/0/34 on 802.1q trunking 999','Vlans allowed on trunk: 10,20,30,40','Vlans allowed and active in management domain: 10,20,30,40','Vlans in spanning tree forwarding state and not pruned: 10,20,30,40'],
-    'show stack':['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Mac persistency wait time: Indefinite','Switch# Role Priority State Model Version','1 Active 15 Ready C9200-48U 17.9.4a','2 Standby 14 Ready C9200-48U 17.9.4a'],
-    'show switch':['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Switch# Role Priority State Model Version','1 Active 15 Ready C9200-48U 17.9.4a','2 Standby 14 Ready C9200-48U 17.9.4a']};
+    'show stack':['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Mac persistency wait time: Indefinite','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','2 Standby 14 Ready C9200L-48T-4G-E 17.9.4a'],
+    'show switch':['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','2 Standby 14 Ready C9200L-48T-4G-E 17.9.4a']};
   return rows[command] ? h+rows[command].join('<br>') : null;
 }
 
@@ -5470,9 +5470,9 @@ function genShowBrief(s, type, command){
     if(command === 'show crypto session') return `${prompt} ${header}Interface: Tunnel0<br>Session status: <span class="ios-up">UP-ACTIVE</span><br>IKEv2 SA: ESTABLISHED · IPsec: UP`;
     if(command === 'show processes cpu') return `${prompt} ${header}CPU utilization for five seconds: 18%/2%; one minute: 16%; five minutes: 14%`;
     if(command === 'show memory statistics') return `${prompt} ${header}Processor Pool Total: 8192M Used: 2470M Free: 5722M`;
-    if(command === 'show cdp neighbors detail' || command === 'show lldp neighbors') return `${prompt} ${header}Device ID: SW-${s.code}-01<br>Interface: Gi0/0/2 · Port ID: Gi1/0/1<br>IP address: 10.70.${n}.2 · Platform: Cisco C9200-48U`;
+    if(command === 'show cdp neighbors detail' || command === 'show lldp neighbors') return `${prompt} ${header}Device ID: SW-${s.code}-01<br>Interface: Gi0/0/2 · Port ID: Gi1/0/1<br>IP address: 10.70.${n}.2 · Platform: Cisco C9200L-48T-4G-E`;
     if(command === 'show vlan brief') return `${prompt} ${header}10  DATOS-Usuarios  active  Gi0/0/2.10<br>20  VOIP-Telefonia  active  Gi0/0/2.20<br>30  GESTION-Red     active  Gi0/0/2.30<br>40  INVITADOS-DMZ   active  Gi0/0/2.40`;
-    if(command === 'show inventory') return `${prompt} ${header}NAME: "Chassis", DESCR: "Cisco ISR 4461"<br>PID: ISR4461/K9 · SN: FOC-LAB-${String(n).padStart(3,'0')}<br>NAME: "NIM-5G-LTE-GA", DESCR: "Cellular module"`;
+    if(command === 'show inventory') return `${prompt} ${header}NAME: "Chassis", DESCR: "Cisco Catalyst C8300-2N2S-4T2X"<br>PID: ISR4461/K9 · SN: FOC-LAB-${String(n).padStart(3,'0')}<br>NAME: "NIM-5G-LTE-GA", DESCR: "Cellular module"`;
     if(command === 'show environment') return `${prompt} ${header}Temperature: <span class="ios-up">Normal</span> · CPU: 18% · Power supplies: 2/2 OK · Fans: OK`;
     if(command === 'show redundancy') return `${prompt} ${header}Redundancy mode: Stateful Switchover<br>              Active             Standby<br>RP state:     <span class="ios-up">ACTIVE</span>             READY`;
     if(command === 'show standby brief') return `${prompt} ${header}<span class="ios-hdr">                     P indicates configured to preempt.</span><br>Gi0/0/2.10  10.70.${n}.1  local  Active  Standby  10.70.${n}.2`;
@@ -5497,13 +5497,13 @@ function genShowBrief(s, type, command){
     if(command === 'show ip route') return `${base}C    10.70.${n}.0/24 is directly connected, Vlan10<br>S*   0.0.0.0/0 [1/0] via 10.70.${n}.1`;
     if(command.includes('mac address-table')) return `${base}<span class="ios-hdr">Vlan    Mac Address       Type       Ports</span><br>10      001a.2b${String(n).padStart(2,'0')}0a.ff DYNAMIC    Gi1/0/3<br>30      001a.2b${String(n).padStart(2,'0')}0b.ff DYNAMIC    Gi1/0/1`;
     if(command === 'show spanning-tree' || command === 'show spanning-tree brief' || command === 'show spanning-tree root') return `${base}VLAN0010  Root bridge: SW-${s.code}-01  Priority 24586<br>Gi1/0/1 Forwarding · Gi1/0/2 Forwarding`;
-    if(command === 'show cdp neighbors detail' || command === 'show lldp neighbors detail') return `${base}Device ID: RTR-${s.code}<br>Interface: Gi1/0/1 · Port ID: Gi0/0/2<br>IP address: 10.70.${n}.1 · Platform: Cisco ISR 4461`;
+    if(command === 'show cdp neighbors detail' || command === 'show lldp neighbors detail') return `${base}Device ID: RTR-${s.code}<br>Interface: Gi1/0/1 · Port ID: Gi0/0/2<br>IP address: 10.70.${n}.1 · Platform: Cisco Catalyst C8300-2N2S-4T2X`;
     if(command === 'show lldp neighbors') return `${base}<span class="ios-hdr">Local Intf  Chassis Id        Port Id       System Name</span><br>Gi1/0/1     RTR-${s.code}           Gi0/0/2       RTR-${s.code}`;
     if(command === 'show port-channel summary' || command === 'show etherchannel summary') return `${base}<span class="ios-hdr">Group  Port-channel  Protocol  Ports</span><br>1      Po1(SU)        LACP      Gi1/0/47(P) Gi1/0/48(P)`;
     if(command === 'show switch') return `${base}<span class="ios-hdr">Switch/Stack Mac Address : Priority Version State</span><br>1        00aa.bbcc.${String(n).padStart(2,'0')}  15       READY  <span class="ios-up">Ready</span>`;
     if(command === 'show power inline') return `${base}<span class="ios-hdr">Interface  Admin  Oper  Power(W)  Device</span><br>Gi1/0/3    auto   on    7.2       Ieee PD`;
     if(command === 'show environment') return `${base}Temperature: <span class="ios-up">Normal</span> · Fans: OK · Power: 2/2 OK · Status: <span class="ios-up">GREEN</span>`;
-    if(command === 'show inventory') return `${base}NAME: "Switch 1", DESCR: "C9200-48U"<br>PID: C9200-48U · SN: FOC-SW-${String(n).padStart(3,'0')}`;
+    if(command === 'show inventory') return `${base}NAME: "Switch 1", DESCR: "C9200L-48T-4G-E"<br>PID: C9200L-48T-4G-E · SN: FOC-SW-${String(n).padStart(3,'0')}`;
     if(command === 'show authentication sessions') return `${base}<span class="ios-hdr">Interface  MAC Address      Method  Domain  Status</span><br>Gi1/0/3     001a.2b${String(n).padStart(2,'0')}0a.ff dot1x   DATA    <span class="ios-up">Auth</span>`;
     if(command === 'show logging') return `${base}%SYS-5-CONFIG_I: Configured from console by admin<br>%LINK-3-UPDOWN: Interface Gi1/0/1, changed state to up`;
   }
@@ -6570,8 +6570,8 @@ function openComparativa(){
     </div>
     <div style="background:#0a2010;border:1px solid var(--green);border-radius:6px;padding:14px">
       <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px">✓ DESPUÉS — Rediseño 2026</div>
-      <div class="drow"><span class="dkey">Routers</span><span class="dval" style="color:var(--green)">Cisco ISR 4461 + NIM-5G</span></div>
-      <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--green)">C9200-48U x2 (stack)</span></div>
+      <div class="drow"><span class="dkey">Routers</span><span class="dval" style="color:var(--green)">Cisco Catalyst C8300-2N2S-4T2X + NIM-5G</span></div>
+      <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--green)">C9200L-48T-4G-E x2 (stack)</span></div>
       <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--green)">22x PA-850</span></div>
       <div class="drow"><span class="dkey">WAN</span><span class="dval" style="color:var(--green)">4 enlaces inalámbricos</span></div>
       <div class="drow"><span class="dkey">Uptime</span><span class="dval" style="color:var(--green)">99.99999%</span></div>
