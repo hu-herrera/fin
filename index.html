@@ -5282,7 +5282,8 @@ function genRouterRoutes(s){
     { name: 'GigabitEthernet0/0/0.10', network: `10.70.${n}.0/25`, address: `10.70.${n}.1/32` },
     { name: 'GigabitEthernet0/0/0.20', network: `10.70.${n}.128/27`, address: `10.70.${n}.129/32` },
     { name: 'GigabitEthernet0/0/0.30', network: `10.70.${n}.160/28`, address: `10.70.${n}.161/32` },
-    { name: 'GigabitEthernet0/0/0.40', network: `192.168.${n}.0/24`, address: `192.168.${n}.1/32` },
+    { name: 'GigabitEthernet0/0/0.40', network: `10.70.${n}.176/28`, address: `10.70.${n}.177/32` },
+    { name: 'GigabitEthernet0/0/0.99', network: `192.168.${n}.0/24`, address: `192.168.${n}.1/32` },
   ];
   const lanRoutes = interfaces
     .filter(iface => !isDeviceInterfaceAdminDown(s.id, 'router', 'GigabitEthernet0/0/0') &&
