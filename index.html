@@ -1437,7 +1437,7 @@ ID catálogo:         ${satId.toUpperCase()}
 Constelación:        ${tipoLbl}
 Operador:            ${tipo === 'starlink' ? 'SpaceX' : 'Amazon · Amazon Leo Kuiper'}
 Tipo órbita:         LEO
-SLA contratado:      SIN CONTRATO (hipótesis académica)
+SLA del operador: NO VERIFICADO (sin contratación)
 Enlace intersatelital: <span class="ios-up">Láser ISL activo</span>
 
 <span class="ios-hdr">ESTADO ACTUAL</span>
@@ -3552,7 +3552,7 @@ function renderCmdTab(s){
     return `<div style="margin-bottom:10px">
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-legacy" onclick="openDevice('router','${s.id}')">🔧 ${s.isCM?'Cisco 2901':'Cisco 1921'}</button>
-        <button class="btn btn-legacy" onclick="openDevice('sw1','${s.id}')">⚡ ${s.isCM?'C3750-X (stack)':'C2960-24TT-L'}</button>
+        <button class="btn btn-legacy" onclick="openDevice('sw1','${s.id}')">⚡ ${s.isCM?'C3750-X (enlace troncal independiente)':'C2960-24TT-L'}</button>
         ${s.isCM ? `<button class="btn btn-legacy" onclick="openDevice('fw','${s.id}')">🛡 Cisco ASA 5512-X</button>` : ''}
       </div>
       <div style="font-size:11px;color:var(--red);margin-top:8px">⚠ Equipos fuera de soporte fabricante (EOL 2017-2020)</div>
@@ -4301,9 +4301,9 @@ function genRouterRunningConfig(s, startup=false){
     ' route set interface','crypto ikev2 proposal IKEV2-PROP',
     ' encryption aes-gcm-256',' integrity sha256',' group 14','crypto ikev2 policy IKEV2-POLICY',
     ' match fvrf any',' proposal IKEV2-PROP','crypto ikev2 keyring IKEV2-KEYRING',' peer CM-PEER',
-    '  address 200.27.1.8 255.255.255.248','  pre-shared-key local LAB-ONLY-IKE-PSK',
+    '  address 203.0.113.8 255.255.255.248','  pre-shared-key local LAB-ONLY-IKE-PSK',
     '  pre-shared-key remote LAB-ONLY-IKE-PSK','crypto ikev2 profile IKEV2-PROFILE',
-    ' match identity remote address 200.27.1.8 255.255.255.248',
+    ' match identity remote address 203.0.113.8 255.255.255.248',
     ' authentication remote pre-share',' authentication local pre-share',' keyring local IKEV2-KEYRING',
     ' dpd 10 3 on-demand',' nat force-encap','crypto ipsec transform-set IPSEC-TS esp-gcm 256',' mode tunnel',
     'crypto ipsec profile IPSEC-PROFILE',' set transform-set IPSEC-TS',' set ikev2-profile IKEV2-PROFILE',' set pfs group14','!',
@@ -4318,10 +4318,10 @@ function genRouterRunningConfig(s, startup=false){
       ...(vlan==='10'||vlan==='20'||vlan==='40'?[' ip nat inside']:[]),
       ...(vlan==='40'?[' ip access-group GUEST-ACL in']:[]));
   });
-  [['1','Starlink Business','1440','10','100.64.'+n+'.2','200.27.1.10','GigabitEthernet0/0/1'],
-   ['2','Amazon Leo Kuiper','1440','20','100.64.'+n+'.6','200.27.1.11','GigabitEthernet0/0/2'],
-   ['3','5G Entel (gateway externo)','1400','30','100.85.'+n+'.2','200.27.1.12','GigabitEthernet0/0/3'],
-   ['4','4G GTD (gateway externo)','1400','40','100.92.'+n+'.2','200.27.1.13','TenGigabitEthernet0/0/4']].forEach(([idx,name,mtu,cost,local,remote,source])=>{
+  [['1','Starlink Business','1440','10','100.64.'+n+'.2','203.0.113.10','GigabitEthernet0/0/1'],
+   ['2','Amazon Leo Kuiper','1440','20','100.64.'+n+'.6','203.0.113.11','GigabitEthernet0/0/2'],
+   ['3','5G Entel (gateway externo)','1400','30','100.85.'+n+'.2','203.0.113.12','GigabitEthernet0/0/3'],
+   ['4','4G GTD (gateway externo)','1400','40','100.92.'+n+'.2','203.0.113.13','TenGigabitEthernet0/0/4']].forEach(([idx,name,mtu,cost,local,remote,source])=>{
     const tun=idx==='1'?100:idx==='2'?200:idx==='3'?300:400;
     const addr=idx==='1'?1:idx==='2'?5:idx==='3'?9:13;
     lines.push('!',`interface ${source}`,` description Uplink ${name} (direccionamiento WAN de laboratorio)`,
@@ -4330,7 +4330,7 @@ function genRouterRunningConfig(s, startup=false){
       `interface Tunnel${tun}`,` description IPsec sobre ${name} hacia CM`,` ip address 172.16.${n}.${addr} 255.255.255.252`,
       ` ip mtu ${mtu}`,' ip tcp adjust-mss 1360',' load-interval 30',` tunnel source ${source}`,` tunnel destination ${remote}`,
       ' tunnel mode ipsec ipv4',' tunnel protection ipsec profile IPSEC-PROFILE',' ip ospf network point-to-point',' ip ospf 1 area 0',
-      ` ip ospf cost ${cost}`,' ip ospf bfd');
+      ` ip ospf cost ${cost}`,' ! BFD diferido hasta validar temporizadores de enlaces satelitales');
   });
   lines.push('!','router ospf 1',` router-id ${id.loopback}`,' log-adjacency-changes detail',' passive-interface default',
     ' no passive-interface Tunnel100',' no passive-interface Tunnel200',' no passive-interface Tunnel300',' no passive-interface Tunnel400',
@@ -4613,7 +4613,7 @@ function genFWCommand(s,command){
 
 function genRouterDetail(s,command){
   const n=s.num, prefix='RTR-'+s.code+'> <span class="ios-cmd">'+escapeCLI(command)+'</span><br><br>';
-  const identities={starlink:['Tunnel100',2,'200.27.1.10'],kuiper:['Tunnel200',6,'200.27.1.11'],g5:['Tunnel300',10,'200.27.1.12'],g4:['Tunnel400',14,'200.27.1.13']};
+  const identities={starlink:['Tunnel100',2,'203.0.113.10'],kuiper:['Tunnel200',6,'203.0.113.11'],g5:['Tunnel300',10,'203.0.113.12'],g4:['Tunnel400',14,'203.0.113.13']};
   const available=key=>!['caido','inactivo','recuperando'].includes(ST.links[s.id]?.[key]) && !isWanInterfaceAdminDown(s.id,key);
   const active=activeLink(s.id);
   const tunnel=active ? identities[active] : null;
@@ -4647,7 +4647,7 @@ function genRouterDetail(s,command){
   if(command==='show interfaces Tunnel100')
     return prefix+'Tunnel100 is '+(available('starlink')?'up (simulated)':'down')+
       '<br>Internet address 172.16.'+n+'.1/30<br>Tunnel source GigabitEthernet0/0/1'+
-      '<br>Tunnel destination 200.27.1.10 (ejemplo no contratado)'+
+      '<br>Tunnel destination 203.0.113.10 (ejemplo no contratado)'+
       '<br>Cifrado y contadores de hardware no comprobados.';
   return null;
 }
