@@ -1,0 +1,179 @@
+const {test,expect}=require('@playwright/test');
+const path=require('node:path');
+const {pathToFileURL}=require('node:url');
+const url=pathToFileURL(path.resolve(__dirname,'../index.html')).href;
+
+async function setOperational(page){
+ await page.goto(url);
+ await page.evaluate(()=>{
+   ST.mode='despues';
+   for(const s of SEDES){
+     ST.links[s.id]={starlink:'activo',kuiper:'standby',g5:'standby',g4:'standby'};
+     ST.failback[s.id]={pending:false};
+     recompute(s.id);
+   }
+ });
+}
+
+test('LLD por sede: máscaras, IP únicas, configuración Cisco y firewall consistentes',async({page})=>{
+ await setOperational(page);
+ const report=await page.evaluate(()=>{
+   const failures=[],addresses=new Set();
+   for(const s of SEDES){
+     const n=s.num,r=genRouterRunningConfig(s),sw1=genSwitchRunningConfig(s,1),
+       sw2=genSwitchRunningConfig(s,2),fw=genFWCommand(s,'show running-config');
+     const check=(ok,msg)=>{if(!ok)failures.push(s.id+': '+msg)};
+     for(const [suffix,mask] of [['1','255.255.255.128'],['129','255.255.255.224'],
+       ['161','255.255.255.240'],['177','255.255.255.240']]){
+       check(r.includes('ip address 10.70.'+n+'.'+suffix+' '+mask),'router gateway '+suffix+'/'+mask);
+     }
+     check(r.includes('GigabitEthernet0/0/0.10'),'troncal LAN router');
+     check(r.includes('GigabitEthernet0/0/3'),'Ethernet Entel externo');
+     check(r.includes('TenGigabitEthernet0/0/4'),'SFP GTD externo');
+     check(!r.includes('Cellular0/1/'),'interfaces celulares integradas inexistentes');
+     check(r.includes('permit 10.70.'+n+'.176 0.0.0.15'),'NAT VLAN40');
+     check(r.includes('access-class MGMT-SOURCES in'),'ACL VTY de administración');
+     check(!r.includes('MGMT-ACL in'),'ACL de administración que bloquearía VLAN30');
+     check(!r.includes('md5 7 104D000A0618'),'OSPF MD5 heredado');
+     check(sw1.includes('10.70.'+n+'.162 255.255.255.240'),'IP gestión SW1');
+     check(sw2.includes('10.70.'+n+'.163 255.255.255.240'),'IP gestión SW2');
+     check(sw1.includes('interface GigabitEthernet1/0/46'),'puerto de gestión del PA-1410');
+     check(sw1.includes('ip default-gateway 10.70.'+n+'.161'),'gateway gestión de switch');
+     check(sw1.includes('no ip routing'),'switch de acceso L2');
+     check(sw2.includes('RESERVADO-SIN-ENLACE-ROUTER'),'SW2 sin segundo uplink ficticio');
+     check(!sw1.includes('interface Port-channel1'),'Port channel SW1 ficticio');
+     check(!sw2.includes('channel-group 1'),'Port channel SW2 ficticio');
+     check(fw.includes('10.70.'+n+'.164'),'PA en VLAN gestión 30');
+     check(!fw.includes('10.70.'+n+'.178'),'PA en subred invitados por error');
+     check(!fw.includes('set network ike gateway'),'IPsec duplicado en PA');
+     check(genFWIfaces(s).includes('virtual-wire'),'tipo de firewall');
+     check(genIfBrief(s).includes('GigabitEthernet0/0/0.10'),'show interface brief coincide con configuración');
+     check(genRouterVLAN(s).includes('10.70.'+n+'.1/25'),'show vlan coincide con máscara');
+     for(const pc of getPCs(s)){
+       const oct=Number(pc.ip.split('.').at(-1));
+       check(oct>=2&&oct<=126,'PC fuera de /25: '+pc.ip);
+       check(!addresses.has(pc.ip),'IP de PC duplicada '+pc.ip);
+       addresses.add(pc.ip);
+     }
+     for(const host of [1,129,161,162,163,164,177]){
+       const ip='10.70.'+n+'.'+host;
+       check(!addresses.has(ip),'IP equipo coincide con otra PC: '+ip);
+     }
+   }
+   return {failures,sites:SEDES.length,pcs:addresses.size};
+ });
+ expect(report.sites).toBe(23);
+ expect(report.pcs).toBeGreaterThan(500);
+ expect(report.failures).toEqual([]);
+});
+
+test('Conmutación LAN física: router vía SW1, SW2 por único troncal Gi45',async({page})=>{
+ await setOperational(page);
+ const report=await page.evaluate(()=>{
+   const id='s01',a=DEVICE_CLI_SESSIONS.get('s01:sw1'),b=DEVICE_CLI_SESSIONS.get('s01:sw2');
+   const issues=[],check=(ok,msg)=>{if(!ok)issues.push(msg)};
+   a.interfaces={};b.interfaces={};
+   check(isSwitchPathAvailable(id,1)&&isSwitchPathAvailable(id,2),'estado inicial');
+   check(isSiteLanAvailable(id),'LAN inicial');
+   b.interfaces['Gi1/0/45']={shutdown:true};
+   check(isSwitchPathAvailable(id,1),'SW1 debe continuar conectado');
+   check(!isSwitchPathAvailable(id,2),'SW2 debe desconectarse sin Gi45');
+   b.interfaces['Gi1/0/45']={shutdown:false};
+   check(isSwitchPathAvailable(id,2),'SW2 debe recuperarse');
+   a.interfaces['Gi1/0/1']={shutdown:true};
+   check(!isSwitchPathAvailable(id,1)&&!isSwitchPathAvailable(id,2),'sin uplink SW1, ambos aislados');
+   check(!isSiteLanAvailable(id),'LAN debe indicarse caída');
+   a.interfaces['Gi1/0/1']={shutdown:false};
+   check(isSwitchPathAvailable(id,1)&&isSwitchPathAvailable(id,2),'restauración uplink');
+   a.interfaces={};b.interfaces={};
+   return issues;
+ });
+ expect(report).toEqual([]);
+});
+
+test('ACL y segmentación: invitados aislados, DNS explícito y gestión sólo desde VLAN30 central',async({page})=>{
+ await setOperational(page);
+ const report=await page.evaluate(()=>{
+   const errors=[];
+   for(const s of SEDES){
+     const cfg=genRouterRunningConfig(s);
+     const guest=cfg.indexOf('ip access-list extended GUEST-ACL');
+     const deny=cfg.indexOf('deny ip any 10.70.0.0 0.0.255.255',guest);
+     const dns=cfg.indexOf('permit udp any any eq 53',guest);
+     const web=cfg.indexOf('permit tcp any any eq 443',guest);
+     if(!(guest>=0&&deny>guest&&dns>deny&&web>dns))errors.push(s.id+' GUEST ACL orden');
+     if(!cfg.includes('permit 10.70.0.160 0.0.0.15'))errors.push(s.id+' MGMT SOURCES');
+     if(!cfg.includes('ip access-group GUEST-ACL in'))errors.push(s.id+' ACL en entrada VLAN40');
+     if(!cfg.includes('ip nat inside'))errors.push(s.id+' NAT inside ausente');
+     if(cfg.includes('permit ip any any'))errors.push(s.id+' ACL excesivamente permisiva');
+   }
+   return errors;
+ });
+ expect(report).toEqual([]);
+});
+
+test('Consola operativa router, switch y NGFW coincide con topología y estados',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await setOperational(page);
+ const testCmd=async(type,commands)=>{
+   await page.evaluate(type=>{
+     document.getElementById('audit-cli')?.remove();
+     const host=document.createElement('div');host.id='audit-cli';
+     host.innerHTML=genDeviceCLI(SEDES.find(s=>s.id==='s01'),type);
+     document.body.appendChild(host);
+   },type);
+   const input=page.locator('#audit-cli #device-term-input');
+   const output=page.locator('#audit-cli #device-term-out');
+   if(type!=='fw'){await input.fill('terminal length 0');await input.press('Enter')}
+   else{await input.fill('set cli pager off');await input.press('Enter')}
+   for(const [cmd,expected] of commands){
+     await input.fill(cmd);await input.press('Enter');
+     await expect(output).toContainText(expected);
+   }
+ };
+ await testCmd('router',[
+   ['show ip interface brief','GigabitEthernet0/0/0.10'],
+   ['show ip ospf neighbor','Tunnel100'],
+   ['show ip bgp summary','BGP is not configured'],
+   ['show standby brief','HSRP no configurado']
+ ]);
+ await testCmd('sw1',[
+   ['show ip interface brief','10.70.1.162'],
+   ['show interfaces trunk','Gi1/0/45'],
+   ['show power inline','alimentación externa']
+ ]);
+ await testCmd('sw2',[
+   ['show ip interface brief','10.70.1.163'],
+   ['show etherchannel summary','No EtherChannels']
+ ]);
+ await testCmd('fw',[
+   ['show system info','10.70.1.164'],
+   ['show routing route','Virtual wire'],
+   ['show vpn ike-sa','No local PAN-OS IKEv2 SA'],
+   ['show security policy','VLAN 40 Invitados']
+ ]);
+ expect(errors).toEqual([]);
+});
+
+test('Tablas de rutas OSPF cambian en todas las sedes ante caída y no inventan /24',async({page})=>{
+ await setOperational(page);
+ const issues=await page.evaluate(()=>{
+   const issues=[];
+   for(const site of SEDES){
+     const n=site.num,route=genRouterRoutes(site);
+     if(route.includes('S* 0.0.0.0/0')===false)issues.push(site.id+' default primaria');
+     if(route.includes('O IA 10.70.'))issues.push(site.id+' sumarización /24 no configurada');
+     const peer=SEDES.find(s=>s.id!==site.id);
+     if(!route.includes('O 10.70.'+peer.num+'.0/25'))issues.push(site.id+' OSPF remoto users');
+     if(!route.includes('O 10.70.'+peer.num+'.160/28'))issues.push(site.id+' OSPF remoto gestión');
+     ST.links[site.id].starlink='caido';recompute(site.id);
+     if(activeLink(site.id)!=='kuiper')issues.push(site.id+' failover Leo');
+     ST.links[site.id].kuiper='caido';ST.links[site.id].g5='caido';ST.links[site.id].g4='caido';
+     recompute(site.id);
+     if(genRouterRoutes(site).includes('S* 0.0.0.0/0'))issues.push(site.id+' default sin WAN');
+     ST.links[site.id]={starlink:'activo',kuiper:'standby',g5:'standby',g4:'standby'};recompute(site.id);
+   }
+   return issues;
+ });
+ expect(issues).toEqual([]);
+});
