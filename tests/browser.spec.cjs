@@ -187,3 +187,30 @@ test('CLI: ping, traceroute y configuración shutdown/no shutdown', async ({page
   expect(state).toBe('starlink');
   expect(errors).toEqual([]);
 });
+
+test('Comandos de diagnóstico de router, switch y firewall sin excepciones', async ({page}) => {
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(url);
+  const results=await page.evaluate(()=>{
+    ST.mode='despues';
+    const site=SEDES.find(s=>s.id==='s01');
+    const checks={
+      router:['show version','show ip interface brief','show ip route','show ip ospf neighbor','show ip protocols','show ip sla statistics','show crypto session','show running-config'],
+      sw1:['show version','show vlan brief','show interfaces status','show mac address-table','show spanning-tree','show etherchannel summary','show running-config'],
+      sw2:['show version','show vlan brief','show interfaces status','show running-config'],
+      fw:['show system info','show routing route','show session all','show interface all','show running-config']
+    };
+    const issues=[];
+    for(const [type,commands] of Object.entries(checks)){
+      const session=deviceCliSession(site.id,type);
+      for(const command of commands){
+        const candidates=deviceCliCandidates(type,session);
+        if(!candidates.includes(command))issues.push(type+': comando ausente del catálogo '+command);
+      }
+    }
+    return {issues,count:Object.values(checks).reduce((n,commands)=>n+commands.length,0)};
+  });
+  expect(results.issues).toEqual([]);
+  expect(results.count).toBeGreaterThanOrEqual(20);
+  expect(errors).toEqual([]);
+});
