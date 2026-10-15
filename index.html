@@ -3942,7 +3942,7 @@ Años sin soporte:    9 años
 • Posible incumplimiento PCI DSS
 
 <span class="ios-hdr">CONCLUSIÓN</span>
-<span class="ios-down">⚠ Debe ser reemplazado por Palo Alto PA-1410</span>`;
+<span class="ios-down">⚠ Equipo heredado: reemplazo propuesto Palo Alto PA-1410</span>`;
 }
 
 function genSWLegacyOverview(s){
@@ -4156,7 +4156,7 @@ function getSwitchPortRecords(s,swN){
       2:{name:'Stack-Link',vlan:'trunk'},
       33:{name:'AP-WiFi-1',vlan:'trunk'},
       34:{name:'AP-WiFi-2',vlan:'trunk'},
-      45:{name:`Stackwise-Virtual-${swN}`,vlan:'trunk'},
+      45:{name:`Enlace-SW-${swN}`,vlan:'trunk'},
     }[port];
     const name=settings?.description || pc?.id || infrastructure?.name || '';
     const status=pc
@@ -4460,8 +4460,8 @@ function handleTermCmd(ev,sedeId,pcIdx){
         ' switchport mode trunk',' switchport trunk allowed vlan 10,40',' power inline auto',' spanning-tree portfast trunk',
         'interface GigabitEthernet1/0/34',' description AP-WiFi-2 C9130AXI',' switchport mode trunk',
         ' switchport trunk allowed vlan 10,40',' power inline auto',' spanning-tree portfast trunk',
-        'interface GigabitEthernet1/0/45',' description Stackwise Virtual Link',' stackwise-virtual link 1',
-        'interface GigabitEthernet2/0/45',' description Stackwise Virtual Link',' stackwise-virtual link 1',
+        'interface GigabitEthernet1/0/45',' description Enlace entre switches (sin StackWise Virtual)',' switchport mode trunk',
+        'interface GigabitEthernet2/0/45',' description Enlace entre switches (sin StackWise Virtual)',' switchport mode trunk',
         `interface Vlan30`,` ip address 10.70.${n}.66 255.255.255.240`,` ip default-gateway 10.70.${n}.65`,
         'ip dhcp snooping','ip dhcp snooping vlan 10,20,30','ip dhcp snooping database flash:dhcp_snoop.db',
         'ip arp inspection vlan 10,20,30','mka policy MKA-UPLINK',' macsec-cipher-suite gcm-aes-256',' key-server priority 100',
@@ -4660,7 +4660,7 @@ function genSwitchRunningConfig(s, swN=1){
     ...accessPortConfig,
     'interface GigabitEthernet1/0/33',' description AP-WiFi-1 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' power inline auto',' spanning-tree portfast trunk',
     'interface GigabitEthernet1/0/34',' description AP-WiFi-2 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' power inline auto',' spanning-tree portfast trunk',
-    'interface GigabitEthernet1/0/45',' stackwise-virtual link 1','interface GigabitEthernet2/0/45',' stackwise-virtual link 1',`interface Vlan30`,` ip address 10.70.${n}.66 255.255.255.240`,` ip default-gateway 10.70.${n}.65`,
+    'interface GigabitEthernet1/0/45',' switchport mode trunk','interface GigabitEthernet2/0/45',' switchport mode trunk',`interface Vlan30`,` ip address 10.70.${n}.66 255.255.255.240`,` ip default-gateway 10.70.${n}.65`,
     'ip dhcp snooping','ip dhcp snooping vlan 10,20,30','ip dhcp snooping database flash:dhcp_snoop.db','ip arp inspection vlan 10,20,30',
     'mka policy MKA-UPLINK',' macsec-cipher-suite gcm-aes-256',' key-server priority 100','snmp-server community MONITOR-RO RO','snmp-server group MONITOR-GROUP v3 priv',
     'snmp-server user monitor-ro MONITOR-GROUP v3 auth sha LAB-ONLY-SNMP-AUTH priv aes 128 LAB-ONLY-SNMP-PRIV','snmp-server host 10.70.0.101 version 3 priv monitor-ro',
