@@ -4661,7 +4661,7 @@ function genSwitchRunningConfig(s, swN=1){
 
 function genSwitchVersionFull(s, swN=1){
   const host=`SW-${s.code}-0${swN}`;
-  return cliText(`${host}>`,'show version',['Cisco IOS XE Software, Version 17.09.04a','Cisco IOS Software [Cupertino], Catalyst 9000 Software (CAT9K_IOSXE), Version 17.9.4a, RELEASE SOFTWARE (fc3)',`${host} uptime is ${UPTIME}`,'cisco C9200L-48T-4G-E (ARM64) processor with 2097152K/6147K bytes of memory.','Processor board ID FOC2345A2BC','24 Gigabit Ethernet interfaces','4 Ten Gigabit Ethernet interfaces','2048K bytes of non-volatile configuration memory.','8388608K bytes of physical memory.','Base Ethernet MAC Address : 001a.2b3c.4d5e','Model Number : C9200L-48T-4G-E','Switch/Stack Mac Address : 001a.2b3c.4d5e','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','Cada switch es independiente; no hay StackWise ni miembro 2','SW Image: CAT9K_IOSXE','Configuration register is 0x102']);
+  return cliText(`${host}>`,'show version',['Cisco IOS XE Software, Version 17.09.04a','Cisco IOS Software [Cupertino], Catalyst 9000 Software (CAT9K_IOSXE), Version 17.9.4a, RELEASE SOFTWARE (fc3)',`${host} uptime is ${UPTIME}`,'cisco C9200L-48T-4G-E (ARM64) processor with 2097152K/6147K bytes of memory.','Processor board ID FOC2345A2BC','48 Gigabit Ethernet RJ-45 interfaces','4 Gigabit Ethernet SFP uplinks','2048K bytes of non-volatile configuration memory.','8388608K bytes of physical memory.','Base Ethernet MAC Address : 001a.2b3c.4d5e','Model Number : C9200L-48T-4G-E','Switch/Stack Mac Address : 001a.2b3c.4d5e','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','Cada switch es independiente; no hay StackWise ni miembro 2','SW Image: CAT9K_IOSXE','Configuration register is 0x102']);
 }
 
 function genSwitchDetail(s,type,command){
@@ -5385,6 +5385,8 @@ function genShowBrief(s, type, command){
   const swN = type === 'sw2' ? 2 : 1;
   const header = `<span class="ios-cmd">${command}</span><br><br>`;
   if(type === 'router'){
+    if(command==='show ip interface brief') return genIfBrief(s);
+    if(command==='show vlan brief') return genRouterVLAN(s);
     const rows = [
       `GigabitEthernet0/0/0  ${active === 'starlink' ? '100.64.10.2' : 'dhcp'}  YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (WAN ${active.toUpperCase()})`,
       `GigabitEthernet0/0/1  10.100.${n}.1       YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (Transit)`,
@@ -5443,16 +5445,16 @@ function genShowBrief(s, type, command){
       return `Gi1/0/${port}  <span class="${link}">${interfaceStatus}</span>  <span class="${link}">${protocol}</span>  ${name}`;
     }).join('<br>')}`;
     if(command === 'show interfaces counters errors') return `${base}<span class="ios-hdr">Port        Align-Err  FCS-Err  Xmit-Err  Rcv-Err</span><br>${portRows.map(({port})=>`Gi1/0/${port}  0          0        0         0`).join('<br>')}`;
-    if(command === 'show interfaces trunk') return `${base}<span class="ios-hdr">Port        Mode         Encapsulation  Status        Native vlan</span><br>Gi1/0/1     on           802.1q          trunking      99<br><br>Vlans allowed on trunk: 10,20,30,40,99`;
-    if(command === 'show ip interface brief') return `${base}<span class="ios-hdr">Interface        IP-Address      OK? Method Status Protocol</span><br>Vlan10           10.70.${n}.2      YES DHCP   <span class="ios-up">up</span>     <span class="ios-up">up</span><br>Vlan30           10.70.${n}.162     YES DHCP   <span class="ios-up">up</span>     <span class="ios-up">up</span>`;
-    if(command === 'show ip route') return `${base}C    10.70.${n}.0/25 is directly connected, Vlan10<br>S*   0.0.0.0/0 [1/0] via 10.70.${n}.1`;
-    if(command.includes('mac address-table')) return `${base}<span class="ios-hdr">Vlan    Mac Address       Type       Ports</span><br>10      001a.2b${String(n).padStart(2,'0')}0a.ff DYNAMIC    Gi1/0/3<br>30      001a.2b${String(n).padStart(2,'0')}0b.ff DYNAMIC    Gi1/0/1`;
-    if(command === 'show spanning-tree' || command === 'show spanning-tree brief' || command === 'show spanning-tree root') return `${base}VLAN0010  Root bridge: SW-${s.code}-01  Priority 24586<br>Gi1/0/1 Forwarding · Gi1/0/2 Forwarding`;
+    if(command === 'show interfaces trunk') return genSwitchDetail(s,type,command);
+    if(command === 'show ip interface brief') return `${base}Vlan30 10.70.${n}.${swN===1?162:163} YES manual up up<br>GigabitEthernet1/0/1 unassigned YES unset up up`;
+    if(command === 'show ip route') return `${base}C 10.70.${n}.160/28 is directly connected, Vlan30<br>Default gateway: 10.70.${n}.161 (switch L2, ip routing deshabilitado)`;
+    if(command.includes('mac address-table')) return genSwitchDetail(s,type,'show mac address-table');
+    if(command === 'show spanning-tree' || command === 'show spanning-tree brief' || command === 'show spanning-tree root') return genSwitchDetail(s,type,'show spanning-tree');
     if(command === 'show cdp neighbors detail' || command === 'show lldp neighbors detail') return `${base}Device ID: RTR-${s.code}<br>Interface: Gi1/0/1 · Port ID: Gi0/0/2<br>IP address: 10.70.${n}.1 · Platform: Cisco Catalyst C8300-2N2S-4T2X`;
     if(command === 'show lldp neighbors') return `${base}<span class="ios-hdr">Local Intf  Chassis Id        Port Id       System Name</span><br>Gi1/0/1     RTR-${s.code}           Gi0/0/2       RTR-${s.code}`;
-    if(command === 'show port-channel summary' || command === 'show etherchannel summary') return `${base}<span class="ios-hdr">Group  Port-channel  Protocol  Ports</span><br>1      Po1(SU)        LACP      Gi1/0/47(P) Gi1/0/48(P)`;
+    if(command === 'show port-channel summary' || command === 'show etherchannel summary') return genSwitchDetail(s,type,'show etherchannel summary');
     if(command === 'show switch') return `${base}<span class="ios-hdr">Switch/Stack Mac Address : Priority Version State</span><br>1        00aa.bbcc.${String(n).padStart(2,'0')}  15       READY  <span class="ios-up">Ready</span>`;
-    if(command === 'show power inline') return `${base}<span class="ios-hdr">Interface  Admin  Oper  Power(W)  Device</span><br>Gi1/0/3    auto   on    7.2       Ieee PD`;
+    if(command === 'show power inline') return genSwitchDetail(s,type,command);
     if(command === 'show environment') return `${base}Temperature: <span class="ios-up">Normal</span> · Fans: OK · Power: 2/2 OK · Status: <span class="ios-up">GREEN</span>`;
     if(command === 'show inventory') return `${base}NAME: "Switch 1", DESCR: "C9200L-48T-4G-E"<br>PID: C9200L-48T-4G-E · SN: FOC-SW-${String(n).padStart(3,'0')}`;
     if(command === 'show authentication sessions') return `${base}<span class="ios-hdr">Interface  MAC Address      Method  Domain  Status</span><br>Gi1/0/3     001a.2b${String(n).padStart(2,'0')}0a.ff dot1x   DATA    <span class="ios-up">Auth</span>`;
@@ -5460,7 +5462,7 @@ function genShowBrief(s, type, command){
   }
   if(type === 'fw'){
     const base = `${prompt} ${header}`;
-    if(command === 'show interface management') return `${base}Management1/1  10.70.${n}.250/24  state: <span class="ios-up">up</span>  speed:1Gbps`;
+    if(command === 'show interface management') return `${base}management  10.70.${n}.164/28  gateway 10.70.${n}.161 · VLAN 30 (LAB)`;
     if(command === 'show session all filter') return `${base}Session 1  10.70.${n}.10:51522 -> 8.8.8.8:443  application ssl  state ACTIVE<br>Session 2  10.70.${n}.11:51523 -> 1.1.1.1:443  application ssl  state ACTIVE`;
     if(command === 'show routing summary') return `${base}Total virtual routers: 1 · IPv4 routes: 8 · Active: 8 · Inactive: 0`;
     if(command === 'show vpn ike-sa') return `${base}Gateway: vpn-core · IKEv2 SA: <span class="ios-up">Active</span> · Encryption: AES-256-GCM`;
