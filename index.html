@@ -4149,6 +4149,7 @@ function getSwitchPortRecords(s,swN){
       33:{name:'AP-WiFi-1',vlan:'trunk'},
       34:{name:'AP-WiFi-2',vlan:'trunk'},
       45:{name:'Inter-switch',vlan:'trunk'},
+      46:swN===1?{name:'Management-PA',vlan:30}:null,
     }[port];
     const name=settings?.description || pc?.id || infrastructure?.name || '';
     const status=pc
@@ -4657,8 +4658,11 @@ function genSwitchRunningConfig(s, swN=1){
     'interface GigabitEthernet1/0/45',' description Inter-switch SW1-SW2 (enlace unico)',' switchport mode trunk',
     ' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
     ' ip dhcp snooping trust',' ip arp inspection trust',
+    ...(swN===1?['interface GigabitEthernet1/0/46',' description Management PA-1410',
+      ' switchport mode access',' switchport access vlan 30',' spanning-tree portfast',
+      ' spanning-tree bpduguard enable',' no shutdown']:[]),
     'interface Vlan30',` ip address 10.70.${n}.${swN===1?162:163} 255.255.255.240`,
-    ' no shutdown',`ip default-gateway 10.70.${n}.161`,
+    ' no shutdown','!',`ip default-gateway 10.70.${n}.161`,
     'no ip routing','ip dhcp snooping','ip dhcp snooping vlan 10,20',
     'ip dhcp snooping database flash:dhcp_snoop.db','ip arp inspection vlan 10,20','snmp-server community MONITOR-RO RO','snmp-server group MONITOR-GROUP v3 priv',
     'snmp-server user monitor-ro MONITOR-GROUP v3 auth sha LAB-ONLY-SNMP-AUTH priv aes 128 LAB-ONLY-SNMP-PRIV','snmp-server host 10.70.0.101 version 3 priv monitor-ro',
@@ -4682,7 +4686,7 @@ function genSwitchDetail(s,type,command){
       `1 default active ${formatSwitchPortNumbers(getSwitchDefaultVlanPorts(s,swN))}`,
       `10 DATOS-Usuarios active ${formatSwitchPCPortRange(getSwitchPCPortsForVlan(s,swN,10))}`,
       `20 VOIP-Telefonia active ${formatSwitchPCPortRange(getSwitchPCPortsForVlan(s,swN,20))}`,
-      '30 GESTION-Red active (none)',
+      swN===1?'30 GESTION-Red active Gi1/0/46':'30 GESTION-Red active (none)',
       '40 INVITADOS-DMZ active',
       '1002 fddi-default act/unsup','1003 token-ring-default act/unsup',
       '1004 fddinet-default act/unsup','1005 trnet-default act/unsup',
@@ -4995,7 +4999,7 @@ function formatSwitchPCPortRange(pcPorts){
 
 function getSwitchDefaultVlanPorts(s,swN){
   const reserved=new Set([
-    1,2,33,34,45,
+    1,2,33,34,45,...(swN===1?[46]:[]),
     ...getSwitchPCPorts(s,swN).map(({port})=>port),
   ]);
   return Array.from({length:48},(_,index)=>index+1)
