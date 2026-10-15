@@ -4066,7 +4066,7 @@ WildFire:              <span class="ios-up">Active</span>`;
 function genFWIfaces(s){
  return 'PA-'+s.code+'> <span class="ios-cmd">show interface all</span><br>'+
  '<span class="ios-hdr">Interfaz Dirección Tipo Conexión</span><br>'+
- 'management 10.70.'+s.num+'.164/28 MGMT SW1 Gi1/0/46 (VLAN30)<br>'+
+ 'management 10.70.'+s.num+'.164/28 MGMT SW1 Gi1/0/44 (VLAN30)<br>'+
  'ethernet1/1 unassigned virtual-wire Cisco C8300 Gi0/0/0<br>'+
  'ethernet1/2 unassigned virtual-wire SW1 Gi1/0/1<br>'+
  'Virtual wire no asigna direcciones IPv4 a interfaces de datos';
@@ -4148,14 +4148,18 @@ function getSwitchPortRecords(s,swN){
       2:null,
       33:{name:'AP-WiFi-1',vlan:'trunk'},
       34:{name:'AP-WiFi-2',vlan:'trunk'},
-      45:{name:'Inter-switch',vlan:'trunk'},
-      46:swN===1?{name:'Management-PA',vlan:30}:null,
+      44:swN===1?{name:'Management-PA',vlan:30}:null,
+      45:{name:'LACP-to-peer-1',vlan:'trunk'},
+      46:{name:'LACP-to-peer-2',vlan:'trunk'},
     }[port];
     const name=settings?.description || pc?.id || infrastructure?.name || '';
     const status=pc
       ? isSwitchPCPortAvailable(s.id,pc)?'connected':'disabled'
       : infrastructure
-        ? isDeviceInterfaceAdminDown(s.id,`sw${swN}`,`Gi1/0/${port}`)?'disabled':'connected'
+        ? isDeviceInterfaceAdminDown(s.id,`sw${swN}`,`Gi1/0/${port}`)
+          ? 'disabled'
+          : [45,46].includes(port) && !getInterSwitchMemberStates(s.id).find(link=>link.port===port)?.up
+            ? 'notconnect' : 'connected'
         : 'notconnect';
     const vlan=pc
       ? settings?.switchportMode==='trunk'?'trunk':getSwitchPCVlan(s.id,pc)
@@ -4518,7 +4522,7 @@ function genSwitchRunningConfig(s, swN=1){
   const lines=['Building configuration...','version 17.9',`hostname ${host}`,
     'aaa new-model','aaa authentication login default group tacacs+ local','aaa authorization exec default group tacacs+ local',
     'aaa accounting exec default start-stop group tacacs+','clock timezone CLT -4 0','switch 1 provision c9200l-48t-4g',
-    '! Switch independiente, enlace Ethernet hacia par','ip domain name financierapacifico.cl','ip name-server 10.70.0.10','ip name-server 10.70.0.11',
+    '! Switches independientes: Po1 LACP entre SW1 y SW2 (NO StackWise)','ip domain name financierapacifico.cl','ip name-server 10.70.0.10','ip name-server 10.70.0.11',
     'login on-success log','login on-failure log','spanning-tree mode rapid-pvst','spanning-tree extend system-id','spanning-tree vlan 1-4094 priority 32768',
     'vlan 10',' name DATOS-Usuarios','vlan 20',' name VOIP-Telefonia','vlan 30',' name GESTION-Red','vlan 40',' name INVITADOS-DMZ','vlan 999',' name NATIVE-NONE',
     
@@ -4531,10 +4535,16 @@ function genSwitchRunningConfig(s, swN=1){
     ...accessPortConfig,
     'interface GigabitEthernet1/0/33',' description AP-WiFi-1 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
     'interface GigabitEthernet1/0/34',' description AP-WiFi-2 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
-    'interface GigabitEthernet1/0/45',' description Inter-switch SW1-SW2 (enlace unico)',' switchport mode trunk',
+    'interface Port-channel1',' description LACP-SW1-SW2',' switchport mode trunk',
     ' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
-    ' ip dhcp snooping trust',' ip arp inspection trust',
-    ...(swN===1?['interface GigabitEthernet1/0/46',' description Management PA-1410',
+    ' ip dhcp snooping trust',' ip arp inspection trust',' no shutdown',
+    'interface GigabitEthernet1/0/45',' description LACP-miembro-1-hacia-switch-par',
+    ' switchport mode trunk',' switchport trunk native vlan 999',
+    ' switchport trunk allowed vlan 10,20,30,40',' channel-group 1 mode active',' no shutdown',
+    'interface GigabitEthernet1/0/46',' description LACP-miembro-2-hacia-switch-par',
+    ' switchport mode trunk',' switchport trunk native vlan 999',
+    ' switchport trunk allowed vlan 10,20,30,40',' channel-group 1 mode active',' no shutdown',
+    ...(swN===1?['interface GigabitEthernet1/0/44',' description Management PA-1410 (VLAN30)',
       ' switchport mode access',' switchport access vlan 30',' spanning-tree portfast',
       ' spanning-tree bpduguard enable',' no shutdown']:[]),
     'interface Vlan30',` ip address 10.70.${n}.${swN===1?162:163} 255.255.255.240`,
@@ -4562,7 +4572,7 @@ function genSwitchDetail(s,type,command){
       `1 default active ${formatSwitchPortNumbers(getSwitchDefaultVlanPorts(s,swN))}`,
       `10 DATOS-Usuarios active ${formatSwitchPCPortRange(getSwitchPCPortsForVlan(s,swN,10))}`,
       `20 VOIP-Telefonia active ${formatSwitchPCPortRange(getSwitchPCPortsForVlan(s,swN,20))}`,
-      swN===1?'30 GESTION-Red active Gi1/0/46':'30 GESTION-Red active (none)',
+      swN===1?'30 GESTION-Red active Gi1/0/44':'30 GESTION-Red active (none)',
       '40 INVITADOS-DMZ active',
       '1002 fddi-default act/unsup','1003 token-ring-default act/unsup',
       '1004 fddinet-default act/unsup','1005 trnet-default act/unsup',
@@ -4577,10 +4587,11 @@ function genSwitchDetail(s,type,command){
   }
   const rows={ 'show vlan brief':['VLAN Name Status Ports','1 default active Gi1/0/35-44,Gi1/0/47,Gi1/0/48','10 DATOS-Usuarios active Gi1/0/3-30','20 VOIP-Telefonia active','30 GESTION-Red active Gi1/0/31,Gi1/0/32','40 INVITADOS-DMZ active','1002 fddi-default act/unsup','1003 token-ring-default act/unsup','1004 fddinet-default act/unsup','1005 trnet-default act/unsup'],
     'show mac address-table':['Vlan Mac Address Type Ports','10 001a.2b3c.4d5e DYNAMIC Gi1/0/5','10 3c97.0e8a.2b11 DYNAMIC Gi1/0/8','10 001b.21a4.c8d2 DYNAMIC Gi1/0/12','10 3c97.0e8a.2b45 DYNAMIC Gi1/0/15','20 001a.2b3c.4d61 DYNAMIC Gi1/0/5','20 001a.2b3c.4d62 DYNAMIC Gi1/0/7','20 001a.2b3c.4d63 DYNAMIC Gi1/0/9','30 f4cf.e28a.2b10 DYNAMIC Gi1/0/1','40 f018.9812.34ab DYNAMIC Gi1/0/33','Total Mac Addresses for this criterion: 9'],
-    'show spanning-tree':['VLAN0010','Spanning tree enabled protocol rstp','Root: SW-'+s.code+'-01','One inter-switch link Gi1/0/45',...(swN===1?['Gi1/0/1 Root FWD 4 128.1 P2p']:[]),'Gi1/0/33 Desg FWD 4 128.33 P2p Edge','Gi1/0/34 Desg FWD 4 128.34 P2p Edge'],
+    'show spanning-tree':['VLAN0010','Spanning tree enabled protocol rstp','Root: SW-'+s.code+'-01',...(isSwitchStackLinkAvailable(s.id)?['Po1 Desg FWD 3 128.65 P2p']:[]),...(swN===1?['Gi1/0/1 Root FWD 4 128.1 P2p']:[]),'Gi1/0/33 Desg FWD 4 128.33 P2p Edge','Gi1/0/34 Desg FWD 4 128.34 P2p Edge'],
     'show power inline':['Available:0.0(w) Used:0.0(w) Remaining:0.0(w)','Interface Admin Oper Power Device Class','C9200L-48T-4G-E no suministra PoE: alimentación externa requerida'],
-    'show etherchannel summary':['Group Port-channel Protocol Ports','No EtherChannels configured (independent uplinks)'],
-    'show interfaces trunk':['Port Mode Encapsulation Status Native vlan',...(swN===1?['Gi1/0/1 on 802.1q trunking 999']:[]),'Gi1/0/45 on 802.1q trunking 999','Gi1/0/33 on 802.1q trunking 999','Gi1/0/34 on 802.1q trunking 999','Vlans allowed on trunk: 10,20,30,40','Vlans allowed and active in management domain: 10,20,30,40','Vlans in spanning tree forwarding state and not pruned: 10,20,30,40'],
+    'show etherchannel summary':['Group Port-channel Protocol Ports',
+      `1 Po1(${isSwitchStackLinkAvailable(s.id)?'SU':'SD'}) LACP ${getInterSwitchMemberStates(s.id).map(link=>`Gi1/0/${link.port}(${link.up?'P':'D'})`).join(' ')}`],
+    'show interfaces trunk':['Port Mode Encapsulation Status Native vlan',...(swN===1?['Gi1/0/1 on 802.1q trunking 999']:[]),...(isSwitchStackLinkAvailable(s.id)?['Po1 on 802.1q trunking 999']:[]),'Gi1/0/33 on 802.1q trunking 999','Gi1/0/34 on 802.1q trunking 999','Vlans allowed on trunk: 10,20,30,40','Vlans allowed and active in management domain: 10,20,30,40','Vlans in spanning tree forwarding state and not pruned: 10,20,30,40'],
     'show stack':['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Mac persistency wait time: Indefinite','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','Cada switch es independiente; no hay StackWise ni miembro 2'],
     'show switch':['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','Cada switch es independiente; no hay StackWise ni miembro 2']};
   return rows[command] ? h+rows[command].join('<br>') : null;
@@ -4875,7 +4886,7 @@ function formatSwitchPCPortRange(pcPorts){
 
 function getSwitchDefaultVlanPorts(s,swN){
   const reserved=new Set([
-    1,2,33,34,45,...(swN===1?[46]:[]),
+    1,2,33,34,45,46,...(swN===1?[44]:[]),
     ...getSwitchPCPorts(s,swN).map(({port})=>port),
   ]);
   return Array.from({length:48},(_,index)=>index+1)
@@ -4888,10 +4899,18 @@ function isSwitchUplinkAvailable(sedeId, swN){
   return swN === 1 && !isDeviceInterfaceAdminDown(sedeId,'sw1','Gi1/0/1');
 }
 
+function getInterSwitchMemberStates(sedeId){
+  // Po1 LACP entre dos switches INDEPENDIENTES; cada cable conecta el mismo puerto en ambos equipos.
+  // El enlace deja de transportar tráfico cuando cualquiera de sus extremos está apagado.
+  return [45,46].map(port=>({
+    port,
+    up:!isDeviceInterfaceAdminDown(sedeId,'sw1',`Gi1/0/${port}`) &&
+       !isDeviceInterfaceAdminDown(sedeId,'sw2',`Gi1/0/${port}`),
+  }));
+}
 function isSwitchStackLinkAvailable(sedeId){
-  // Nombre heredado por compatibilidad: es un troncal INTER-SWITCH, no StackWise.
-  return !isDeviceInterfaceAdminDown(sedeId,'sw1','Gi1/0/45') &&
-         !isDeviceInterfaceAdminDown(sedeId,'sw2','Gi1/0/45');
+  // Nombre legado usado por el grafo de simulación: transporte lógico Po1, NO StackWise.
+  return getInterSwitchMemberStates(sedeId).some(link=>link.up);
 }
 
 function isSwitchPathAvailable(sedeId, swN){
