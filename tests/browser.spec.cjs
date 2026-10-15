@@ -95,3 +95,40 @@ test('Auditoría de todas las sedes: VLAN, gateways, switches y rutas sin enlace
   expect(audit.sites).toBeGreaterThanOrEqual(23);
   expect(audit.issues).toEqual([]);
 });
+
+test('Terminal real: ejecutar comandos y comprobar cambios WAN', async ({page}) => {
+  const errors=[];
+  page.on('pageerror', e=>errors.push(e.message));
+  await page.goto(url);
+  await page.evaluate(() => {
+    ST.mode='despues';
+    const site=SEDES.find(s=>s.id==='s01');
+    ST.links[site.id]={starlink:'activo',kuiper:'standby',g5:'standby',g4:'standby'};
+    recompute(site.id);
+    const host=document.createElement('div');
+    host.id='test-cli-container';
+    host.innerHTML=genDeviceCLI(site,'router');
+    document.body.appendChild(host);
+  });
+  const input=page.locator('#test-cli-container #device-term-input');
+  const output=page.locator('#test-cli-container #device-term-out');
+  await input.fill('terminal length 0');
+  await input.press('Enter');
+  await input.fill('show ip route');
+  await input.press('Enter');
+  await expect(output).toContainText('100.64.1.1');
+  await page.evaluate(() => {
+    ST.links.s01.starlink='caido';
+    recompute('s01');
+  });
+  await input.fill('show ip route');
+  await input.press('Enter');
+  await expect(output).toContainText('100.64.1.5');
+  await input.fill('show running-config');
+  await input.press('Enter');
+  await expect(output).toContainText('10.70.1.129 255.255.255.224');
+  await input.fill('show ip interface brief');
+  await input.press('Enter');
+  await expect(output).toContainText('GigabitEthernet');
+  expect(errors).toEqual([]);
+});
