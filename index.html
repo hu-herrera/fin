@@ -4065,18 +4065,20 @@ WildFire:              <span class="ios-up">Active</span>`;
 
 function genFWIfaces(s){
  return 'PA-'+s.code+'> <span class="ios-cmd">show interface all</span><br>'+
- 'management 10.70.'+s.num+'.164/28 (VLAN30)<br>'+
- 'ethernet1/1 unassigned (interconexión de inspección pendiente de validar)<br>'+
- 'ethernet1/2 unassigned (interconexión de inspección pendiente de validar)';
+ '<span class="ios-hdr">Interfaz Dirección Tipo Conexión</span><br>'+
+ 'management 10.70.'+s.num+'.164/28 MGMT SW1 Gi1/0/46 (VLAN30)<br>'+
+ 'ethernet1/1 unassigned virtual-wire Cisco C8300 Gi0/0/0<br>'+
+ 'ethernet1/2 unassigned virtual-wire SW1 Gi1/0/1<br>'+
+ 'Virtual wire no asigna direcciones IPv4 a interfaces de datos';
 }
-
 function genFWZones(s){
-  return `PA-${s.code}> <span class="ios-cmd">show security policy</span>
-<span class="ios-hdr">Name           From    To       App        Action  Log</span>
-Allow-VoIP     trust   untrust  sip,rtp    <span class="ios-up">allow</span>   yes
-Allow-Web      trust   untrust  web,ssl    <span class="ios-up">allow</span>   yes
-Block-Guest    guest   trust    any        <span class="ios-down">deny</span>    yes
-Default-Deny   any     any      any        <span class="ios-down">deny</span>    yes`;
+ return 'PA-'+s.code+'> <span class="ios-cmd">show security policy</span><br>'+
+ 'PLAN DE SEGMENTACIÓN (políticas PAN-OS aún sin probar en equipo real)<br>'+
+ 'VLAN 10 Usuarios: acceso sólo a aplicaciones financieras autorizadas<br>'+
+ 'VLAN 20 Voz: SIP/RTP a servidores aprobados<br>'+
+ 'VLAN 30 Gestión: SSH/HTTPS/SNMP sólo desde equipos administrativos<br>'+
+ 'VLAN 40 Invitados: DENY hacia 10.70.0.0/16, salida web/DNS autorizada<br>'+
+ 'Virtual wire subinterfaces y App-ID requieren configuración y validación PAN-OS';
 }
 
 function genFWThreat(s){
@@ -4695,10 +4697,10 @@ function genSwitchDetail(s,type,command){
   }
   const rows={ 'show vlan brief':['VLAN Name Status Ports','1 default active Gi1/0/35-44,Gi1/0/47,Gi1/0/48','10 DATOS-Usuarios active Gi1/0/3-30','20 VOIP-Telefonia active','30 GESTION-Red active Gi1/0/31,Gi1/0/32','40 INVITADOS-DMZ active','1002 fddi-default act/unsup','1003 token-ring-default act/unsup','1004 fddinet-default act/unsup','1005 trnet-default act/unsup'],
     'show mac address-table':['Vlan Mac Address Type Ports','10 001a.2b3c.4d5e DYNAMIC Gi1/0/5','10 3c97.0e8a.2b11 DYNAMIC Gi1/0/8','10 001b.21a4.c8d2 DYNAMIC Gi1/0/12','10 3c97.0e8a.2b45 DYNAMIC Gi1/0/15','20 001a.2b3c.4d61 DYNAMIC Gi1/0/5','20 001a.2b3c.4d62 DYNAMIC Gi1/0/7','20 001a.2b3c.4d63 DYNAMIC Gi1/0/9','30 f4cf.e28a.2b10 DYNAMIC Gi1/0/1','40 f018.9812.34ab DYNAMIC Gi1/0/33','Total Mac Addresses for this criterion: 9'],
-    'show spanning-tree':['VLAN0010','Spanning tree enabled protocol rstp','Root ID Priority 24586 Address 001a.2b3c.4d5e','Bridge ID Priority 32778 Address 001a.2b3c.4d5e','Gi1/0/1 Root FWD 4 128.1 P2p','Gi1/0/33 Desg FWD 4 128.33 P2p Edge','Gi1/0/34 Desg FWD 4 128.34 P2p Edge'],
+    'show spanning-tree':['VLAN0010','Spanning tree enabled protocol rstp','Root: SW-'+s.code+'-01','One inter-switch link Gi1/0/45',...(swN===1?['Gi1/0/1 Root FWD 4 128.1 P2p']:[]),'Gi1/0/33 Desg FWD 4 128.33 P2p Edge','Gi1/0/34 Desg FWD 4 128.34 P2p Edge'],
     'show power inline':['Available:0.0(w) Used:0.0(w) Remaining:0.0(w)','Interface Admin Oper Power Device Class','C9200L-48T-4G-E no suministra PoE: alimentación externa requerida'],
     'show etherchannel summary':['Group Port-channel Protocol Ports','No EtherChannels configured (independent uplinks)'],
-    'show interfaces trunk':['Port Mode Encapsulation Status Native vlan','Gi1/0/1 on 802.1q trunking 999','Gi1/0/2 on 802.1q trunking 999','Gi1/0/45 on 802.1q trunking 999','Gi1/0/33 on 802.1q trunking 999','Gi1/0/34 on 802.1q trunking 999','Vlans allowed on trunk: 10,20,30,40','Vlans allowed and active in management domain: 10,20,30,40','Vlans in spanning tree forwarding state and not pruned: 10,20,30,40'],
+    'show interfaces trunk':['Port Mode Encapsulation Status Native vlan',...(swN===1?['Gi1/0/1 on 802.1q trunking 999']:[]),'Gi1/0/45 on 802.1q trunking 999','Gi1/0/33 on 802.1q trunking 999','Gi1/0/34 on 802.1q trunking 999','Vlans allowed on trunk: 10,20,30,40','Vlans allowed and active in management domain: 10,20,30,40','Vlans in spanning tree forwarding state and not pruned: 10,20,30,40'],
     'show stack':['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Mac persistency wait time: Indefinite','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','Cada switch es independiente; no hay StackWise ni miembro 2'],
     'show switch':['Switch/Stack Mac Address : 001a.2b3c.4d5e - Local Mac Address','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','Cada switch es independiente; no hay StackWise ni miembro 2']};
   return rows[command] ? h+rows[command].join('<br>') : null;
