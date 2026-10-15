@@ -4142,11 +4142,11 @@ function getSwitchPortRecords(s,swN){
     const pc=assigned.get(port);
     const settings=pc ? getSwitchPCPortSettings(s.id,pc) : null;
     const infrastructure={
-      1:{name:'Uplink-to-FW',vlan:'trunk'},
-      2:{name:'Stack-Link',vlan:'trunk'},
+      1:swN===1?{name:'Uplink-to-FW',vlan:'trunk'}:null,
+      2:null,
       33:{name:'AP-WiFi-1',vlan:'trunk'},
       34:{name:'AP-WiFi-2',vlan:'trunk'},
-      45:{name:`Enlace-SW-${swN}`,vlan:'trunk'},
+      45:{name:'Inter-switch',vlan:'trunk'},
     }[port];
     const name=settings?.description || pc?.id || infrastructure?.name || '';
     const status=pc
@@ -4645,14 +4645,22 @@ function genSwitchRunningConfig(s, swN=1){
     'login on-success log','login on-failure log','spanning-tree mode rapid-pvst','spanning-tree extend system-id','spanning-tree vlan 1-4094 priority 32768',
     'vlan 10',' name DATOS-Usuarios','vlan 20',' name VOIP-Telefonia','vlan 30',' name GESTION-Red','vlan 40',' name INVITADOS-DMZ','vlan 999',' name NATIVE-NONE',
     
-    'interface GigabitEthernet1/0/1',' description Uplink-Router',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
-    'interface GigabitEthernet1/0/2',' description Uplink-Switch-Peer',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
+    'interface GigabitEthernet1/0/1',
+    ...(swN===1 ? [' description Uplink-PA-1410-ethernet1/2',' switchport mode trunk',
+      ' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
+      ' ip dhcp snooping trust',' ip arp inspection trust',' no shutdown'] :
+      [' description RESERVADO-SIN-ENLACE-ROUTER',' shutdown']),
+    'interface GigabitEthernet1/0/2',' description RESERVADO-SIN-STACK',' shutdown',
     ...accessPortConfig,
     'interface GigabitEthernet1/0/33',' description AP-WiFi-1 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
     'interface GigabitEthernet1/0/34',' description AP-WiFi-2 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
-    'interface GigabitEthernet1/0/45',' description Enlace Ethernet entre switches',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',`interface Vlan30`,` ip address 10.70.${n}.${swN === 1 ? 162 : 163} 255.255.255.240`,` ip default-gateway 10.70.${n}.161`,
-    'ip dhcp snooping','ip dhcp snooping vlan 10,20,30','ip dhcp snooping database flash:dhcp_snoop.db','ip arp inspection vlan 10,20,30',
-    'mka policy MKA-UPLINK',' macsec-cipher-suite gcm-aes-256',' key-server priority 100','snmp-server community MONITOR-RO RO','snmp-server group MONITOR-GROUP v3 priv',
+    'interface GigabitEthernet1/0/45',' description Inter-switch SW1-SW2 (enlace unico)',' switchport mode trunk',
+    ' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
+    ' ip dhcp snooping trust',' ip arp inspection trust',
+    'interface Vlan30',` ip address 10.70.${n}.${swN===1?162:163} 255.255.255.240`,
+    ' no shutdown',`ip default-gateway 10.70.${n}.161`,
+    'no ip routing','ip dhcp snooping','ip dhcp snooping vlan 10,20',
+    'ip dhcp snooping database flash:dhcp_snoop.db','ip arp inspection vlan 10,20','snmp-server community MONITOR-RO RO','snmp-server group MONITOR-GROUP v3 priv',
     'snmp-server user monitor-ro MONITOR-GROUP v3 auth sha LAB-ONLY-SNMP-AUTH priv aes 128 LAB-ONLY-SNMP-PRIV','snmp-server host 10.70.0.101 version 3 priv monitor-ro',
     'tacacs server ISE-01',' address ipv4 10.70.0.20',' key LAB-ONLY-TACACS-KEY',' timeout 5','line con 0',' logging synchronous','line vty 0 4',' transport input ssh','ntp server 10.70.0.1 prefer'];
   lines.push('end');
@@ -4964,18 +4972,20 @@ function getSwitchDefaultVlanPorts(s,swN){
 }
 
 function isSwitchUplinkAvailable(sedeId, swN){
-  return !isDeviceInterfaceAdminDown(sedeId, `sw${swN}`, 'Gi1/0/1');
+  // Una sola conexión física router -> NGFW virtual-wire -> SW1.
+  // SW2 llega por el enlace Ethernet Gi1/0/45; no hay stack ni segundo uplink al router.
+  return swN === 1 && !isDeviceInterfaceAdminDown(sedeId,'sw1','Gi1/0/1');
 }
 
 function isSwitchStackLinkAvailable(sedeId){
-  return !isDeviceInterfaceAdminDown(sedeId, 'sw1', 'Gi1/0/2') &&
-    !isDeviceInterfaceAdminDown(sedeId, 'sw2', 'Gi1/0/2');
+  // Nombre heredado por compatibilidad: es un troncal INTER-SWITCH, no StackWise.
+  return !isDeviceInterfaceAdminDown(sedeId,'sw1','Gi1/0/45') &&
+         !isDeviceInterfaceAdminDown(sedeId,'sw2','Gi1/0/45');
 }
 
 function isSwitchPathAvailable(sedeId, swN){
-  if(isSwitchUplinkAvailable(sedeId, swN)) return true;
-  const peer = swN === 1 ? 2 : 1;
-  return isSwitchStackLinkAvailable(sedeId) && isSwitchUplinkAvailable(sedeId, peer);
+  return isSwitchUplinkAvailable(sedeId,1) &&
+    (swN === 1 || isSwitchStackLinkAvailable(sedeId));
 }
 
 function isPCNetworkAvailable(sedeId, pc){
