@@ -4443,16 +4443,15 @@ function handleTermCmd(ev,sedeId,pcIdx){
       const n=s.num, host=`SW-${s.code}-0${swN}`;
       const lines=['Building configuration...','Current configuration : 6421 bytes','version 17.9',`hostname ${host}`,
         'aaa new-model','aaa authentication login default group tacacs+ local','aaa authorization exec default group tacacs+ local',
-        'aaa accounting exec default start-stop group tacacs+','clock timezone CLT -4 0','switch 1 provision c9200l-48t-4g',
-        'switch 2 provision c9200l-48t-4g','! StackWise Virtual no se modela en C9200L; dos switches independientes','ip domain name financierapacifico.cl',
+        'aaa accounting exec default start-stop group tacacs+','clock timezone CLT -4 0','switch 1 provision c9200l-48t-4g','! Switch de acceso independiente','ip domain name financierapacifico.cl',
         'ip name-server 10.70.0.10','ip name-server 10.70.0.11','login on-success log','login on-failure log',
         'spanning-tree mode rapid-pvst','spanning-tree extend system-id','spanning-tree vlan 1-4094 priority 32768',
         'vlan 10',' name DATOS-Usuarios','vlan 20',' name VOIP-Telefonia','vlan 30',' name GESTION-Red',
         'vlan 40',' name INVITADOS-DMZ','vlan 999',' name NATIVE-NONE','interface Port-channel1',
-        ' description Stack/Uplink to Router',' switchport mode trunk',' switchport trunk native vlan 999',
+        ' description Uplink to Router',' switchport mode trunk',' switchport trunk native vlan 999',
         ' switchport trunk allowed vlan 10,20,30,40','interface GigabitEthernet1/0/1',' description Uplink-Router',
         ' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
-        ' channel-group 1 mode active',' mka policy MKA-UPLINK','interface GigabitEthernet1/0/2',' description Uplink-Stack',
+        ' channel-group 1 mode active',' mka policy MKA-UPLINK','interface GigabitEthernet1/0/2',' description Uplink-Switch-Peer',
         ' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
         ' channel-group 1 mode active',' mka policy MKA-UPLINK','interface GigabitEthernet1/0/3',' description PC-USER-001',
         ' switchport mode access',' switchport access vlan 10',' switchport voice vlan 20',' spanning-tree portfast',
@@ -4461,9 +4460,9 @@ function handleTermCmd(ev,sedeId,pcIdx){
         ' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
         'interface GigabitEthernet1/0/34',' description AP-WiFi-2 C9130AXI',' switchport mode trunk',
         ' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
-        'interface GigabitEthernet1/0/45',' description Enlace entre switches (sin StackWise Virtual)',' switchport mode trunk',
-        'interface GigabitEthernet2/0/45',' description Enlace entre switches (sin StackWise Virtual)',' switchport mode trunk',
-        `interface Vlan30`,` ip address 10.70.${n}.66 255.255.255.240`,` ip default-gateway 10.70.${n}.161`,
+        'interface GigabitEthernet1/0/45',' description Enlace Ethernet entre switches',' switchport mode trunk',
+        
+        `interface Vlan30`,` ip address 10.70.${n}.${swN === 1 ? 162 : 163} 255.255.255.240`,` ip default-gateway 10.70.${n}.161`,
         'ip dhcp snooping','ip dhcp snooping vlan 10,20,30','ip dhcp snooping database flash:dhcp_snoop.db',
         'ip arp inspection vlan 10,20,30','mka policy MKA-UPLINK',' macsec-cipher-suite gcm-aes-256',' key-server priority 100',
         'snmp-server community MONITOR-RO RO','snmp-server group MONITOR-GROUP v3 priv',
@@ -4657,11 +4656,11 @@ function genSwitchRunningConfig(s, swN=1){
     'vlan 10',' name DATOS-Usuarios','vlan 20',' name VOIP-Telefonia','vlan 30',' name GESTION-Red','vlan 40',' name INVITADOS-DMZ','vlan 999',' name NATIVE-NONE',
     'interface Port-channel1',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',
     'interface GigabitEthernet1/0/1',' description Uplink-Router',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',' channel-group 1 mode active',' mka policy MKA-UPLINK',
-    'interface GigabitEthernet1/0/2',' description Uplink-Stack',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',' channel-group 1 mode active',' mka policy MKA-UPLINK',
+    'interface GigabitEthernet1/0/2',' description Uplink-Switch-Peer',' switchport mode trunk',' switchport trunk native vlan 999',' switchport trunk allowed vlan 10,20,30,40',' channel-group 1 mode active',' mka policy MKA-UPLINK',
     ...accessPortConfig,
     'interface GigabitEthernet1/0/33',' description AP-WiFi-1 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
     'interface GigabitEthernet1/0/34',' description AP-WiFi-2 C9130AXI',' switchport mode trunk',' switchport trunk allowed vlan 10,40',' ! AP requiere alimentación externa: C9200L-48T-4G-E no entrega PoE',' spanning-tree portfast trunk',
-    'interface GigabitEthernet1/0/45',' switchport mode trunk','interface GigabitEthernet2/0/45',' switchport mode trunk',`interface Vlan30`,` ip address 10.70.${n}.66 255.255.255.240`,` ip default-gateway 10.70.${n}.161`,
+    'interface GigabitEthernet1/0/45',' switchport mode trunk','interface GigabitEthernet2/0/45',' switchport mode trunk',`interface Vlan30`,` ip address 10.70.${n}.${swN === 1 ? 162 : 163} 255.255.255.240`,` ip default-gateway 10.70.${n}.161`,
     'ip dhcp snooping','ip dhcp snooping vlan 10,20,30','ip dhcp snooping database flash:dhcp_snoop.db','ip arp inspection vlan 10,20,30',
     'mka policy MKA-UPLINK',' macsec-cipher-suite gcm-aes-256',' key-server priority 100','snmp-server community MONITOR-RO RO','snmp-server group MONITOR-GROUP v3 priv',
     'snmp-server user monitor-ro MONITOR-GROUP v3 auth sha LAB-ONLY-SNMP-AUTH priv aes 128 LAB-ONLY-SNMP-PRIV','snmp-server host 10.70.0.101 version 3 priv monitor-ro',
@@ -6576,7 +6575,7 @@ function openComparativa(){
     </div>
     <div style="background:#0a2010;border:1px solid var(--green);border-radius:6px;padding:14px">
       <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px">✓ DESPUÉS — Rediseño 2026</div>
-      <div class="drow"><span class="dkey">Routers</span><span class="dval" style="color:var(--green)">Cisco Catalyst C8300-2N2S-4T2X + NIM-5G</span></div>
+      <div class="drow"><span class="dkey">Routers</span><span class="dval" style="color:var(--green)">Cisco Catalyst C8300-2N2S-4T2X + gateway 5G externo (modelo por validar)</span></div>
       <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--green)">C9200L-48T-4G-E x2 (stack)</span></div>
       <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--green)">22x PA-1410</span></div>
       <div class="drow"><span class="dkey">WAN</span><span class="dval" style="color:var(--green)">4 enlaces inalámbricos</span></div>
