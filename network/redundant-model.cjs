@@ -68,22 +68,33 @@ function inspect(s){
   // master election ni forwarding: fallo seguro (particion).
   const partitioned=alive.length===2&&!PORTS.stack.some(id=>s.links[id]);
   const stackFunctional=alive.length>0&&!partitioned;
-  const routeToFirewall=stackFunctional&&transit.length>0&&dist.length>0;
-  const memberL2={
-    1:Boolean(n.sw1&&routeToFirewall),
-    2:Boolean(n.sw2&&routeToFirewall)
+  // Tres planos separados: conmutacion local, gateway L3 en PA y salida WAN.
+  // Un fallo de router NO deja sin red local a los hosts del mismo switch.
+  const switchLocalL2={1:Boolean(n.sw1),2:Boolean(n.sw2)};
+  const paPath=stackFunctional&&n.firewall&&dist.length>0;
+  const switchGateway={
+    1:Boolean(n.sw1&&paPath),
+    2:Boolean(n.sw2&&paPath)
   };
-  const activeWan=WAN_ORDER.find(id=>s.wan[id])||null;
+  const routerPath=paPath&&transit.length>0;
+  const switchRouterPath={
+    1:Boolean(n.sw1&&routerPath),
+    2:Boolean(n.sw2&&routerPath)
+  };
+  const activeWan=n.router?(WAN_ORDER.find(id=>s.wan[id])||null):null;
   return {
     transitUp:transit.length>0,
     transitMembers:transit.map(p=>p.id),
     stackFunctional,stackPartitioned:partitioned,
     activeStackMembers:alive,
     paStackMembers:dist.map(p=>p.id),
-    switchLan:{...memberL2},
+    switchLocalL2,
+    interMemberL2:alive.length===2&&stackFunctional,
+    switchGateway,
+    switchRouterPath,
     switchInternet:{
-      1:memberL2[1]&&Boolean(activeWan),
-      2:memberL2[2]&&Boolean(activeWan)
+      1:switchRouterPath[1]&&Boolean(activeWan),
+      2:switchRouterPath[2]&&Boolean(activeWan)
     },
     activeWan,
     lossOfEntireFirewall:!n.firewall
