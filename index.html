@@ -3194,6 +3194,7 @@ function toggleRedundantLab(sedeId,kind,key){
   else if(kind==='wan')model.setWan(state,key,!state.wan[key]);
   else if(kind==='upstream')model.setWanHealth(state,key,{upstream:!state.wanUpstream[key]});
   else if(kind==='gateway')model.setWanHealth(state,key,{gateway:!state.wanGateway[key]});
+  else if(kind==='oob')model.setOob(state,key,!state.oob[key]);
   else throw new Error('Control de laboratorio desconocido');
   if(SM_ID===sedeId&&SM_TAB==='lab')document.getElementById('sm-body').innerHTML=renderRedundantLabTab(SEDES.find(s=>s.id===sedeId));
 }
@@ -3219,7 +3220,9 @@ function renderRedundantLabTab(s){
   const wanBtns=model.WAN_ORDER.map(id=>toggleRow('wan',id,wanNames[id]+' · cable',state.wan[id])+
     toggleRow('gateway',id,wanNames[id]+' · gateway ISP',state.wanGateway[id])+
     toggleRow('upstream',id,wanNames[id]+' · salida real',state.wanUpstream[id])).join('');
-  const policy=getRedundantLabPolicy(s.id);
+  const oobNames={gateway:'Gateway OOB',switch:'Switch OOB',nocPath:'Ruta desde NOC',paMgt:'Cable MGT PA',sw1Mgt:'Cable Gi0/0 SW1',sw2Mgt:'Cable Gi0/0 SW2'};
+  const oobBtns=Object.entries(oobNames).map(([key,label])=>toggleRow('oob',key,label,state.oob[key])).join('');
+    const policy=getRedundantLabPolicy(s.id);
   const policyResult=model.evaluatePanPolicy(policy.from,policy.to,policy.application,policy.destinationIp);
   const policyOptions=(field,values)=>'<select aria-label="'+field+'" style="background:var(--panel2);color:var(--text);border:1px solid var(--text2);padding:6px;margin:4px" onchange="setRedundantLabPolicy(&quot;'+s.id+'&quot;,&quot;'+field+'&quot;,this.value)">'+
     values.map(value=>'<option value="'+value+'"'+(policy[field]===value?' selected':'')+'>'+value+'</option>').join('')+'</select>';
@@ -3248,6 +3251,10 @@ function renderRedundantLabTab(s){
     kv('SW2 · '+pc2+' PCs · L2 local',textState(health.switchLocalL2[2]))+
     kv('SW2 · gateway Palo Alto',textState(health.switchGateway[2]))+
     kv('SW2 · salida WAN',textState(health.switchInternet[2]))+
+    kv('OOB de gestión (camino)',textState(health.oobPath))+
+    kv('Palo Alto MGT OOB',textState(health.oobManagement.firewall))+
+    kv('Catalyst SW1 Mgmt-vrf',textState(health.oobManagement.sw1))+
+    kv('Catalyst SW2 Mgmt-vrf',textState(health.oobManagement.sw2))+
     '</div>';
   return '<div style="max-width:1120px;margin:auto">'+
     '<div style="border-left:3px solid var(--yellow);padding:10px 13px;background:var(--panel2)"><strong>LABORATORIO AISLADO: arquitectura candidata</strong><p style="margin-top:6px">WAN → Cisco C8300 (Po10, 2×10G) → Palo Alto Layer3 (ae1/ae2) → MEC Po20 sobre StackWise-80 (4×1G). Esto no cambia todavía las consolas ni el diagrama principal. No representa pruebas en hardware.</p></div>'+
@@ -3257,7 +3264,8 @@ function renderRedundantLabTab(s){
     '<div class="dsec"><div class="dslbl">2. Cortar / recuperar cables LACP y StackWise</div>'+bundleBtns+'</div>'+
     '<div class="dsec"><div class="dslbl">3. WAN: cable, gateway y salida aguas arriba independientes</div>'+wanBtns+'</div>'+
     policyPanel+
-    '<div class="dsec"><div class="dslbl">5. Configuración candidata (solo lectura)</div>'+configuration+'</div>'+
+    '<div class="dsec" id="lab-oob"><div class="dslbl">5. Gestión fuera de banda · propuesta no desplegada</div><p>Red 10.73.'+s.num+'.0/28 reservada. Requiere gateway y switch OOB dedicados, acceso NOC y cables MGT independientes; estado simulado, NO hardware instalado.</p>'+oobBtns+'</div>'+
+    '<div class="dsec"><div class="dslbl">6. Configuración candidata (solo lectura)</div>'+configuration+'</div>'+
     '<p style="color:var(--text2);font-size:12px;margin-top:12px">Para despliegue real faltan: gestión OOB, validación/aprobación de políticas PAN-OS, IP/SLA del operador, VPN y validación IOS-XE. Un PA único sigue siendo punto único de falla.</p></div>';
 }
 function topoToolbar(s){
