@@ -439,3 +439,27 @@ test('NTP de C8300 usa Loopback0 /32 y queda restringido a los dos servidores ce
  });
  expect(failures).toEqual([]);
 });
+
+test('Consultas DNS Cisco se limitan a Loopback0 /32 y servidores centrales',async({page})=>{
+ await page.goto(url);
+ const errors=await page.evaluate(()=>{
+  const faults=[],expectPolicy=(ok,msg)=>{if(!ok)faults.push(msg)};
+  for(let n=0;n<=22;n++){
+   const src='10.70.100.'+(n===0?1:n+10),api=window.RedundantLab;
+   for(const dest of ['10.70.0.110','10.70.0.111']){
+    const verdict=api.evaluateSitePanPolicy(0,'TRANSIT','USERS','dns',dest,src);
+    expectPolicy(verdict.action==='allow'&&verdict.rule==='CM-IN-DNS-FROM-ROUTERS',
+      'Router DNS denied '+src+' => '+dest);
+    expectPolicy(api.evaluateSitePanPolicy(0,'TRANSIT','USERS','ssh',dest,src).action==='deny',
+      'Router management source can SSH to central DNS '+src);
+   }
+   expectPolicy(api.evaluateSitePanPolicy(0,'TRANSIT','USERS','dns','10.70.0.12',src).action==='deny',
+     'Router DNS source can query arbitrary CM workstation '+src);
+  }
+  for(const spoof of ['10.70.100.2','10.70.100.10','10.70.100.33'])
+   expectPolicy(window.RedundantLab.evaluateSitePanPolicy(0,'TRANSIT','USERS','dns',
+     '10.70.0.110',spoof).action==='deny','Uninventoried router source accepted '+spoof);
+  return faults;
+ });
+ expect(errors).toEqual([]);
+});
