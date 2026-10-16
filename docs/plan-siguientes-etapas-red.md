@@ -20,6 +20,17 @@
 
 ## Etapa 3 — conectividad WAN e IPsec (bloqueo principal de operación intersede)
 
+Se añadió un **preflight conservador** que no establece VPN ni simula SAs: `network/wan-ipsec-readiness.cjs`. Desde la raíz:
+
+```bash
+node network/export-candidate.cjs s01 wan-readiness ./evidencia-wan-s01.json
+node tests/wan-ipsec-readiness.test.cjs
+```
+
+El JSON requiere un `hub` con `publicEndpoint`, declaración de alcanzabilidad, UDP/500 y UDP/4500, identidad IKEv2 aprobada y `behindCgnat`; además, cuatro entradas `wan` (`starlink`, `leo`, `entel5g`, `gtd4g`). Cada una declara `mode` (`static-public`, `dhcp-public`, `cgnat` o `unavailable`). Las disponibles exigen confirmaciones explícitas de contrato, gateway, MTU, NAT-T saliente, retorno, SA/peer, OSPF y dos sondas remotas.
+
+**Advertencia:** las banderas `...Verified: true` son solamente declaraciones del operador de la prueba, no comprobaciones de red. Si falta algo, el resultado es `BLOCKED`; incluso sin bloqueos el máximo resultado es `CANDIDATE_FOR_LAB_REVIEW`, con `certified:false`. La herramienta **no solicita ni guarda PSK/secretos**. No utilizar direcciones o credenciales inventadas.
+
 Para C8300 CM y cada sucursal, obtener por cada operador:
 - Modo de entrega (DHCP, estático, bridge, CGNAT), dirección WAN/prefijo, gateway y MTU verdaderos.
 - Dos destinos IP públicos de SLA alcanzables **por ese operador**, protocolos ICMP permitidos y plan de fallback si no responden.
