@@ -23,6 +23,18 @@ La página integra tres niveles de comportamiento:
 
 No es necesario PowerPoint. El [guion de seis escenas](presentacion-avances-16-octubre-2026.md) incluye los cinco puntos exigidos por el profesor, tiempos, secuencia de clics y preguntas probables. El guion se puede revisar después de recibir retroalimentación.
 
+## Navegación del mapa y terminales de PC
+
+La rueda acerca y aleja alrededor del punto del cursor, también en los márgenes de la vista país. Arrastrar mueve el mapa desde el fondo, una sede, una antena o un satélite; un arrastre no abre el equipo. Un clic selecciona sin cambiar el zoom; doble clic acerca al punto indicado. **País** restablece el encuadre y **RM** centra Santiago. Los controles y el listado del ping conservan sus propios clics y desplazamiento.
+
+Los 650 PCs de las 23 sedes tienen IPv4 única por sede (`PC 001 → 10.70.<sede>.10`, `PC 002 → 10.70.<sede>.11`, etc.), máscara `/25` (`255.255.255.128`) y gateway `10.70.<sede>.1`. En DESPUÉS ese gateway es el Palo Alto. La configuración del PC identifica el miembro y puerto correctos de StackWise; una IP configurada no garantiza que su puerto o gateway estén activos.
+
+Al pulsar un PC de la topología se abren **Config** y **Terminal**. Comandos: `help`, `hostname`, `ipconfig`, `ipconfig /all`, `ping <IP>`, `tracert <IP>` / `traceroute <IP>`, `route print`, `arp -a`, `clear` / `cls` y flechas de historial. El ping usa los mismos hosts y políticas que la herramienta de la sede: la LAN puede seguir funcionando sin gateway y no se inventan respuestas de Internet. ARP muestra PCs locales aprendidos durante esta sesión; el recorrido es lógico, sin TTL medidos.
+
+Desde el PC 001, `console router`, `console sw1`, `console sw2` o `console fw` abre el mismo motor de comandos de los equipos mediante un **cable local simulado de laboratorio**. Se pueden consultar y cambiar las configuraciones existentes; **Volver al terminal del PC**, Escape o salir de EXEC de usuario vuelve al PC conservando su historial. Una consola local no depende de la conectividad Ethernet, pero el equipo destino debe estar encendido. La configuración interactiva de dispositivos se realiza en DESPUÉS.
+
+Esto no crea acceso SSH desde usuarios a gestión. Los PCs están en VLAN 10 y no tienen autorización para administrar los equipos por red. El comando `ssh` ya no salta los controles ni confunde el gateway del Palo Alto con el router. Telnet no está habilitado. El navegador simula un conjunto de comandos; no ejecuta sistemas Windows, IOS-XE, PAN-OS ni servicios SSH reales.
+
 ## Ping entre sedes desde el mapa principal
 
 No hace falta abrir la topología. Usa **Seleccionar origen → destino** y pulsa las dos sedes sobre el mapa, o **Ping / Trace entre sedes** para elegir también los PCs exactos. Al enviar desde el formulario se cierra esa ventana y se muestra el mapa.

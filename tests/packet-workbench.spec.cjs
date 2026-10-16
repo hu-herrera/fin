@@ -293,3 +293,83 @@ test('El encuadre del ping incluye ambos extremos de una ruta nacional larga',as
  });
  expect(report.ok).toBe(true);expect(report.inside).toBe(true);
 });
+
+test('La rueda conserva el punto del cursor en vistas país, local y ruta larga',async({page})=>{
+ await page.goto(url);
+ for(const mode of ['country','local','long']){
+  await page.evaluate(mode=>{if(mode==='country')zoomReset();else if(mode==='local')zoomToSantiago();else fitPingRoute([{point:[150,80]},{point:[152,985]}]);},mode);
+  const box=await page.locator('#chile-map').boundingBox(),x=Math.round(box.x+box.width*.23),y=Math.round(box.y+box.height*.31);
+  const before=await page.evaluate(({x,y})=>{const p=mapClientPoint(x,y);return {x:p.x,y:p.y,w:ZOOM.w};},{x,y});
+  await page.mouse.move(x,y);await page.mouse.wheel(0,-120);
+  await expect.poll(()=>page.evaluate(()=>ZOOM.w)).toBeLessThan(before.w);
+  const after=await page.evaluate(({x,y})=>{const p=mapClientPoint(x,y);return {x:p.x,y:p.y,scale:document.getElementById('chile-map').getScreenCTM().a};},{x,y});
+  expect(Math.hypot(after.x-before.x,after.y-before.y)*after.scale).toBeLessThan(0.01);
+ }
+});
+
+test('Se puede arrastrar desde una sede sin abrirla y el clic normal no cambia el zoom',async({page})=>{
+ await page.goto(url);await page.evaluate(()=>zoomToSantiago());
+ const point=()=>page.evaluate(()=>{const [x,y]=sedePos(SEDES.find(s=>s.id==='s01'));const p=new DOMPoint(x,y).matrixTransform(document.getElementById('chile-map').getScreenCTM());return {x:p.x,y:p.y};});
+ const start=await point();await page.mouse.move(start.x,start.y);await page.mouse.down();await page.mouse.move(start.x+85,start.y+35,{steps:8});await page.mouse.up();
+ const end=await point();expect(end.x-start.x).toBeCloseTo(85,3);expect(end.y-start.y).toBeCloseTo(35,3);
+ expect(await page.evaluate(()=>ST.selId)).toBeNull();await expect(page.locator('#dev-overlay')).toBeHidden();
+ const zoom=await page.evaluate(()=>JSON.stringify(ZOOM));
+ await page.mouse.click(end.x,end.y);
+ expect(await page.evaluate(()=>ST.selId)).toBe('s01');expect(await page.evaluate(()=>JSON.stringify(ZOOM))).toBe(zoom);
+});
+
+test('Los 650 PCs tienen IP única, máscara de usuarios y puerto correcto de StackWise',async({page})=>{
+ await page.goto(url);
+ const audit=await page.evaluate(()=>{const all=SEDES.flatMap(s=>getPCs(s));return {count:all.length,unique:new Set(all.map(p=>p.ip)).size,valid:all.every(p=>isValidIPv4(p.ip)&&+p.ip.split('.')[3]<127&&p.vlan===10),sw2:genPCConfig(SEDES.find(s=>s.id==='s01'),getPCs(SEDES.find(s=>s.id==='s01')).find(p=>p.sw===2))};});
+ expect(audit.count).toBe(650);expect(audit.unique).toBe(650);expect(audit.valid).toBe(true);expect(audit.sw2).toContain('Gi2/0/3');
+});
+
+async function openPCTerminal(page,index=0){
+ await page.goto(url);await page.evaluate(index=>openPC('s01',index),index);
+ await page.locator('#dev-tabs button').filter({hasText:'Terminal'}).click();
+}
+async function pcSend(page,command){await page.locator('#term-input').fill(command);await page.locator('#term-input').press('Enter');}
+async function deviceSend(page,command){await page.locator('#device-term-input').fill(command);await page.locator('#device-term-input').press('Enter');}
+
+test('El terminal PC conserva LAN sin gateway y no inventa respuestas a Internet',async({page})=>{
+ await openPCTerminal(page);await pcSend(page,'ipconfig /all');await expect(page.locator('#term-out')).toContainText('255.255.255.128');
+ await page.evaluate(()=>toggleRedundantLab('s01','node','firewall'));
+ await pcSend(page,'ping 10.70.1.11');await expect(page.locator('#term-out')).toContainText('Respuesta ICMP simulada desde 10.70.1.11');
+ await pcSend(page,'arp -a');await expect(page.locator('#term-out')).toContainText('dinámica (modelo)');
+ await pcSend(page,'tracert 10.70.1.11');await expect(page.locator('#term-out')).toContainText('no son saltos TTL medidos');
+ await page.evaluate(()=>toggleRedundantLab('s01','node','firewall'));
+ await pcSend(page,'ping 8.8.8.8');await expect(page.locator('#term-out')).toContainText('BLOQUEADO por firewall');
+ await page.locator('#term-input').press('ArrowUp');await expect(page.locator('#term-input')).toHaveValue('ping 8.8.8.8');
+});
+
+test('Desde PC 001 se configura por consola local y se regresa al PC sin perder el historial',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await openPCTerminal(page);
+ await pcSend(page,'ipconfig');await pcSend(page,'console router');
+ await expect(page.locator('#dev-body')).toContainText('No es una sesión SSH');
+ await deviceSend(page,'enable');await deviceSend(page,'configure terminal');await deviceSend(page,'hostname RTR-PC-LAB');await deviceSend(page,'end');
+ expect(await page.evaluate(()=>deviceCliSession('s01','router').hostname)).toBe('RTR-PC-LAB');
+ await page.getByRole('button',{name:'Volver al terminal del PC',exact:false}).click();
+ await expect(page.locator('#term-out')).toContainText('console router');await expect(page.locator('#term-out')).toContainText('ipconfig');
+ for(const [type,command] of [['sw1','show switch'],['sw2','show mac address-table'],['fw','show system info']]){
+  await pcSend(page,'console '+type);await deviceSend(page,command);await page.keyboard.press('Escape');await expect(page.locator('#term-input')).toBeVisible();
+ }
+ expect(errors).toEqual([]);
+});
+
+test('SSH no abre el router desde el gateway del PA ni desde un PC sin conexión',async({page})=>{
+ await openPCTerminal(page);
+ await pcSend(page,'ssh admin@10.70.1.1');await expect(page.locator('#term-out')).toContainText('Palo Alto, no el router');await expect(page.locator('#device-term-input')).toHaveCount(0);
+ await pcSend(page,'telnet 10.70.1.1');await expect(page.locator('#term-out')).toContainText('Telnet no está habilitado');
+ await page.evaluate(()=>toggleRedundantLab('s01','node','firewall'));await pcSend(page,'ssh router');await expect(page.locator('#term-out')).toContainText('SSH no puede abrir una sesión sin ruta');
+ await pcSend(page,'console router');await expect(page.locator('#device-term-input')).toBeVisible();
+ await page.keyboard.press('Escape');await page.evaluate(()=>toggleRedundantLab('s01','node','router'));await pcSend(page,'console router');await expect(page.locator('#term-out')).toContainText('el equipo está apagado');
+});
+
+test('Los cambios del switch desde la consola del PC afectan a su ping local',async({page})=>{
+ await openPCTerminal(page);await pcSend(page,'console sw1');
+ for(const cmd of ['enable','configure terminal','interface GigabitEthernet1/0/4','shutdown','end'])await deviceSend(page,cmd);
+ await page.getByRole('button',{name:'Volver al terminal del PC',exact:false}).click();await pcSend(page,'ping 10.70.1.11');
+ await expect(page.locator('#term-out')).toContainText('Sin ruta activa');
+ await pcSend(page,'console sw2');for(const cmd of ['enable','configure terminal','interface GigabitEthernet1/0/4','no shutdown','end'])await deviceSend(page,cmd);
+ await page.getByRole('button',{name:'Volver al terminal del PC',exact:false}).click();await pcSend(page,'ping 10.70.1.11');await expect(page.locator('#term-out')).toContainText('Respuesta ICMP simulada desde 10.70.1.11');
+});
