@@ -105,6 +105,13 @@ for(let n=0;n<23;n++){
    'CM-IN-NTP-FROM-ROUTERS','allow');
  decision(0,'TRANSIT','USERS','ntp',CM_SERVICES.ntp[1],routerLoop,
    'CM-IN-NTP-FROM-ROUTERS','allow');
+ for(const dns of CM_SERVICES.dns)
+   decision(0,'TRANSIT','USERS','dns',dns,routerLoop,
+     'CM-IN-DNS-FROM-ROUTERS','allow');
+ decision(0,'TRANSIT','USERS','ssh',CM_SERVICES.dns[0],routerLoop,
+   'interzone-default','deny');
+ decision(0,'TRANSIT','USERS','dns','10.70.0.12',routerLoop,
+   'interzone-default','deny');
  decision(0,'TRANSIT','USERS','dns',CM_SERVICES.ntp[0],routerLoop,
    'interzone-default','deny');
  decision(0,'TRANSIT','USERS','ssh',CM_SERVICES.ntp[0],routerLoop,
@@ -116,6 +123,8 @@ for(let n=0;n<23;n++){
 }
 for(const rogue of ['10.70.100.2','10.70.100.10','10.70.100.33','10.70.200.11']){
  decision(0,'TRANSIT','USERS','ntp',CM_SERVICES.ntp[0],rogue,
+   'interzone-default','deny');
+ decision(0,'TRANSIT','USERS','dns',CM_SERVICES.dns[0],rogue,
    'interzone-default','deny');
 }
 ok(paloCandidate(0).includes('set rulebase security rules CM-IN-NTP-FROM-ROUTERS service application-default'),
