@@ -32,6 +32,7 @@ function isReservedTarget(ip){
 function validateWanSettings(settings){
   if(!settings||typeof settings!=='object')return ['Se requieren cuatro contratos WAN y monitores autorizados'];
   const usedTargets=new Set();
+  const ranges=[];
   const issues=[];
   for(const type of WAN_KEYS){
     const v=settings[type];
@@ -44,6 +45,13 @@ function validateWanSettings(settings){
         const mask=(0xffffffff << (32-prefix))>>>0;
         const network=(ip&mask)>>>0;
         const broadcast=(network | (~mask>>>0))>>>0;
+        // Un C8300 con cuatro WAN en la misma tabla de rutas no puede
+        // distinguir dos subredes conectadas solapadas entre interfaces.
+        for(const other of ranges){
+          if(network<=other.broadcast&&other.network<=broadcast)
+            issues.push(type+': subred WAN solapada con '+other.type);
+        }
+        ranges.push({type,network,broadcast});
         if((gw&mask)>>>0!==network||ip===gw)issues.push(type+': gateway fuera del segmento WAN');
         if(ip===network||ip===broadcast)issues.push(type+': dirección WAN es red o broadcast');
         if(gw===network||gw===broadcast)issues.push(type+': gateway es red o broadcast');
