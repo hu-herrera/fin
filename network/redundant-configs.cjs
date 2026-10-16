@@ -136,12 +136,13 @@ function evaluatePanPolicy(from,to,application){
 }
 function panosSecurityCommands(){
   const lines=[];
+  const cliList=values=>values.length===1?values[0]:'[ '+values.join(' ')+' ]';
   for(const r of PANOS_RULES){
     const p='set rulebase security rules '+r.name;
-    lines.push(p+' from '+r.from.join(' '),
-      p+' to '+r.to.join(' '),
+    lines.push(p+' from '+cliList(r.from),
+      p+' to '+cliList(r.to),
       p+' source any',p+' destination any',
-      p+' application '+r.apps.join(' '),
+      p+' application '+cliList(r.apps),
       p+' service '+(r.action==='allow'?'application-default':'any'),
       p+' action '+r.action,
       p+' log-end yes');
