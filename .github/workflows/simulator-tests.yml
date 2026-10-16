@@ -29,6 +29,8 @@ jobs:
         run: node tests/security-policy.test.cjs
       - name: Validar generador Cisco IOS-XE WAN IP SLA con rutas /32 por proveedor
         run: node tests/wan-sla-candidate.test.cjs
+      - name: Validar gestión OOB y Mgmt-vrf independiente en 23 sedes
+        run: node tests/oob-management.test.cjs
       - name: Probar simulador en navegador
         run: npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs tests/redundant-ui.spec.cjs --browser chromium --reporter=line --trace retain-on-failure
       - name: Guardar diagnóstico de fallos
