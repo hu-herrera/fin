@@ -269,3 +269,35 @@ test('Spanning Tree y estados físicos de switches coherentes en las 23 sedes', 
   });
   expect(issues).toEqual([]);
 });
+
+
+test('RIB Cisco: subredes WAN físicas, distancias de backup y caída del concentrador', async ({page})=>{
+ await setOperational(page);
+ const issues=await page.evaluate(()=>{
+   const issues=[];
+   const cm=SEDES.find(s=>s.id==='cm');
+   const s=SEDES.find(site=>site.id==='s01'),id=s.id;
+   const state={...ST.links[id]},cmState={...ST.links.cm};
+   const route=()=>genRouterRoutes(s);
+   let rib=route();
+   for(const net of ['100.64.1.0/30','100.64.1.4/30','100.85.1.0/30','100.92.1.0/30'])
+     if(!rib.includes(net))issues.push('RIB omite subred WAN conectada '+net);
+   if(!rib.includes('S* 0.0.0.0/0 [1/0]'))issues.push('distancia primaria incorrecta');
+   ST.links[id].starlink='caido';recompute(id);rib=route();
+   if(!rib.includes('S* 0.0.0.0/0 [10/0]'))issues.push('distancia de Leo no coincide con running-config');
+   ST.links[id].kuiper='caido';recompute(id);rib=route();
+   if(!rib.includes('S* 0.0.0.0/0 [20/0]'))issues.push('distancia de 5G no coincide');
+   ST.links[id].g5='caido';recompute(id);rib=route();
+   if(!rib.includes('S* 0.0.0.0/0 [30/0]'))issues.push('distancia de 4G no coincide');
+   ST.links[id]={...state};recompute(id);
+   if(!route().includes('O 10.70.2.0/25'))issues.push('faltan rutas remotas iniciales');
+   ST.links.cm={starlink:'caido',kuiper:'caido',g5:'caido',g4:'caido'};recompute('cm');
+   rib=route();
+   if(rib.includes('O 10.70.2.0/25'))issues.push('rutas de sucursales continúan instaladas tras caída total del concentrador');
+   if(!rib.includes('S* 0.0.0.0/0'))issues.push('salida a Internet sucursal cae indebidamente con el hub');
+   ST.links.cm={...cmState};recompute('cm');
+   if(!route().includes('O 10.70.2.0/25'))issues.push('rutas overlay no recuperan tras reconexión del hub');
+   return issues;
+ });
+ expect(issues).toEqual([]);
+});
