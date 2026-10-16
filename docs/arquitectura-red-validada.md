@@ -1,6 +1,10 @@
 # Arquitectura acordada — Financiera Pacífico
 
-Estado: decisión de topología validada por el usuario el 15 de octubre de 2026. Este documento define el objetivo; NO certifica que el simulador ya lo implemente.
+Estado: arquitectura validada por el usuario el 15 de octubre de 2026, implementada en la vista **DESPUÉS** del simulador y cubierta por CI. **No certifica implementación sobre equipos físicos.** Las descripciones históricas de esta decisión más abajo deben leerse como requisitos de origen, no como trabajo todavía sin realizar en la web.
+
+**Fuente activa:** `network/active-profile.js` (topología), `network/redundant-configs.cjs` (plantillas candidatas) y `tests/active-topology.spec.cjs` (pruebas de navegador). El diseño vigente es Cisco C8300 Po10 ↔ Palo Alto PA-1410 ae1 Layer3 ↔ ae2/Po20 MEC ↔ dos C9200L con StackWise-80; 23 sedes/650 PCs. La vista **ANTES** conserva la arquitectura legacy únicamente para comparación.
+
+**Dependencias de despliegue no comprobadas:** contratos WAN/IPsec/OSPF reales; aprovisionamiento DNS/NTP/AAA; licencias/transceptores; 46 kits mínimos C9200L-STACK-KIT para los 23 stacks si no vienen incluidos; scopes DHCP o configuración IP estática de clientes físicos; validación PAN-OS/IOS-XE en laboratorio. Los equipos de gestión OOB adicionales siguen siendo opcionales. Ver [DHCP y StackWise](dhcp-invitados-y-stackwise.md), [protocolo de hardware](protocolo-laboratorio-iosxe-panos.md) y [auditoría de conformidad](auditoria-conformidad-dispositivos.md).
 
 ## Orden de tráfico
 Proveedores WAN (Starlink / Amazon Leo / Entel 5G / GTD 4G) → Cisco C8300 (selección WAN, rutas y VPN) → Palo Alto PA-1410 (control perimetral y segmentación, modo operativo por validar) → switches Catalyst → usuarios.
