@@ -166,19 +166,122 @@ function evaluatePanPolicy(from,to,application,destinationIp='8.8.8.8'){
   // PAN-OS interzone-default=deny; intrazone-default=allow.
   return {action:from===to?'allow':'deny',rule:from===to?'intrazone-default':'interzone-default'};
 }
-function panosSecurityCommands(){
+// Autorización intersede: SOLO DNS/NTP centrales identificados. El resto
+// de RFC1918 por TRANSIT se bloquea antes de los permisos web genéricos.
+const CM_SERVICES=Object.freeze({
+  dns:Object.freeze(['10.70.0.110','10.70.0.111']),
+  ntp:Object.freeze(['10.70.0.116','10.70.0.117'])
+});
+function intersiteRulesForSite(num){
+  checkSiteNum(num);
+  const denyPrivate={
+    name:'DENY-CORP-RFC1918-TRANSIT',
+    from:['USERS','VOICE','MGMT-DATA'],to:['TRANSIT'],
+    source:'any',destination:'RFC1918-NETWORKS',apps:['any'],action:'deny'
+  };
+  if(num===0) return [
+    {name:'CM-IN-DNS-FROM-BRANCHES',from:['TRANSIT'],to:['USERS'],
+     source:'BRANCH-DNS-CLIENTS',destination:'CM-DNS-SERVERS',
+     apps:['dns'],action:'allow'},
+    {name:'CM-IN-NTP-FROM-BRANCHES',from:['TRANSIT'],to:['USERS'],
+     source:'BRANCH-MGMT-CLIENTS',destination:'CM-NTP-SERVERS',
+     apps:['ntp'],action:'allow'},
+    denyPrivate
+  ];
+  return [
+    {name:'BRANCH-DNS-TO-CM',from:['USERS','MGMT-DATA'],to:['TRANSIT'],
+     source:'any',destination:'CM-DNS-SERVERS',apps:['dns'],action:'allow'},
+    {name:'BRANCH-NTP-TO-CM',from:['MGMT-DATA'],to:['TRANSIT'],
+     source:'any',destination:'CM-NTP-SERVERS',apps:['ntp'],action:'allow'},
+    denyPrivate
+  ];
+}
+function securityRulesForSite(num){
+  checkSiteNum(num);
+  const denies=PANOS_RULES.filter(r=>r.action==='deny');
+  const allows=PANOS_RULES.filter(r=>r.action==='allow');
+  return [...denies,...intersiteRulesForSite(num),...allows];
+}
+function inSubnet(ip,network,prefix){
+  const number=value=>{
+    const parts=value.split('.').map(Number);
+    if(parts.length!==4||parts.some(n=>!Number.isInteger(n)||n<0||n>255))
+      throw new RangeError('IPv4 inválida: '+value);
+    return parts.reduce((v,n)=>((v<<8)|n)>>>0,0);
+  };
+  const mask=(0xffffffff<<(32-prefix))>>>0;
+  return (number(ip)&mask)===(number(network)&mask);
+}
+function matchSecurityAddress(selector,ip,num){
+  if(!selector||selector==='any')return true;
+  if(selector==='RFC1918-NETWORKS')return isPrivateRfc1918(ip);
+  if(selector==='CM-DNS-SERVERS')return CM_SERVICES.dns.includes(ip);
+  if(selector==='CM-NTP-SERVERS')return CM_SERVICES.ntp.includes(ip);
+  if(selector==='BRANCH-DNS-CLIENTS'||selector==='BRANCH-MGMT-CLIENTS'){
+    for(let n=1;n<=22;n++){
+      if(inSubnet(ip,'10.70.'+n+'.160',28))return true;
+      if(selector==='BRANCH-DNS-CLIENTS'&&inSubnet(ip,'10.70.'+n+'.0',25))return true;
+    }
+    return false;
+  }
+  throw new Error('Address object sin modelo: '+selector+' sede '+num);
+}
+function evaluateSitePanPolicy(num,from,to,application,destinationIp,sourceIp){
+  checkSiteNum(num);
+  if(!sourceIp||!destinationIp)throw new Error('Se requieren IP origen/destino para evaluar intersede');
+  if(!['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'].includes(from)||
+     !['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'].includes(to)||
+     typeof application!=='string'||!application)
+    throw new Error('Zona/Aplicación no reconocida');
+  // Validar IPv4 y evitar que una entrada desconocida omita una regla.
+  inSubnet(sourceIp,'0.0.0.0',1);inSubnet(destinationIp,'0.0.0.0',1);
+  const rule=securityRulesForSite(num).find(r=>
+    r.from.includes(from)&&r.to.includes(to)&&
+    (r.apps.includes('any')||r.apps.includes(application))&&
+    matchSecurityAddress(r.source,sourceIp,num)&&
+    matchSecurityAddress(r.destination,destinationIp,num));
+  return rule?{action:rule.action,rule:rule.name}:
+    {action:from===to?'allow':'deny',
+     rule:from===to?'intrazone-default':'interzone-default'};
+}
+function intersiteAddressCommands(num){
+  checkSiteNum(num);
+  const lines=[];
+  for(const [type,ips] of Object.entries(CM_SERVICES)){
+    const upper=type.toUpperCase();
+    for(let i=0;i<ips.length;i++){
+      lines.push('set address CM-'+upper+'-'+(i+1)+' ip-netmask '+ips[i]+'/32');
+    }
+    lines.push('set address-group CM-'+upper+'-SERVERS static [ CM-'+upper+'-1 CM-'+upper+'-2 ]');
+  }
+  if(num===0){
+    const users=[],mgmt=[];
+    for(let n=1;n<=22;n++){
+      const id=String(n).padStart(2,'0');
+      const u='BR-'+id+'-USERS',m='BR-'+id+'-MGMT';
+      lines.push('set address '+u+' ip-netmask 10.70.'+n+'.0/25',
+        'set address '+m+' ip-netmask 10.70.'+n+'.160/28');
+      users.push(u,m);mgmt.push(m);
+    }
+    lines.push('set address-group BRANCH-DNS-CLIENTS static [ '+users.join(' ')+' ]',
+      'set address-group BRANCH-MGMT-CLIENTS static [ '+mgmt.join(' ')+' ]');
+  }
+  return lines;
+}
+function panosSecurityCommands(num){
   const lines=[
     'set address RFC1918-10 ip-netmask 10.0.0.0/8',
     'set address RFC1918-172 ip-netmask 172.16.0.0/12',
     'set address RFC1918-192 ip-netmask 192.168.0.0/16',
     'set address-group RFC1918-NETWORKS static [ RFC1918-10 RFC1918-172 RFC1918-192 ]'
   ];
+  lines.push(...intersiteAddressCommands(num));
   const cliList=values=>values.length===1?values[0]:'[ '+values.join(' ')+' ]';
-  for(const r of PANOS_RULES){
+  for(const r of securityRulesForSite(num)){
     const p='set rulebase security rules '+r.name;
     lines.push(p+' from '+cliList(r.from),
       p+' to '+cliList(r.to),
-      p+' source any',p+' destination '+(r.destination||'any'),
+      p+' source '+(r.source||'any'),p+' destination '+(r.destination||'any'),
       p+' application '+cliList(r.apps),
       p+' service '+(r.action==='allow'?'application-default':'any'),
       p+' action '+r.action,
@@ -214,7 +317,7 @@ function paloCandidate(num){
   const zones={10:'USERS',20:'VOICE',30:'MGMT-DATA',40:'GUESTS'};
   lines.push('set zone TRANSIT network layer3 ae1');
   for(const v of VLAN)lines.push('set zone '+zones[v.id]+' network layer3 ae2.'+v.id);
-  lines.push(...panosSecurityCommands());
+  lines.push(...panosSecurityCommands(num));
   lines.push('set network virtual-router default interface [ ae1 ae2.10 ae2.20 ae2.30 ae2.40 ]',
     'set network virtual-router default routing-table ip static-route DEFAULT destination 0.0.0.0/0',
     'set network virtual-router default routing-table ip static-route DEFAULT interface ae1',
@@ -233,4 +336,4 @@ function siteCandidate(num,pcCount){
    'WAN/VPN no parametrizados','asignacion de puertos de usuarios requiere validacion en terreno',
    'sin laboratorio de hardware']};
 }
-module.exports={routerCandidate,routerNatCandidate,stackCandidate,paloCandidate,siteCandidate,PANOS_RULES,evaluatePanPolicy,isPrivateRfc1918,panosSecurityCommands};
+module.exports={routerCandidate,routerNatCandidate,stackCandidate,paloCandidate,siteCandidate,PANOS_RULES,evaluatePanPolicy,isPrivateRfc1918,panosSecurityCommands,CM_SERVICES,intersiteRulesForSite,securityRulesForSite,evaluateSitePanPolicy};
