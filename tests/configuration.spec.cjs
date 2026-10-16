@@ -381,3 +381,42 @@ test('Troncales de AP respetan VLAN 10/40 y native 999 en todas las sedes',async
  });
  expect(failures).toEqual([]);
 });
+
+test('IPAM: DNS, TACACS, NTP y monitoreo CM sin colisiones con PCs ni gateways',async({page})=>{
+ await setOperational(page);
+ const results=await page.evaluate(()=>{
+   const issues=[],cm=SEDES.find(site=>site.id==='cm');
+   const ipToRole=Object.entries(CENTRAL_SERVICES).map(([role,ip])=>({role,ip}));
+   const occupied=new Set(getPCs(cm).map(pc=>pc.ip));
+   const gatewayIps=new Set(['10.70.0.1','10.70.0.129','10.70.0.161','10.70.0.177','10.70.0.162','10.70.0.163','10.70.0.164']);
+   const used=new Set();
+   for(const {role,ip} of ipToRole){
+     if(used.has(ip))issues.push(role+': dirección de infraestructura repetida');
+     used.add(ip);
+     if(occupied.has(ip))issues.push(role+': dirección colisiona con un PC');
+     if(gatewayIps.has(ip))issues.push(role+': dirección colisiona con un gateway o equipo');
+     const octet=Number(ip.split('.')[3]);
+     if(!ip.startsWith('10.70.0.')||octet<=1||octet>=127)issues.push(role+': dirección fuera del segmento 10.70.0.0/25');
+   }
+   for(const site of SEDES){
+     const router=genRouterRunningConfig(site);
+     const sw=genSwitchRunningConfig(site,1);
+     const fw=genFWCommand(site,'show running-config');
+     const ntp=genShowBrief(site,'router','show ntp status');
+     if(!router.includes('ip name-server '+CENTRAL_SERVICES.dns1)||
+        !router.includes('ip name-server '+CENTRAL_SERVICES.dns2))issues.push(site.id+': DNS Cisco incorrectos');
+     if(!router.includes('address ipv4 '+CENTRAL_SERVICES.tacacs1)||
+        !router.includes('address ipv4 '+CENTRAL_SERVICES.tacacs2))issues.push(site.id+': TACACS Cisco incorrectos');
+     if(!sw.includes('ntp server '+CENTRAL_SERVICES.ntp1)||
+        !sw.includes('address ipv4 '+CENTRAL_SERVICES.tacacs1))issues.push(site.id+': infraestructura SW incorrecta');
+     if(!fw.includes('dns-setting servers primary '+CENTRAL_SERVICES.dns1)||
+        !fw.includes('ntp-servers primary-ntp-server '+CENTRAL_SERVICES.ntp1))issues.push(site.id+': servicios PA incorrectos');
+     if(!ntp.includes(CENTRAL_SERVICES.ntp1)||!ntp.includes(CENTRAL_SERVICES.ntp2))issues.push(site.id+': diagnóstico NTP inconsistente');
+   }
+   return {issues,hosts:ipToRole.length,cmPcs:getPCs(cm).length,sites:SEDES.length};
+ });
+ expect(results.issues).toEqual([]);
+ expect(results.hosts).toBe(8);
+ expect(results.cmPcs).toBe(55);
+ expect(results.sites).toBe(23);
+});
