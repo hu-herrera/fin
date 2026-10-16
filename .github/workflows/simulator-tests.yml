@@ -37,6 +37,8 @@ jobs:
         run: node tests/security-policy.test.cjs
       - name: Verificar rutas de retorno y permisos exactos DNS NTP entre sedes
         run: node tests/intersite-routing.test.cjs
+      - name: Validar aprovisionamiento condicionado de DNS y NTP centrales
+        run: node tests/management-services.test.cjs
       - name: Validar generador Cisco IOS-XE WAN IP SLA con rutas /32 por proveedor
         run: node tests/wan-sla-candidate.test.cjs
       - name: Validar prerrequisitos de WAN CGNAT, NAT-T, IPsec y OSPF
