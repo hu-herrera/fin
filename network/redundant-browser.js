@@ -139,6 +139,26 @@ const CONFIGS=(function(){
 // Redundancia validada estructuralmente; configuracion WAN/VPN, OOB, NAT y politicas
 // requieren parametros de los operadores, PAN-OS real y pruebas de acceso.
 const {PORTS,VLAN,candidateAddressing,checkSiteNum}=MODEL;
+function routerNatCandidate(num){
+  checkSiteNum(num);
+  const prefix='10.70.'+num+'.';
+  const lines=[
+    '! NAT/PAT segun WAN realmente usada; cifrado intersede mantiene ruta Tunnel y NO matchea WAN fisica',
+    'ip access-list extended NAT-LOCAL',
+    ' permit ip '+prefix+'0 0.0.0.127 any',
+    ' permit ip '+prefix+'128 0.0.0.31 any',
+    ' permit ip '+prefix+'176 0.0.0.15 any'
+  ];
+  for(const [type,iface] of Object.entries(PORTS.wan)){
+    const rule='NAT-'+type.toUpperCase();
+    lines.push('route-map '+rule+' permit 10',
+      ' match ip address NAT-LOCAL',
+      ' match interface '+iface,
+      'ip nat inside source route-map '+rule+' interface '+iface+' overload');
+  }
+  lines.push('! Verificar show ip nat translations y show ip nat statistics por WAN; no publicar claves de laboratorio.');
+  return lines;
+}
 function routerCandidate(num){
   checkSiteNum(num);
   const a=candidateAddressing(num);
@@ -178,7 +198,8 @@ function routerCandidate(num){
     ' redistribute static subnets route-map EXPORT-SITE-LAN',
     '! conservar Tunnel100/200/300/400 y revisar adyacencias y costes reales',
     '! FALTAN: WAN IP/MTU y SLA extremo-a-extremo por ISP; VPN peers autenticos',
-    '! FALTAN: NAT ACL, ruta por defecto rastreada, QoS, AAA/OOB y rollback');
+    ...routerNatCandidate(num),
+    '! FALTAN: IP SLA por contrato y ruta por defecto rastreada, QoS, AAA/OOB y rollback');
   return lines.join('\n');
 }
 function stackCandidate(num,pcCount){
@@ -349,7 +370,7 @@ function siteCandidate(num,pcCount){
    'sin laboratorio de hardware']};
 }
 
-return {routerCandidate,stackCandidate,paloCandidate,siteCandidate,PANOS_RULES,evaluatePanPolicy,isPrivateRfc1918,panosSecurityCommands};
+return {routerCandidate,routerNatCandidate,stackCandidate,paloCandidate,siteCandidate,PANOS_RULES,evaluatePanPolicy,isPrivateRfc1918,panosSecurityCommands};
 })();
 root.RedundantLab=Object.freeze({...MODEL,...CONFIGS});
 })(window);
