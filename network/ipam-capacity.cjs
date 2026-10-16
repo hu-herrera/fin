@@ -43,6 +43,16 @@ function capacityAssessment(inventory=pcInventory()){
      aggregatePaStackMbps:4000,
      aggregateRouterPaMbps:20000,
      perFlowStackAccessMbps:1000,
+     // C9200L-STACK-KIT = dos adaptadores + un cable (datasheet Cisco).
+     // Un stack de 2 miembros con dos enlaces traseros necesita 4 adaptadores
+     // y 2 cables: dos kits por sede, sujetos a cotización/inventario real.
+     physicalStackMembers:46,
+     physicalStackwiseAdapters:92,
+     physicalStackwiseCables:46,
+     minimumC9200LStackKits:46,
+     stackKitPartNumber:'C9200L-STACK-KIT',
+     stackKitProcurementVerified:false,
+     clientAddressing:'STATIC_IN_SIMULATOR; DHCP_SERVER_OR_RELAY_NOT_PROVISIONED',
      limitations:'Valores de enlaces teóricos antes de overhead/negociación; LACP no suma velocidad a un único flujo'
    }
  };
