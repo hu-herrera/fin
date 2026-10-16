@@ -9,7 +9,7 @@ Este repositorio modela una red corporativa ficticia con **23 sedes y 650 PCs**,
 
 ## Meta académica — simulador primero, presentación después
 
-**Fase A: simulador funcional e interactivo en esta página.** Topología simulada, VLAN/rutas, aislamiento, fallos, candidatos IOS-XE/PAN-OS, servicios modelados y un **laboratorio de paquetes** que evalúa saltos y políticas entre Cisco, Palo Alto y StackWise. Se puede cortar Starlink, comprobar failover, inspeccionar decisiones del firewall y restaurar la red sin comprar equipamiento. La suite GitHub Actions verifica las regresiones. A diferencia de ejecutar IOS-XE/PAN-OS virtualizados en GNS3/CML, el motor es JavaScript determinista con un subconjunto de comportamientos de red; **no ejecuta imágenes de Cisco o Palo Alto ni protocolos de red reales**.
+**Fase A: simulador funcional e interactivo en esta página.** Topología simulada, VLAN/rutas, aislamiento, fallos, candidatos IOS-XE/PAN-OS, servicios modelados y una pestaña **Ping / Trace** integrada en la topología original. Se puede cortar Starlink, comprobar failover, inspeccionar decisiones del firewall y restaurar la red sin comprar equipamiento. La suite GitHub Actions verifica las regresiones. A diferencia de ejecutar IOS-XE/PAN-OS virtualizados en GNS3/CML, el motor es JavaScript determinista con un subconjunto de comportamientos de red; **no ejecuta imágenes de Cisco o Palo Alto ni protocolos de red reales**.
 
 **Fase B: presentación de avances desde la misma página.** El botón **Presentar** incluye seis escenas alineadas con la pauta del profesor del 16 de octubre: introducción, avances, estado e implementaciones, evidencias, dificultades y tareas pendientes. Cada escena tiene un guion oculto por defecto (**N** lo muestra), duración sugerida y acceso a la demostración en vivo. [Discurso y recorrido completo](docs/presentacion-avances-16-octubre-2026.md). No se necesita PowerPoint.
 
@@ -17,7 +17,7 @@ Este repositorio modela una red corporativa ficticia con **23 sedes y 650 PCs**,
 
 ## Qué probar
 
-Abrir [index.html](index.html) en un navegador compatible. Selecciona una sede en el mapa, usa el botón amarillo **Ver topología interna completa** y, dentro de ese simulador original, entra a **📦 Flujo de paquetes** o pulsa **📦 Seguir un paquete** en la barra de la topología. Ahí se simulan DNS, SSH, rutas WAN y fallos. **▣ Presentar** abre la exposición y lleva a ese mismo simulador original. Son partes de la misma página y están disponibles en GitHub Pages. Consulta la [guía de demostración](docs/guia-demostracion-simulador.md).
+Abrir [index.html](index.html) en un navegador compatible. Selecciona una sede en el mapa, usa el botón amarillo **Ver topología interna completa** y entra a **📡 Ping / Trace**. El botón **Enviar ping** deja el resultado y la ruta lógica visibles en esa misma ventana; desde ahí se puede abrir la animación del ping sobre el mapa. **▣ Presentar** abre la exposición y abre el Ping / Trace original de S01. Son partes de la misma página y están disponibles en GitHub Pages. Consulta la [guía de demostración](docs/guia-demostracion-simulador.md).
 
 Para comprobaciones reproducibles desde la raíz con Node.js:
 
