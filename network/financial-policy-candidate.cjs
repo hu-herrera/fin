@@ -11,6 +11,7 @@ const REQUIRED={
  sourceAssetVerified:'Activo de origen no verificado',
  destinationAssetVerified:'Servidor real no inventariado ni verificado',
  applicationIdVerified:'App-ID registrado en PAN-OS no validado',
+ appIdentityReviewed:'Identidad de aplicación y clasificación de tráfico no revisadas',
  tcpServicePortVerified:'Puerto TCP de aplicación no validado',
  securityProfileVerified:'Perfil de prevención de amenazas y licencias no comprobado',
  routeAndReturnVerified:'VPN/OSPF y rutas de retorno no comprobados',
