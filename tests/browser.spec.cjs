@@ -293,7 +293,14 @@ test('Consola switch real: configuración, comandos y persistencia local', async
   await send('show power inline');await expect(out).toContainText('alimentación externa');
   await send('show etherchannel summary');await expect(out).toContainText('Po1(SU)');
   await send('show interfaces trunk');await expect(out).toContainText('Po1 on 802.1q trunking 999');
-  await send('enable');await send('configure terminal');await send('hostname SW-LAB-TEST');await send('end');
+  await send('enable');await send('configure terminal');
+  await send('interface Port-channel1');await send('shutdown');await send('end');
+  await send('show etherchannel summary');await expect(out).toContainText('Po1(SD)');
+  await send('configure terminal');await send('interface Port-channel1');await send('no shutdown');await send('end');
+  const recovered=await page.evaluate(()=>isSwitchStackLinkAvailable('s01'));
+  expect(recovered).toBe(true);
+  await send('show etherchannel summary');await expect(out).toContainText('Po1(SU)');
+  await send('configure terminal');await send('hostname SW-LAB-TEST');await send('end');
   await send('write memory');
   await expect(out).toContainText('SW-LAB-TEST');
   const stored=await page.evaluate(()=>localStorage.getItem('financiera-pacifico-cli-v1:s01:sw1'));
