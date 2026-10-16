@@ -6506,7 +6506,23 @@ function collapsePacketRoute(route, src, dest = src){
   return collapsed;
 }
 
+function packetPolicyDecision(src,dest,srcPc,destPc,application='icmp'){
+  if(!window.ActiveProfile?.enabled()||src.id===dest.id)
+    return {action:'allow',rule:'local-or-historical'};
+  if(!srcPc||!destPc)
+    return {action:'deny',rule:'source-or-destination-not-an-authorized-host'};
+  const from=window.RedundantLab.evaluateSitePanPolicy(src.num,'USERS','TRANSIT',
+    application,destPc.ip,srcPc.ip);
+  if(from.action!=='allow')return from;
+  const to=window.RedundantLab.evaluateSitePanPolicy(dest.num,'TRANSIT','USERS',
+    application,destPc.ip,srcPc.ip);
+  return to.action==='allow'?{action:'allow',rule:from.rule+' / '+to.rule}:to;
+}
 function buildPacketRoute(src, dest, collapseCloud = true, srcPc = getPCs(src)[0], destPc = getPCs(dest)[0]){
+  // Un enlace WAN no constituye autorización: prevalece la regla PAN-OS.
+  // Los servicios centrales reservados tienen su propio evaluador de políticas;
+  // no son PCs activos y nunca se les inventan respuestas ICMP.
+  if(packetPolicyDecision(src,dest,srcPc,destPc).action!=='allow')return [];
   const graph = buildSimulationGraph();
   const srcPrefix = `site:${src.id}`;
   const destPrefix = `site:${dest.id}`;
