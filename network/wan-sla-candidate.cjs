@@ -25,7 +25,7 @@ function isReservedTarget(ip){
     a===255||(a===255&&b===255&&c===255&&d===255);
 }
 function validateWanSettings(settings){
-  if(!settings||typeof settings!=='object')throw new Error('Se requieren cuatro contratos WAN y monitores autorizados');
+  if(!settings||typeof settings!=='object')return ['Se requieren cuatro contratos WAN y monitores autorizados'];
   const usedTargets=new Set();
   const issues=[];
   for(const type of WAN_KEYS){
