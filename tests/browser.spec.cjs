@@ -230,6 +230,8 @@ test('Switches independientes: configuración, EtherChannel, PoE y troncales', a
         if(!config.includes('interface Port-channel1')||
            !config.includes('channel-group 1 mode active')||
            !config.includes('interface GigabitEthernet1/0/46'))issues.push(site.id+type+' LACP ausente');
+        if(!config.includes('spanning-tree vlan 10,20,30,40 priority '+(swN===1?24576:28672)))
+          issues.push(site.id+type+' prioridad STP no determinista');
         if(!config.includes('interface GigabitEthernet1/0/45')||!config.includes(' switchport trunk allowed vlan 10,20,30,40'))issues.push(site.id+type+' troncal incorrecta');
         if(!ether.includes('Po1(SU)')||!ether.includes('LACP')||
            !ether.includes('Gi1/0/45(P)')||!ether.includes('Gi1/0/46(P)'))issues.push(site.id+type+' EtherChannel no operativo');
