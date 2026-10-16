@@ -103,3 +103,78 @@
 @media(max-width:450px){
  #sm-packet-host .packetlab-controls{grid-template-columns:1fr}
 }
+
+/* Polish after moving Packet Lab into the original site modal.
+ * Avoid inherited dashboard text metrics and label/status collisions. */
+#sm-packet-host,#sm-packet-host *{box-sizing:border-box}
+#sm-packet-host .packetlab-dialog{display:flex;flex-direction:column;gap:18px;min-width:0}
+#sm-packet-host .packetlab-dialog > *{min-width:0;max-width:100%}
+#sm-packet-host .packetlab-heading{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px}
+#sm-packet-host .packetlab-heading > div{min-width:0;flex:1 1 260px}
+#sm-packet-host .packetlab-heading h2{line-height:1.2;overflow-wrap:break-word}
+#sm-packet-host .packetlab-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:14px}
+#sm-packet-host .packetlab-controls label{min-width:0;max-width:100%;line-height:1.45;
+ display:flex;flex-direction:column;gap:7px;overflow-wrap:break-word}
+#sm-packet-host .packetlab-controls select,
+#sm-packet-host .packetlab-controls input{min-width:0;width:100%;max-width:100%;height:43px;
+ line-height:normal;text-overflow:ellipsis}
+#sm-packet-host .packetlab-controls input[readonly]{color:#91d9b5}
+#sm-packet-host .packetlab-presets{display:flex;flex-wrap:wrap;gap:9px;justify-content:flex-start}
+#sm-packet-host .packetlab-presets .packetlab-btn{flex:0 1 auto;min-height:40px;
+ white-space:normal;text-align:center;line-height:1.35}
+#sm-packet-host .packetlab-result{min-width:0;width:100%;position:relative;
+ display:flex;flex-direction:column;gap:10px;overflow:visible}
+#sm-packet-host .packetlab-result-title{display:flex;align-items:center;
+ justify-content:space-between;flex-wrap:wrap;gap:10px;min-width:0;line-height:1.4}
+#sm-packet-host #pl-verdict{display:block;flex:1 1 170px;min-width:0;overflow-wrap:anywhere;
+ font-size:clamp(15px,1.9vw,20px);line-height:1.3}
+#sm-packet-host #pl-state{display:block;flex:0 1 auto;max-width:100%;
+ font-size:11px;font-weight:700;line-height:1.35;letter-spacing:.35px;
+ padding:5px 10px;border:1px solid #57778b;border-radius:8px;
+ white-space:normal;overflow-wrap:anywhere;text-align:right}
+#sm-packet-host #pl-reason{margin:0;max-width:100%;line-height:1.6;overflow-wrap:anywhere}
+#sm-packet-host .packetlab-execution{color:#b8d5e9;font-size:11px;font-weight:700;
+ line-height:1.5;letter-spacing:.2px;overflow-wrap:anywhere;
+ padding:8px 11px;border:1px solid #37526a;border-radius:7px;background:#152a3e}
+#sm-packet-host .packetlab-trace{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));
+ gap:10px;margin-top:5px;min-width:0}
+#sm-packet-host .packetlab-hop{min-width:0;height:auto;min-height:104px;overflow:visible;
+ display:flex;flex-direction:column;gap:9px}
+#sm-packet-host .packetlab-hop-title{margin:0;color:#a0edbd;
+ line-height:1.5;min-width:0;overflow-wrap:anywhere;word-break:normal}
+#sm-packet-host .packetlab-hop.blocked .packetlab-hop-title{color:#ff9aa9}
+#sm-packet-host .packetlab-hop-detail{font-size:11px;line-height:1.55;min-width:0;
+ overflow-wrap:anywhere;word-break:normal}
+#sm-packet-host .packetlab-footnote{margin:0;line-height:1.55}
+#sm-packet-host .packetlab-result.packetlab-updated{
+ animation:packetlab-result-flash .65s ease-out}
+#sm-packet-host .packetlab-result.packetlab-updated .packetlab-hop{
+ animation:packetlab-hop-reveal .35s ease-out both}
+#sm-packet-host .packetlab-result.packetlab-updated .packetlab-hop:nth-child(2){animation-delay:.055s}
+#sm-packet-host .packetlab-result.packetlab-updated .packetlab-hop:nth-child(3){animation-delay:.11s}
+#sm-packet-host .packetlab-result.packetlab-updated .packetlab-hop:nth-child(4){animation-delay:.165s}
+#sm-packet-host .packetlab-result.packetlab-updated .packetlab-hop:nth-child(5){animation-delay:.22s}
+@keyframes packetlab-result-flash{0%{box-shadow:0 0 0 3px #39bde879}
+ 100%{box-shadow:0 0 0 0 transparent}}
+@keyframes packetlab-hop-reveal{from{opacity:.45;transform:translateY(5px)}
+ to{opacity:1;transform:translateY(0)}}
+/* Long green WAN state no longer overlays topology instructions/buttons. */
+#sm-body .topo-toolbar{flex-wrap:wrap;row-gap:9px;min-height:48px;height:auto}
+#sm-body .topo-toolbar > *{min-width:0}
+#sm-body .topo-toolbar .topo-state{overflow-wrap:anywhere;white-space:normal;
+ max-width:100%;line-height:1.5;margin-left:0}
+#sm-body .topo-toolbar .topo-zoom{flex-wrap:wrap;gap:4px}
+@media(max-width:800px){
+ #sm-packet-host .packetlab-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #sm-packet-host .packetlab-trace{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:510px){
+ #sm-packet-host .packetlab-controls{grid-template-columns:1fr}
+ #sm-packet-host .packetlab-trace{grid-template-columns:1fr}
+ #sm-packet-host #pl-state{text-align:left}
+ #sm-body .topo-toolbar .topo-zoom{margin-left:0}
+}
+@media(prefers-reduced-motion:reduce){
+ #sm-packet-host .packetlab-updated,
+ #sm-packet-host .packetlab-updated .packetlab-hop{animation:none!important}
+}
