@@ -4,18 +4,23 @@
 
 Este repositorio modela una red corporativa ficticia con **23 sedes y 650 PCs**, para estudio, auditoría y demostración. La vista **DESPUÉS** usa Cisco C8300 → PA-1410 de capa 3 → un stack lógico de dos C9200L (StackWise-80), con LACP Po10 y Po20. Se conserva la vista **ANTES** para comparación. No se crearon switches OOB adicionales.
 
-## Estado en dos fases
+## Meta académica — simulador primero, presentación después
 
-**Fase 1: software, diseño y pruebas automatizadas.** Topología simulada, VLAN/rutas, aislamiento, fallos modelados, candidatos IOS-XE/PAN-OS, reservas DNS/NTP, DHCP condicional, AAA/TACACS+, Syslog TLS, seguridad de administración, planes de WAN/IPsec, política financiera por aplicación y preflight SNMPv3. Las nuevas salidas están bloqueadas hasta que se introduzcan parámetros, aprobaciones y rutas verificadas. Los resultados de GitHub Actions son verificables en la pestaña [Actions](https://github.com/hu-herrera/fin/actions).
+**Fase A: simulador funcional e interactivo en esta página.** Topología simulada, VLAN/rutas, aislamiento, fallos, candidatos IOS-XE/PAN-OS, servicios modelados y un **laboratorio de paquetes** que evalúa saltos y políticas entre Cisco, Palo Alto y StackWise. Se puede cortar Starlink, comprobar failover, inspeccionar decisiones del firewall y restaurar la red sin comprar equipamiento. La suite GitHub Actions verifica las regresiones. A diferencia de ejecutar IOS-XE/PAN-OS virtualizados en GNS3/CML, el motor es JavaScript determinista con un subconjunto de comportamientos de red; **no ejecuta imágenes de Cisco o Palo Alto ni protocolos de red reales**.
 
-**Fase 2: despliegue y aceptación física.** Aún requiere parámetros contratados de operadores, alcance WAN/CGNAT, concentrador IPsec/IKEv2, IOS-XE/PAN-OS licenciados, transceptores, equipos y servidores centrales reales, licencias, TLS/AAA/SNMP, pruebas de recuperación y actas. Esta fase **no puede ser certificada por Playwright ni por el generador de configuraciones**.
+**Fase B: presentación desde la misma página.** El botón **Presentar** abre una vista proyectable de seis escenas que sirve como estructura; el discurso, la secuencia final y los tiempos de la exposición serán la siguiente tarea. No se necesita PowerPoint.
+
+**Laboratorio físico: opcional, fuera del alcance requerido por el trabajo académico.** No hay obligación de adquirir 23 routers/firewalls ni de contratar operadores. Documentos de hardware y candidatos están disponibles como anexos para explicar cómo se validaría un despliegue real, no como condición para presentar el simulador.
 
 ## Qué probar
 
-Abrir [index.html](index.html) en un navegador compatible. Para comprobaciones reproducibles desde la raíz con Node.js:
+Abrir [index.html](index.html) en un navegador compatible. Utiliza **⌁ Laboratorio de paquetes** en la cabecera para simular DNS, SSH, salida WAN y cortes de Starlink; **▣ Presentar** para el esqueleto de exposición sin diapositivas. Son partes de la misma página y están disponibles en GitHub Pages. Consulta la [guía de demostración](docs/guia-demostracion-simulador.md).
+
+Para comprobaciones reproducibles desde la raíz con Node.js:
 
 ```bash
 node network/build-browser-lab.cjs --check
+node tests/packet-simulator.test.cjs
 node tests/financial-policy.test.cjs
 node tests/snmpv3-monitoring.test.cjs
 node tests/site-readiness.test.cjs
