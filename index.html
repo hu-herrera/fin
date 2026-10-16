@@ -4273,6 +4273,8 @@ Status: <span class="ios-up">ACTIVE</span>`;
 }
 
 function genACLs(s){
+  if(window.ActiveProfile?.enabled())return 'RTR-'+s.code+'> <span class="ios-cmd">show ip access-lists</span><br>NAT-LOCAL: VLAN10, VLAN20, VLAN40; gestión VLAN30 sin PAT indiscriminado.<br>EXPORT-SITE-LAN: VLAN10/20/30 en OSPF; VLAN40 excluida. Inter-VLAN y filtros de invitados residen en Palo Alto Layer3 (modelo).';
+
   const n=s.num;
   return `RTR-${s.code}> <span class="ios-cmd">show ip access-lists</span>
 
@@ -4424,6 +4426,8 @@ function getSwitchPortRecords(s,swN){
 }
 
 function genSWPorts(s,swN){
+  if(window.ActiveProfile?.enabled())return window.ActiveProfile.switchCommand(s,swN,'show interfaces status');
+
   let rows=`SW-${s.code}-0${swN}> <span class="ios-cmd">show interfaces status</span>\n`;
   rows+=`<span class="ios-hdr">Port      Name              Status      Vlan</span>\n`;
   getSwitchPortRecords(s,swN).forEach(({port,name,status,vlan})=>{
@@ -4817,6 +4821,8 @@ function genSwitchRunningConfig(s, swN=1){
 }
 
 function genSwitchVersionFull(s, swN=1){
+  if(window.ActiveProfile?.enabled())return cliText('STACK-'+s.code+'>','show version',['Cisco IOS XE 17.9 · C9200L-48T-4G-E (modelo)','StackWise-80: 2 miembros (2x C9200L-48T-4G-E)','Po20: 4x1G LACP distribuido hacia PA ae2','No se afirma estado físico ni versión/licencias reales','show switch y show etherchannel summary para estado del modelo']);
+
   const host=`SW-${s.code}-0${swN}`;
   return cliText(`${host}>`,'show version',['Cisco IOS XE Software, Version 17.09.04a','Cisco IOS Software [Cupertino], Catalyst 9000 Software (CAT9K_IOSXE), Version 17.9.4a, RELEASE SOFTWARE (fc3)',`${host} uptime is ${UPTIME}`,'cisco C9200L-48T-4G-E (ARM64) processor with 2097152K/6147K bytes of memory.','Processor board ID FOC2345A2BC','48 Gigabit Ethernet RJ-45 interfaces','4 Gigabit Ethernet SFP uplinks','2048K bytes of non-volatile configuration memory.','8388608K bytes of physical memory.','Base Ethernet MAC Address : 001a.2b3c.4d5e','Model Number : C9200L-48T-4G-E','Switch/Stack Mac Address : 001a.2b3c.4d5e','Switch# Role Priority State Model Version','1 Active 15 Ready C9200L-48T-4G-E 17.9.4a','Cada switch es independiente; no hay StackWise ni miembro 2','SW Image: CAT9K_IOSXE','Configuration register is 0x102']);
 }
@@ -5458,6 +5464,8 @@ function findDeviceTargetPC(address){
 }
 
 function genRouterTrackOutput(s, command){
+  if(window.ActiveProfile?.enabled())return window.ActiveProfile.routerDetail(s,command);
+
   const links = [
     ['starlink','Starlink'],
     ['kuiper','Amazon Leo Kuiper'],
@@ -6069,7 +6077,9 @@ function handleDeviceCmd(ev, sedeId, type){
       ? genRouterTrackOutput(s, normalized)
       : genRouterDetail(s, normalized) || genRouterOps(s, normalized));
   } else if(normalized === 'show crypto isakmp policy' && type === 'router'){
-    addLine(`RTR-${s.code}> <span class="ios-cmd">${normalized}</span><br><br>
+    addLine(window.ActiveProfile?.enabled()
+      ? 'RTR-'+s.code+'> IKEv1/ISAKMP no configurado. IKEv2 requiere peers y claves reales.'
+      : `RTR-${s.code}> <span class="ios-cmd">${normalized}</span><br><br>
 IKEv2 policy: 10<br>  encryption aes-gcm-256<br>  integrity sha512<br>  group 20<br>  lifetime 86400 seconds`);
   } else if(normalized === 'show startup-config' || normalized === 'show running-config'){
     if(ST.mode === 'antes'){
@@ -6155,7 +6165,9 @@ Number of sessions: 42<br>Packets received: 182340<br>Packets transmitted: 17988
     addLine(`PA-${s.code}> <span class="ios-cmd">${normalized}</span><br><br>
 Destination        Nexthop          Metric  Flags  Interface<br>0.0.0.0/0          ${activeLink(s.id) || 'unreachable'}  10      A      ethernet1/1<br>10.70.${s.num}.0/24 connected          0       C      ethernet1/2`);
   } else if(normalized === 'show log system' && type === 'fw'){
-    addLine(`PA-${s.code}> <span class="ios-cmd">${normalized}</span><br><br>
+    addLine(window.ActiveProfile?.enabled()
+      ? 'PA-'+s.code+'> No se recolectaron logs PAN-OS físicos. Eventos de enlace y permisos son simulados.'
+      : `PA-${s.code}> <span class="ios-cmd">${normalized}</span><br><br>
 ${new Date().toISOString()} info  dataplane  link state changed to up<br>${new Date().toISOString()} info  routing    default route installed`);
   } else if((normalized === 'show ip access-lists' || normalized === 'show access-lists') && type === 'router'){
     addLine(genACLs(s));
