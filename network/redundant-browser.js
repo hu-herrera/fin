@@ -180,9 +180,14 @@ function routerCandidate(num){
   checkSiteNum(num);
   const a=candidateAddressing(num);
   const prefix='10.70.'+num+'.';
+  const loopback='10.70.100.'+(num===0?1:num+10);
   const lines=[
     '! LAB CANDIDATO C8300 - NO PEGAR EN PRODUCCION',
     '! Router C8300: enlaces WAN en Gi0/0/0..3, transito L3 LACP Te0/0/4..5',
+    'interface Loopback0',
+    ' description ROUTER-ID-OSPF-OVERLAY',
+    ' ip address '+loopback+' 255.255.255.255',
+    ' ip ospf 1 area 0',
     'interface Port-channel10',
     ' description TRANSIT-TO-PA1410-AE1',
     ' ip address 10.72.'+num+'.1 255.255.255.252',
@@ -211,6 +216,7 @@ function routerCandidate(num){
   lines.push('route-map EXPORT-SITE-LAN permit 10',
     ' match ip address prefix-list '+pfx,
     'router ospf 1',
+    ' router-id '+loopback,
     ' passive-interface default',
     ' redistribute static subnets route-map EXPORT-SITE-LAN',
     '! conservar Tunnel100/200/300/400 y revisar adyacencias y costes reales',
