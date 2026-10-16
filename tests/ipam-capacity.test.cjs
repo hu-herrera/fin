@@ -1,0 +1,28 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {pcInventory}=require('../network/export-candidate.cjs');
+const {CAPACITY,capacityAssessment}=require('../network/ipam-capacity.cjs');
+const inventory=pcInventory(),report=capacityAssessment(inventory);
+assert.equal(report.status,'PASS_WITH_CAPACITY_NOTES');
+assert.deepEqual(report.errors,[]);
+assert.equal(report.sites.length,23);
+assert.equal(report.totalPC,650);
+assert.equal(CAPACITY[10],126);
+assert.equal(CAPACITY[20],30);
+assert.equal(CAPACITY[30],14);
+assert.equal(CAPACITY[40],14);
+assert.ok(report.sites.every(site=>site.sw1+site.sw2===site.pcs));
+assert.ok(report.sites.every(site=>site.sw1<=30&&site.sw2<=30));
+assert.ok(report.warnings.every(s=>s.includes('una telefonía IP por puesto')));
+const bad={...inventory,s01:127};
+assert.ok(capacityAssessment(bad).errors.some(s=>s.includes('VLAN10')));
+const oversize={...inventory,s01:65};
+assert.ok(capacityAssessment(oversize).errors.some(s=>s.includes('puertos 3-32')));
+const missing={...inventory};delete missing.s22;
+assert.ok(capacityAssessment(missing).errors.length>0);
+const malformed={...inventory,s02:-1};
+assert.ok(capacityAssessment(malformed).errors.length>0);
+assert.equal(report.constraints.aggregatePaStackMbps,4000);
+assert.equal(report.constraints.perFlowStackAccessMbps,1000);
+console.log('IPAM capacity: 23 sites, 650 PCs, '+report.warnings.length+
+  ' conditional voice capacity warnings; hard violations rejected.');
