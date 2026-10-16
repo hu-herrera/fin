@@ -33,6 +33,15 @@ for(let n=0;n<=22;n++){
   }
   check(!c.includes('GigabitEthernet0/0/0.10'),label+' legacy router-on-a-stick remains');
   check(c.includes('interface Port-channel10'),label+' Cisco LACP transit missing');
+  check(c.includes(' ip nat inside'),label+' Cisco transit lacks NAT inside');
+  for(const [type,iface] of Object.entries(PORTS.wan)){
+    const rule='NAT-'+type.toUpperCase();
+    check(c.includes('route-map '+rule+' permit 10\n match ip address NAT-LOCAL\n match interface '+iface),label+' NAT route-map not tied to egress '+iface);
+    check(c.includes('ip nat inside source route-map '+rule+' interface '+iface+' overload'),label+' NAT/PAT egress translation missing '+type);
+  }
+  for(const [prefix,wildcard] of [['0','0.0.0.127'],['128','0.0.0.31'],['176','0.0.0.15']])
+    check(c.includes(' permit ip 10.70.'+n+'.'+prefix+' '+wildcard+' any'),label+' NAT ACL wildcard mismatch '+prefix);
+  check(!c.includes('permit ip 10.70.'+n+'.160 0.0.0.15 any'),label+' NAT must not publish management subnet by default');
   check(count(c,'channel-group 10 mode active')===2,label+' Cisco LACP must have 2 members');
   for(const port of Object.values(PORTS.wan))check(c.includes('interface '+port),label+' WAN '+port+' missing');
   for(const p of PORTS.transit){
