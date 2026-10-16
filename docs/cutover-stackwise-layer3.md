@@ -41,12 +41,26 @@
 7. Sólo tras validar: sustituir el modelo del simulador activo, las consolas, los tests de versión vieja y al final la representación gráfica.
 8. Guardar `startup-config` / commit PAN-OS únicamente con respaldo OOB y plan de reversión confirmado.
 
+## Consulta de configuraciones candidatas por sede
+
+El exportador `network/export-candidate.cjs` toma el inventario PC real del simulador, exige un identificador de sede válido y añade una advertencia de **no despliegue**. Comandos de lectura (no modifican dispositivos):
+
+```bash
+node network/export-candidate.cjs s01 router
+node network/export-candidate.cjs s01 stack
+node network/export-candidate.cjs s01 palo
+node network/export-candidate.cjs cm stack
+```
+
+Las tres salidas se generan por sede sin claves reales, con interfaces y rutas del diseño futuro. Estas plantillas son *candidatos para revisión*, no la salida `show running-config` de un equipo físico ni configuraciones completas certificadas.
+
 ## Comprobación automática local o en CI
 
 ```bash
 node tests/wan.test.cjs
 node tests/redundant-model.test.cjs
 node tests/redundant-configs.test.cjs
+node network/export-candidate.cjs s01 stack
 npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs --browser chromium
 ```
 
