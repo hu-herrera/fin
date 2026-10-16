@@ -451,7 +451,11 @@ body{background:var(--bg);color:var(--text);
 .ping-note{font-size:10px;color:var(--text2);line-height:1.5;margin-top:8px;}
 .ping-src-sel{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   padding:8px;background:var(--panel2);border-radius:4px;margin-bottom:8px;}
-.ping-src-sel select{min-width:0;max-width:100%;flex:1 1 260px;}
+.ping-src-sel select{min-width:0;max-width:100%;flex:1 1 260px;background:var(--panel2);color:var(--text);border:1px solid var(--panel3);padding:6px 8px;border-radius:4px;font-size:12px;}
+.ping-src-sel label{font-size:11px;color:var(--text2);}
+.ping-src-sel .ping-host-picker{display:flex;flex:1 1 260px;flex-direction:column;gap:5px;min-width:0;}
+.ping-src-sel .ping-host-picker select{flex:none;width:100%;}
+.ping-local-topology{border:1px solid var(--panel3);border-radius:8px;background:#101824;overflow:hidden;margin:12px 0;}
 .ping-table td,.ping-table th{overflow-wrap:anywhere;}
 .ping-route-summary span{min-width:0;overflow-wrap:anywhere;}
 .dashboard-ping-form{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;
@@ -2510,13 +2514,13 @@ function selectPingSede(id){
   return true;
 }
 
-function runMapPing(srcId, destId){
+function runMapPing(srcId, destId, sourceIp, targetIp){
   const src = SEDES.find(s => s.id === srcId);
   const dest = SEDES.find(s => s.id === destId);
   if(!src || !dest) return;
   const localOnly=src.id===dest.id;
-  const srcPc=findAvailableSimulationPC(src,localOnly);
-  const destPc=findAvailableSimulationPC(dest,localOnly);
+  const srcPc=sourceIp?getPCs(src).find(p=>p.ip===sourceIp):findAvailableSimulationPC(src,localOnly);
+  const destPc=targetIp?getPCs(dest).find(p=>p.ip===targetIp):findAvailableSimulationPC(dest,localOnly);
   const detailedRoute = srcPc && destPc
     ? buildPacketRoute(src,dest,false,srcPc,destPc)
     : [];
@@ -3074,6 +3078,7 @@ function sc_dropMPLS(){
 }
 
 function sc_reset(){
+  PING_DIAGNOSTIC_RULE=null;
   initLinks();
   if(window.ActiveProfile?.enabled()) REDUNDANT_LAB_STATES.clear();
   SEDES.forEach(s=>recompute(s.id));
@@ -3090,6 +3095,12 @@ function _refresh(){
   clearPacketSimulation();
   renderMap(); renderAntenas(); updateMetrics();
   if(ST.selId) renderDetail(ST.selId);
+  if(SM_TAB==='ping'&&document.getElementById('ping-source-host')){
+    const source=document.getElementById('ping-source-host'),value=source.value;
+    source.innerHTML=pingHostOptions(SEDES.find(s=>s.id===SM_ID));source.value=value;
+    updatePingHosts(SM_ID,true);
+    cancelPendingSitePing('El estado de la red cambió. Envía otro ping para evaluar la ruta actual.');
+  }
   if(SM_ID&&document.getElementById('sm-overlay').classList.contains('vis')){
     if(['topo','lab','kpis','tables'].includes(SM_TAB))
       smTab(SM_TAB,document.querySelector('#sm-tabs .sm-tab.active'));
@@ -3691,7 +3702,7 @@ function renderActiveTopoTab(s){
     let result='';
     list.forEach((pc,i)=>{
       const x=origin+(i%6)*55,y=start+Math.floor(i/6)*gapY,
-        online=profile.l2Local(s.id,member),fill=online?'#203c35':'#3b2029';
+        online=isSwitchPCPortAvailable(s.id,pc)&&isPCOnConfiguredVlan(s.id,pc),fill=online?'#203c35':'#3b2029';
       result+='<g class="topo-pc" onclick="openPC(\''+s.id+'\','+(pc.idx-1)+')">'+
         '<title>'+escapeCLI(pc.id)+' '+escapeCLI(pc.ip)+'</title>'+
         '<rect class="pc-body" x="'+x+'" y="'+y+'" width="43" height="30" rx="4" fill="'+fill+
@@ -3870,6 +3881,57 @@ function renderCmdTab(s){
   <div class="ios">${genRouterOverview(s)}</div>`;
 }
 
+function pingHostOptions(s,exclude){
+  return getPCs(s).filter(pc=>pc.ip!==exclude).map(pc=>'<option value="'+pc.ip+'">'+
+    escapeCLI(pc.id)+' · '+pc.ip+' · VLAN '+pc.vlan+' · SW'+pc.sw+
+    (isSwitchPCPortAvailable(s.id,pc)&&isPCOnConfiguredVlan(s.id,pc)?'':' · sin acceso')+'</option>').join('');
+}
+function invalidatePingSelection(){
+  cancelPendingSitePing();
+  const result=document.getElementById('ping-result');
+  if(result)result.textContent='Selección actualizada. Envía otro ping para probar estos equipos.';
+}
+function updatePingHosts(srcId,keepTarget=false){
+  invalidatePingSelection();
+  const src=SEDES.find(s=>s.id===srcId),local=document.getElementById('ping-dest').value==='local';
+  const dst=local?src:SEDES.find(s=>s.id===document.getElementById('ping-dest').value);
+  const target=document.getElementById('ping-target-host'),previous=target.value;
+  target.innerHTML=pingHostOptions(dst,local?document.getElementById('ping-source-host').value:null);
+  if(keepTarget&&[...target.options].some(o=>o.value===previous))target.value=previous;
+  document.getElementById('ping-diagnostic-controls').innerHTML=local||!window.ActiveProfile?.enabled()?'':
+    '<p>ICMP intersede está bloqueado por defecto. Puedes crear una excepción educativa para este par exacto de PCs (VLAN 10), en ambos firewalls. Solo dura esta sesión; no modifica las configuraciones exportadas.</p>'+
+    '<button type="button" class="btn btn-b" onclick="togglePingDiagnostic(\''+srcId+'\')">Permitir solo este par ICMP</button> '+
+    '<button type="button" class="btn btn-b" onclick="togglePingDiagnostic()">Quitar excepción ICMP</button>'+
+    '<p id="ping-rule-status">'+(PING_DIAGNOSTIC_RULE?'Excepción activa: '+PING_DIAGNOSTIC_RULE.source+' → '+PING_DIAGNOSTIC_RULE.target:'Sin excepción temporal.')+'</p>';
+}
+function togglePingDiagnostic(srcId){
+  invalidatePingSelection();
+  PING_DIAGNOSTIC_RULE=srcId?{src:srcId,dst:document.getElementById('ping-dest').value,
+    source:document.getElementById('ping-source-host').value,target:document.getElementById('ping-target-host').value}:null;
+  const rule=PING_DIAGNOSTIC_RULE;
+  document.getElementById('ping-rule-status').textContent=rule?
+    'Excepción activa: '+rule.source+' → '+rule.target+' · solo ICMP, VLAN 10 · ambos firewalls.':'Sin excepción temporal.';
+  addLog(rule?'Política temporal LAB-ICMP-HOST-PAIR: '+rule.source+' → '+rule.target:'Excepción ICMP temporal eliminada','warn');
+}
+function renderLocalPingTopology(s,source,target){
+  const point=pc=>{
+    const list=getPCs(s).filter(p=>p.sw===pc.sw),i=list.findIndex(p=>p.idx===pc.idx);
+    return [(pc.sw===1?184:783)+(i%6)*55+21,749+Math.floor(i/6)*48+15];
+  };
+  const a=point(source),b=point(target),points=[a,[source.sw===1?350:949,700],
+    [source.sw===1?350:949,657]];
+  if(source.sw!==target.sw)points.push([target.sw===1?350:949,657]);
+  points.push([target.sw===1?350:949,700],b);
+  const path=points.map((p,i)=>(i?'L':'M')+p.join(',')).join(' ');
+  const markup=renderActiveTopoTab(s),svg=markup.slice(markup.indexOf('<svg'),markup.indexOf('</svg>'));
+  return '<p class="ping-note">Recorrido local: '+escapeCLI(source.id)+' → '+escapeCLI(target.id)+
+    ' · punto amarillo: solicitud y respuesta ICMP. La ruta queda resaltada al terminar.</p><div class="ping-local-topology">'+
+    svg.replace(/width="1300" height="(\d+)" viewBox="0 0 1300 \d+"/,(_,h)=>'width="1020" height="'+(Number(h)-660)+'" viewBox="140 580 1020 '+(Number(h)-660)+'"').replace('class="topo-svg"','class="topo-svg" role="img" aria-label="Recorrido ICMP local sobre la topología de '+s.code+'" style="width:100%;height:auto"')+
+    '<path d="'+path+'" stroke="#ffd166" stroke-width="6" fill="none" stroke-dasharray="10 5"/>'+
+    '<circle cx="'+a[0]+'" cy="'+a[1]+'" r="10" fill="#ffd166"/><circle cx="'+b[0]+'" cy="'+b[1]+'" r="10" fill="#ffd166"/>'+
+    (window.matchMedia('(prefers-reduced-motion: reduce)').matches?'':'<circle r="10" fill="#ffd166" stroke="#131b28" stroke-width="3"><animateMotion dur="4s" repeatCount="1" fill="freeze" keyPoints="0;1;0" keyTimes="0;0.5;1" calcMode="linear" path="'+path+'"/></circle>')+'</svg></div>';
+}
+
 function renderPingTab(s){
   const opts = '<option value="local">Otro PC de esta sede (misma VLAN)</option>'+SEDES.filter(x=>x.id!==s.id).map(x=>`<option value="${x.id}">${x.code} — ${x.city} (ICMP intersede sujeto a firewall)</option>`).join('');
   return `
@@ -3877,11 +3939,14 @@ function renderPingTab(s){
     <span style="font-size:11px;color:var(--text2)">Origen:</span>
     <strong style="font-size:11px">${s.code} — ${s.city}</strong>
     <label for="ping-dest" style="font-size:11px;color:var(--text2)">Destino:</label>
-    <select id="ping-dest" style="background:var(--panel2);color:var(--text);border:1px solid var(--panel3);padding:6px 8px;border-radius:4px;font-size:12px">${opts}</select>
+    <select id="ping-dest" onchange="updatePingHosts('${s.id}')" style="background:var(--panel2);color:var(--text);border:1px solid var(--panel3);padding:6px 8px;border-radius:4px;font-size:12px">${opts}</select>
+    <label class="ping-host-picker" for="ping-source-host">PC origen<select id="ping-source-host" onchange="updatePingHosts('${s.id}',true)">${pingHostOptions(s)}</select></label>
+    <label class="ping-host-picker" for="ping-target-host">PC destino<select id="ping-target-host" onchange="invalidatePingSelection()">${pingHostOptions(s,getPCs(s)[0]?.ip)}</select></label>
     <button type="button" class="btn btn-acc" onclick="runPing('${s.id}')">▶ Enviar ping</button>
     <button type="button" class="btn btn-b" onclick="startPingSelection()">🖱 Elegir destino en mapa</button>
   </div>
   <p class="ping-note">Prueba <strong>Otro PC de esta sede</strong> para comprobar la LAN. Al elegir otra sede se evalúa la política ICMP del firewall y se explica cualquier bloqueo.</p>
+  <div id="ping-diagnostic-controls" class="ping-note"></div>
   <div id="ping-result" role="status" aria-live="polite" style="min-height:200px">
     <div class="ping-result">Listo para probar ICMP local o entre sedes desde ${s.code}.</div>
   </div>`;
@@ -6313,8 +6378,9 @@ ${new Date().toISOString()} info  dataplane  link state changed to up<br>${new D
 
 let PACKET_ANIMATION = { raf: 0, cleanup: 0 };
 let SITE_PING_TIMER=0;
+// Session-only, exact host pair; never exported as a deployed PAN-OS configuration.
+let PING_DIAGNOSTIC_RULE=null;
 function cancelPendingSitePing(message){
-  if(!SITE_PING_TIMER)return;
   clearTimeout(SITE_PING_TIMER);
   SITE_PING_TIMER=0;
   const result=document.getElementById('ping-result');
@@ -6649,6 +6715,10 @@ function packetPolicyDecision(src,dest,srcPc,destPc,application='icmp'){
     return {action:'allow',rule:'local-or-historical'};
   if(!srcPc||!destPc)
     return {action:'deny',rule:'source-or-destination-not-an-authorized-host'};
+  const rule=PING_DIAGNOSTIC_RULE;
+  if(application==='icmp'&&srcPc.vlan===10&&destPc.vlan===10&&rule&&
+     rule.src===src.id&&rule.dst===dest.id&&rule.source===srcPc.ip&&rule.target===destPc.ip)
+    return {action:'allow',rule:'LAB-ICMP-HOST-PAIR (temporal, ambos firewalls)'};
   const from=window.RedundantLab.evaluateSitePanPolicy(src.num,'USERS','TRANSIT',
     application,destPc.ip,srcPc.ip);
   if(from.action!=='allow')return from;
@@ -6858,11 +6928,8 @@ function runPing(srcId){
     div.innerHTML='<div class="ping-result fail">El ping local requiere el perfil DESPUÉS.</div>';
     return;
   }
-  const srcPc=findAvailableSimulationPC(src,local);
-  const destPc=local
-    ? getPCs(src).find(pc=>pc.ip!==srcPc?.ip&&pc.vlan===srcPc?.vlan&&
-        isSwitchPCPortAvailable(src.id,pc)&&isPCOnConfiguredVlan(src.id,pc))
-    : findAvailableSimulationPC(dst,false);
+  const srcPc=getPCs(src).find(pc=>pc.ip===document.getElementById('ping-source-host')?.value);
+  const destPc=getPCs(dst).find(pc=>pc.ip===document.getElementById('ping-target-host')?.value);
   if(!srcPc||!destPc){
     div.innerHTML='<div class="ping-result fail">'+(local?'No hay dos equipos activos en la misma VLAN para completar esta prueba.':'El origen o el destino no tiene un PC con acceso a su gateway. Revisa los puertos, la VLAN y el Palo Alto.')+'</div>';
     return;
@@ -6887,7 +6954,7 @@ function runPing(srcId){
       return;
     }
     if(!routeOk){
-      div.innerHTML='<div class="ping-result fail">✕ Tiempo agotado: la política permite ICMP, pero no existe una ruta activa. Revisa los equipos, el StackWise y la WAN.</div>';
+      div.innerHTML='<div class="ping-result fail">✕ Tiempo agotado: no existe una ruta activa entre los PCs elegidos. Revisa sus puertos, VLAN, StackWise'+(local?'.':' y WAN.')+'</div>';
       return;
     }
     const middle=route.slice(1,-1).map((hop,index)=>
@@ -6898,6 +6965,7 @@ function runPing(srcId){
         <strong>ICMP · RESPUESTA SIMULADA</strong>
         <span>${src.code} (${srcPc.ip}) → ${dst.code} (${destPc.ip})</span>
       </div>
+      ${local&&window.ActiveProfile?.enabled()?renderLocalPingTopology(src,srcPc,destPc):''}
       <table class="ping-table">
         <thead><tr><th>Paso</th><th>Dispositivo / tramo</th><th>IP</th><th>Estado</th></tr></thead>
         <tbody>
@@ -6908,13 +6976,14 @@ function runPing(srcId){
       </table>
       <div class="ping-result ok">✓ Respuesta ICMP simulada · ${route.length} pasos lógicos · RTT estimado ${totalLat} ms · ${routeLabel}</div>
       ${local?'':'<button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap(\''+src.id+'\',\''+dst.id+'\')">🗺 Ver animación del ping en el mapa</button>'}
-      <p class="ping-note">Los tiempos son estimaciones del modelo; no son mediciones de una red física.</p>`;
+      <p class="ping-note">Política: ${escapeCLI(policy.rule)}. Los tiempos son estimaciones del modelo; no son mediciones de una red física.</p>`;
     addLog('ICMP reply simulado '+src.code+' → '+(local?'host local':dst.code)+' · RTT estimado '+totalLat+' ms','ok');
   },350);
 }
 function showPingOnMap(srcId,destId){
+  const source=document.getElementById('ping-source-host')?.value,target=document.getElementById('ping-target-host')?.value;
   closeSedeModal();
-  runMapPing(srcId,destId);
+  runMapPing(srcId,destId,source,target);
 }
 function openDashboardPing(){
   const options = SEDES.map(s => `<option value="${s.id}">${s.code} — ${s.city}</option>`).join('');

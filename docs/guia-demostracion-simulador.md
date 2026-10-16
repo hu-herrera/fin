@@ -14,7 +14,7 @@ La página integra tres niveles de comportamiento:
 
 ## Entradas nuevas de la interfaz
 
-- **Ping / Trace dentro del simulador original:** seleccionar una sede, pulsar **Ver topología interna completa** y abrir **📡 Ping / Trace**. Dejar **Otro PC de esta sede** para la prueba local. Elegir otra sede para observar el bloqueo ICMP de la política actual. El resultado permanece en la misma ventana y el bloqueo puede mostrarse sobre el mapa.
+- **Ping / Trace dentro del simulador original:** seleccionar una sede, pulsar **Ver topología interna completa** y abrir **📡 Ping / Trace**. Dejar **Otro PC de esta sede** para la prueba local y elegir los PCs origen y destino. El recorrido se anima sobre la misma topología, con ida y respuesta; con movimiento reducido queda resaltado sin animación. Elegir otra sede para observar el bloqueo ICMP de la política actual. El resultado permanece en la misma ventana y el bloqueo puede mostrarse sobre el mapa.
 - **StackWise / LACP:** los controles de cable WAN, gateway ISP y salida aguas arriba afectan al mismo modelo que el mapa, las métricas y las consolas. Al fallar Starlink, se selecciona Amazon Leo si está sano en el escenario. Esto no supone un servicio comercial contratado.
 - **Puertos y consolas del stack:** ambas consolas comparten la configuración de interfaces. Un puerto apagado deja de ser utilizable por el modelo y desaparece de su tabla MAC; se puede recuperar desde cualquiera de las dos consolas. `write memory` guarda un único startup-config del stack en este navegador.
 - **Restaurar:** recupera los equipos, cables y fallos WAN del escenario; conserva los comandos y configuraciones CLI. Una interfaz con `shutdown` requiere `no shutdown`.
@@ -29,12 +29,16 @@ No es necesario PowerPoint. El [guion de seis escenas](presentacion-avances-16-o
 |---|---|---|
 | Ping local en S01 | Destino “Otro PC de esta sede” | Respuesta simulada, pasos de switching y RTT estimado visibles sin cerrar la ventana |
 | Bloqueo intersede | Elegir S02 desde S01 | ICMP bloqueado por la política del PA-1410; la regla se indica en pantalla |
+| Permitir solo dos PCs | Elegir S02, pulsar **Permitir solo este par ICMP**, enviar ping | Respuesta si los puertos, VLAN, gateway, hub y WAN están sanos; solo se permite ICMP del origen /32 al destino /32 elegido |
+| Volver al bloqueo | Pulsar **Quitar excepción ICMP** y enviar ping | La política original vuelve a denegar ICMP |
 | Ver el bloqueo | Desde la denegación intersede, abrir el mapa | El mapa marca el ping como descartado |
 | Todos los enlaces WAN caídos | Simular caída WAN desde StackWise / LACP | WAN sin servicio; los hosts de la misma VLAN aún pueden comunicarse localmente |
 | Caída Po10 | Cortar T1 y T2 del enlace C8300–PA | Sin salida al router; la LAN y el gateway del Palo Alto siguen disponibles |
 | Fabric StackWise partido | Cortar STACK-A y STACK-B | No se garantiza gateway ni L2 entre miembros |
 | Inter-VLAN no autorizada | Usuarios hacia gestión VLAN30 | Política denegada |
 | Acceso a invitados remotos | VLAN40 cruzando sedes | No se anuncia por OSPF |
+
+La excepción `LAB-ICMP-HOST-PAIR` es una regla educativa temporal aplicada por el evaluador de paquetes a ambos extremos. No se guarda, no se exporta como configuración PAN-OS, no habilita otros PCs ni aplicaciones y no recupera enlaces caídos. Se elimina con **Reset**, al recargar la página o al pulsar **Quitar excepción ICMP**. Solo admite PCs de VLAN 10. El mapa usa los mismos PCs elegidos en Ping / Trace.
 
 ## Estado actual y pruebas
 
