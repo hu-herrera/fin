@@ -116,3 +116,56 @@ test('Perfil anterior permanece disponible y aislado para comparar modelos',asyn
  expect(r.classic.sw1).toContain('Port-channel1');
  expect(r.modernAgain).toBe(r.modern.router);
 });
+
+test('Dibujo físico de las 23 sedes usa Po10, ae1/ae2, Po20 y dos cables StackWise reales del modelo',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(url);
+ const failures=await page.evaluate(()=>{
+   const fails=[];
+   for(const site of SEDES){
+     const svg=renderTopoTab(site);
+     const names=['Cisco Catalyst C8300','Palo Alto PA-1410','Port-channel10',
+       'StackWise-80 · 2 cables traseros','Catalyst 9200L · miembro 1',
+       'Catalyst 9200L · miembro 2','Gi1/0/45','Gi2/0/45',
+       'Starlink Business','Amazon Leo','Entel 5G','GTD 4G','VLAN 30: gestión'];
+     for(const term of names)if(!svg.includes(term))fails.push(site.id+': topología omite '+term);
+     if(svg.includes('Stack 10G')||svg.includes('virtual-wire')||svg.includes('SW1-SW2 Po1'))
+        fails.push(site.id+': etiqueta histórica incorrecta');
+     if((svg.match(/class="topo-pc"/g)||[]).length!==PC_COUNT[site.id])
+        fails.push(site.id+': puntos PC no coinciden con inventario');
+   }
+   return fails;
+ });
+ expect(failures).toEqual([]);
+ await page.evaluate(()=>openSedeModal('s01'));
+ await page.locator('#sm-tabs button').filter({hasText:/topolog/i}).click();
+ const svg=page.locator('#sm-body .topo-svg');
+ await expect(svg).toBeVisible();
+ await expect(svg).toContainText('StackWise-80 · 2 cables traseros');
+ await expect(svg).toContainText('Po10');
+ await expect(svg).toContainText('Palo Alto PA-1410');
+ await expect(svg.locator('g.topo-pc')).toHaveCount(30);
+ expect(errors).toEqual([]);
+});
+test('Consolas principales no anuncian sesiones IPsec o licencias PA falsamente validadas',async({page})=>{
+ await page.goto(url);
+ const failures=await page.evaluate(()=>{
+   const fails=[];
+   for(const s of SEDES){
+     const n=s.num,sw=genSwitchVersionFull(s,1),
+       oldIke=genRouterDetail(s,'show crypto ikev2 sa'),
+       fw=genFWThreat(s),policy=genFWCommand(s,'show rulebase security rules'),
+       ifaces=genFWCommand(s,'show interface all');
+     if(sw.includes('no hay StackWise'))fails.push(s.id+': switch reports independent members');
+     if(!sw.includes('StackWise-80'))fails.push(s.id+': show version missing logical stack');
+     if(!oldIke.includes('no established SA claimed'))fails.push(s.id+': router does not disclose unverified SAs');
+     if(!fw.includes('NO verificados'))fails.push(s.id+': threat licenses are fabricated');
+     if(!policy.includes('DENY-GUEST-TO-CORP'))fails.push(s.id+': PA zone rules missing');
+     if(!ifaces.includes('ae2.30 10.70.'+n+'.161/28'))fails.push(s.id+': PA management L3 gateway incorrect');
+     if(ifaces.includes('10.70.'+n+'.164/28'))fails.push(s.id+': PA MGT data overlap');
+     if(!genRouterTrackOutput(s,'show track').includes('Two remote probes per ISP'))fails.push(s.id+': no IP SLA unverified warning');
+   }
+   return fails;
+ });
+ expect(failures).toEqual([]);
+});
