@@ -281,3 +281,15 @@ test('El mapa y sus controles exteriores caben en móvil y la tarjeta no arrastr
  await page.locator('#ping-trace-steps').hover();await page.mouse.wheel(0,120);
  expect(await page.evaluate(()=>JSON.stringify(ZOOM))).toBe(zoom);
 });
+
+
+test('El encuadre del ping incluye ambos extremos de una ruta nacional larga',async({page})=>{
+ await page.goto(url);
+ const report=await page.evaluate(()=>{
+  const src=SEDES.find(s=>s.id==='s01'),dest=SEDES.find(s=>s.id==='s22');
+  setPingDiagnosticRule(src.id,dest.id,getPCs(src)[0].ip,getPCs(dest)[0].ip);
+  const result=runMapPing(src.id,dest.id);
+  return {ok:result.ok,inside:result.route.every(h=>h.point[0]>=ZOOM.x&&h.point[0]<=ZOOM.x+ZOOM.w&&h.point[1]>=ZOOM.y&&h.point[1]<=ZOOM.y+ZOOM.h)};
+ });
+ expect(report.ok).toBe(true);expect(report.inside).toBe(true);
+});

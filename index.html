@@ -6900,7 +6900,12 @@ function fitPingRoute(hops){
   // Reserve the right side for the trace card, instead of hiding the route behind it.
   const reserve=aspect.width>700?0.55:0.85;
   const width=Math.max(36,(maxX-minX+12)/reserve,(maxY-minY+12)*aspect.width/Math.max(aspect.height,1));
-  ZOOM.w=Math.min(ZOOM.maxW,width);ZOOM.h=mapZoomHeight(ZOOM.w);
+  if(width>ZOOM.maxW){
+    ZOOM.w=ZOOM.maxW;ZOOM.h=Math.max(mapZoomHeight(ZOOM.w),maxY-minY+24);
+    ZOOM.x=(minX+maxX)/2-ZOOM.w/2;ZOOM.y=(minY+maxY)/2-ZOOM.h/2;
+    aplicarZoom();return;
+  }
+  ZOOM.w=width;ZOOM.h=mapZoomHeight(ZOOM.w);
   ZOOM.x=(minX+maxX)/2-ZOOM.w*(aspect.width>700?0.3:0.5);
   ZOOM.y=(minY+maxY)/2-ZOOM.h*(aspect.width>700?0.5:0.24);
   aplicarZoom();
@@ -6957,7 +6962,8 @@ function animatePacket(srcId,destId,linkType,ok,route,detailedRoute,result){
     const index=Math.max(0,Math.min(hops.length-1,back?segments-segment:segment));
     const target=Math.max(0,Math.min(hops.length-1,index+(back?-1:1))),fraction=position-segment;
     const a=hops[index].point,b=hops[target].point;
-    const scale=ZOOM.w/Math.max(document.getElementById('map-container').clientWidth,1);
+    const matrix=document.getElementById('chile-map').getScreenCTM();
+    const scale=matrix?1/Math.hypot(matrix.a,matrix.b):1;
     dot.setAttribute('cx',a[0]+(b[0]-a[0])*fraction);dot.setAttribute('cy',a[1]+(b[1]-a[1])*fraction);
     dot.setAttribute('r',5*scale);dot.setAttribute('fill',back?'#65c8ff':'#ffd166');
     markers.forEach((marker,i)=>{marker.setAttribute('r',(i===index?5:2)*scale);marker.setAttribute('fill',i===index?'#ffd166':'#9fb4cc');});
