@@ -732,6 +732,7 @@ body{background:var(--bg);color:var(--text);
       <button class="sm-tab" onclick="smTab('ping',this)">📡 Ping / Trace</button>
       <button class="sm-tab" onclick="smTab('tables',this)">📋 Tablas</button>
       <button class="sm-tab" onclick="smTab('kpis',this)">📊 KPIs</button>
+      <button class="sm-tab" onclick="smTab('lab',this)">🧪 StackWise / LACP</button>
     </div>
     <div class="sm-body" id="sm-body"></div>
   </div>
@@ -772,6 +773,7 @@ body{background:var(--bg);color:var(--text);
 </div>
 
 <script src="./map-geography.js"></script>
+<script src="./network/redundant-browser.js"></script>
 <script>
 const SEDES = [
   { id:'cm',  code:'CM',  name:'Casa Matriz / Datacenter', city:'Santiago Centro',
@@ -3143,6 +3145,7 @@ function smTab(tab, btn){
   if(tab==='ping') body.innerHTML = renderPingTab(s);
   if(tab==='tables') body.innerHTML = renderTablesTab(s);
   if(tab==='kpis') body.innerHTML = renderKPIsTab(s);
+  if(tab==='lab') body.innerHTML = renderRedundantLabTab(s);
   if(tab==='topo'){
     requestAnimationFrame(() => initTopologyWorkspace(s));
   }
