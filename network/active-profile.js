@@ -38,7 +38,8 @@ function rawSite(siteId){
     const session=DEVICE_CLI_SESSIONS.get(siteId+':router');
     const short=p.router.replace('TenGigabitEthernet','Te');
     if(session?.interfaces[p.router]?.shutdown||session?.interfaces[short]?.shutdown||
-       session?.interfaces.Po10?.shutdown)copy.links[p.id]=false;
+       session?.interfaces.Po10?.shutdown||session?.interfaces['Port-channel10']?.shutdown)
+      copy.links[p.id]=false;
   }
   for(const p of m.PORTS.distribution){
     const sw=p.member;
