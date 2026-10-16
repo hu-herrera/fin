@@ -78,3 +78,18 @@ test('Presentar abre una vista proyectable con 6 escenas y acceso al simulador',
  await page.keyboard.press('Escape');
  await expect(page.locator('#packetlab-overlay')).toBeHidden();
 });
+
+test('Puerto Cisco de PC deshabilitado impide el flujo y al levantarlo vuelve a permitirlo',async({page})=>{
+ await page.goto(url);
+ await page.locator('#packetlab-launch').click();
+ await expect(page.locator('#pl-result')).toContainText('PERMITIDO');
+ await page.evaluate(()=>{
+  const cfg=deviceCliSession('s01','sw1');
+  cfg.interfaces['Gi1/0/3']={shutdown:true};
+ });
+ await page.locator('#pl-trace').click();
+ await expect(page.locator('#pl-result')).toContainText('ACCESS_DOWN');
+ await page.evaluate(()=>{deviceCliSession('s01','sw1').interfaces['Gi1/0/3']={shutdown:false};});
+ await page.locator('#pl-trace').click();
+ await expect(page.locator('#pl-result')).toContainText('PERMITIDO');
+});
