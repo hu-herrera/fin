@@ -5242,6 +5242,8 @@ function canonicalDeviceInterface(name, type){
   const value = name.trim();
   if(type.startsWith('sw')) return value.replace(/^port-channel/i, 'Po').replace(/^gigabitethernet/i, 'Gi').replace(/^gi/i, 'Gi');
   return value
+    .replace(/^port-channel/i, 'Port-channel')
+    .replace(/^po(?=\d)/i, 'Port-channel')
     .replace(/^tengigabitethernet/i, 'TenGigabitEthernet')
     .replace(/^te(?=\d)/i, 'TenGigabitEthernet')
     .replace(/^gigabitethernet/i, 'GigabitEthernet')
