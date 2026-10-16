@@ -151,6 +151,12 @@ test('Palo Alto: políticas inter-VLAN protegen invitados y gestión, permiten w
   await policy.locator('select[aria-label="to"]').selectOption('TRANSIT');
   await policy.locator('select[aria-label="application"]').selectOption('ssl');
   await expect(policy.locator('#lab-policy-result')).toContainText('ALLOW · ALLOW-GUESTS-WEB-OUT');
+  await policy.locator('select[aria-label="destinationIp"]').selectOption('10.70.0.20');
+  await expect(policy.locator('#lab-policy-result')).toContainText('DENY · DENY-GUEST-RFC1918-TRANSIT');
+  await policy.locator('select[aria-label="destinationIp"]').selectOption('172.16.3.1');
+  await expect(policy.locator('#lab-policy-result')).toContainText('DENY · DENY-GUEST-RFC1918-TRANSIT');
+  await policy.locator('select[aria-label="destinationIp"]').selectOption('8.8.8.8');
+  await expect(policy.locator('#lab-policy-result')).toContainText('ALLOW · ALLOW-GUESTS-WEB-OUT');
   await policy.locator('select[aria-label="application"]').selectOption('ssh');
   await expect(policy.locator('#lab-policy-result')).toContainText('DENY · interzone-default');
   await policy.locator('select[aria-label="from"]').selectOption('USERS');
