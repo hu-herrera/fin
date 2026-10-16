@@ -59,6 +59,14 @@ jobs:
         run: node tests/oob-management.test.cjs
       - name: Probar simulador en navegador
         run: npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs tests/redundant-ui.spec.cjs tests/active-topology.spec.cjs --browser chromium --reporter=line --trace retain-on-failure
+      - name: Generar matriz de aceptación por sede para la entrega
+        run: node network/site-readiness-report.cjs --json > acceptance-23-sites.json
+      - name: Publicar matriz auditada sin secretos en GitHub Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: acceptance-23-sites
+          path: acceptance-23-sites.json
+          if-no-files-found: error
       - name: Guardar diagnóstico de fallos
         if: failure()
         uses: actions/upload-artifact@v4
