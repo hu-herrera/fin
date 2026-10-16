@@ -34,3 +34,14 @@ Proveedores WAN (Starlink / Amazon Leo / Entel 5G / GTD 4G) → Cisco C8300 (sel
 3. Ajustar configuraciones y CLI del router, Palo Alto y switches con controles de coherencia.
 4. Añadir pruebas por sede y escenarios de fallo; no aceptar tests basados solamente en strings.
 5. Revisar topología visual al final, tras concordancia funcional y documental.
+
+## Avance implementado — 15 de octubre de 2026
+- En `index.html`: Po1 SW1↔SW2 con LACP active en Gi1/0/45 y Gi1/0/46 de ambos Catalyst **independientes**, troncal VLAN 10,20,30,40 y native VLAN 999; gestión PA movida en el modelo de Gi1/0/46 a Gi1/0/44 en SW1. El grafo de conectividad acepta uno o dos miembros activos y cae solo cuando ambos miembros dejan de estar operativos.
+- Diagnóstico dinámico: `show etherchannel summary` muestra `Po1(SU)` o `Po1(SD)` y el estado `(P)/(D)` de cada miembro; `show interfaces trunk` presenta el puerto lógico, y la consola permite `shutdown` de `interface Port-channel1`.
+- `tests/browser.spec.cjs`: auditoría LACP y escenarios de fallo individual, corte total y recuperación para cada sede. Workflow `.github/workflows/validate-lan.yml` incorporado; **resultados de ejecución aún por confirmar**.
+- **Límite de esta primera fase**: la redundancia de dos cables SW1↔SW2 NO protege ante la caída de SW1 ni ante la del único firewall. La topología visual todavía dice Stack 10G; se corregirá al final según lo pedido. Los dobles uplinks router/firewall/switches y el modo Layer 3 del PA siguen pendientes de implementación.
+
+Referencias de fabricante:
+- Cisco EtherChannel Catalyst 9200: https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst9200/software/release/17-8/configuration_guide/lyr2/b_178_lyr2_9200_cg/configuring_etherchannels.html
+- Cisco StackWise-80 C9200L: https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-stackwise-architecture-cte-en.html
+- PAN-OS Aggregate Ethernet LACP y modos: https://docs.paloaltonetworks.com/ngfw/help/11-1/network/network-interfaces/aggregate-ethernet-ae-interface-group
