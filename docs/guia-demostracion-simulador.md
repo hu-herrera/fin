@@ -25,10 +25,10 @@ No es necesario PowerPoint. El [guion de seis escenas](presentacion-avances-16-o
 
 | Ejercicio | Entrada | Resultado del modelo |
 |---|---|---|
-| Ping entre sedes | S01 → S02, pestaña Ping / Trace | Respuesta del modelo, saltos y RTT estimado visibles sin cerrar la ventana |
-| Ver el recorrido | Desde el resultado, pulsar “Ver animación del ping en el mapa” | La ventana de sede se cierra y el mapa muestra el mismo ping |
-| Ruta alternativa | Abrir StackWise / LACP y simular una caída WAN | El modelo selecciona el siguiente proveedor activo según prioridad |
-| Todos los enlaces WAN caídos | Bajar las 4 WAN desde el laboratorio existente | BLOQUEADO: WAN_DOWN |
+| Ping entre sedes | Ping local en S01 | Destino “Otro PC de esta sede” | Respuesta simulada, saltos de switching y RTT estimado visibles sin cerrar la ventana |
+| Bloqueo intersede | Elegir S02 desde S01 | ICMP bloqueado por la política del PA-1410; la regla se indica en pantalla |
+| Ver el bloqueo | Desde la denegación intersede, abrir el mapa | El mapa marca el ping como descartado |
+| Todos los enlaces WAN caídos | Simular caída WAN desde StackWise / LACP | BLOQUEADO: WAN_DOWN |
 | Caída Po10 | Cortar T1 y T2 del enlace C8300–PA | BLOQUEADO: TRANSIT_DOWN |
 | Fabric StackWise partido | Cortar STACK-A y STACK-B | No se garantiza gateway ni L2 entre miembros |
 | Inter-VLAN no autorizada | Usuarios hacia gestión VLAN30 | Política denegada |
@@ -37,10 +37,10 @@ No es necesario PowerPoint. El [guion de seis escenas](presentacion-avances-16-o
 ## Estado actual y pruebas
 
 - `node tests/packet-simulator.test.cjs`: forwarding simulado, reglas PAN-OS, pérdidas WAN, fallos de C8300/PA y StackWise.
-- `npx playwright test tests/packet-workbench.spec.cjs --browser chromium`: interfaz de laboratorio, pruebas visuales de fallos y seis escenas del modo presentación.
+- `npx playwright test tests/packet-workbench.spec.cjs --browser chromium`: pruebas del Ping / Trace original y seis escenas del modo presentación.
 - `node network/site-readiness-report.cjs --json`: comprobación del inventario de 23 sedes, 650 PCs y limitaciones de configuración física, útil como anexo técnico, no como requisito para presentar.
 
-El trabajo está **preparado para elaborar el speech** cuando la última suite CI esté verde. El mapa, el laboratorio y la presentación pertenecen a una única página. El documento [insumos físicos](insumos-fase-fisica.md) es optativo, para una empresa que realmente fuera a desplegar la red.
+El trabajo está **preparado para elaborar el speech** cuando la última suite CI esté verde. El mapa, la topología, Ping / Trace y la presentación pertenecen a una única página. El documento [insumos físicos](insumos-fase-fisica.md) es optativo, para una empresa que realmente fuera a desplegar la red.
 
 ## Qué todavía no pretende simular
 
