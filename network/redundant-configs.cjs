@@ -119,29 +119,45 @@ const PANOS_RULES=Object.freeze([
   {name:'DENY-USERS-TO-MGMT',from:['USERS'],to:['MGMT-DATA'],apps:['any'],action:'deny'},
   {name:'DENY-VOICE-TO-MGMT',from:['VOICE'],to:['MGMT-DATA'],apps:['any'],action:'deny'},
   {name:'DENY-TRANSIT-TO-GUESTS',from:['TRANSIT'],to:['GUESTS'],apps:['any'],action:'deny'},
+  {name:'DENY-GUEST-RFC1918-TRANSIT',from:['GUESTS'],to:['TRANSIT'],destination:'RFC1918-NETWORKS',apps:['any'],action:'deny'},
   {name:'ALLOW-USERS-WEB-OUT',from:['USERS'],to:['TRANSIT'],apps:['dns','ssl','web-browsing'],action:'allow'},
   {name:'ALLOW-GUESTS-WEB-OUT',from:['GUESTS'],to:['TRANSIT'],apps:['dns','ssl','web-browsing'],action:'allow'},
   {name:'ALLOW-VOICE-DNS-OUT',from:['VOICE'],to:['TRANSIT'],apps:['dns'],action:'allow'},
   {name:'ALLOW-MGMT-DNS-NTP-OUT',from:['MGMT-DATA'],to:['TRANSIT'],apps:['dns','ntp'],action:'allow'},
 ].map(rule=>Object.freeze({...rule,from:Object.freeze(rule.from),to:Object.freeze(rule.to),apps:Object.freeze(rule.apps)})));
-function evaluatePanPolicy(from,to,application){
+function isPrivateRfc1918(ip){
+  if(typeof ip!=='string'||!/^(?:\\d{1,3}\\.){3}\\d{1,3}$/.test(ip))
+    throw new RangeError('Dirección IPv4 de destino no válida');
+  const oct=ip.split('.').map(Number);
+  if(oct.some(n=>n<0||n>255))throw new RangeError('Octeto IPv4 inválido');
+  return oct[0]===10 || (oct[0]===172&&oct[1]>=16&&oct[1]<=31) ||
+    (oct[0]===192&&oct[1]===168);
+}
+function evaluatePanPolicy(from,to,application,destinationIp='8.8.8.8'){
   const zones=['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'];
   if(!zones.includes(from)||!zones.includes(to)||!application||typeof application!=='string')
     throw new RangeError('Zona o aplicación PAN-OS desconocida');
+  const isPrivate=isPrivateRfc1918(destinationIp);
   const rule=PANOS_RULES.find(r=>r.from.includes(from)&&r.to.includes(to)&&
+    (!r.destination||r.destination==='any'||(r.destination==='RFC1918-NETWORKS'&&isPrivate))&&
     (r.apps.includes('any')||r.apps.includes(application)));
   if(rule)return {action:rule.action,rule:rule.name};
   // PAN-OS interzone-default=deny; intrazone-default=allow.
   return {action:from===to?'allow':'deny',rule:from===to?'intrazone-default':'interzone-default'};
 }
 function panosSecurityCommands(){
-  const lines=[];
+  const lines=[
+    'set address RFC1918-10 ip-netmask 10.0.0.0/8',
+    'set address RFC1918-172 ip-netmask 172.16.0.0/12',
+    'set address RFC1918-192 ip-netmask 192.168.0.0/16',
+    'set address-group RFC1918-NETWORKS static [ RFC1918-10 RFC1918-172 RFC1918-192 ]'
+  ];
   const cliList=values=>values.length===1?values[0]:'[ '+values.join(' ')+' ]';
   for(const r of PANOS_RULES){
     const p='set rulebase security rules '+r.name;
     lines.push(p+' from '+cliList(r.from),
       p+' to '+cliList(r.to),
-      p+' source any',p+' destination any',
+      p+' source any',p+' destination '+(r.destination||'any'),
       p+' application '+cliList(r.apps),
       p+' service '+(r.action==='allow'?'application-default':'any'),
       p+' action '+r.action,
@@ -196,4 +212,4 @@ function siteCandidate(num,pcCount){
    'WAN/VPN no parametrizados','asignacion de puertos de usuarios requiere validacion en terreno',
    'sin laboratorio de hardware']};
 }
-module.exports={routerCandidate,stackCandidate,paloCandidate,siteCandidate,PANOS_RULES,evaluatePanPolicy,panosSecurityCommands};
+module.exports={routerCandidate,stackCandidate,paloCandidate,siteCandidate,PANOS_RULES,evaluatePanPolicy,isPrivateRfc1918,panosSecurityCommands};
