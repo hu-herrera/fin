@@ -1,6 +1,6 @@
 # Corte técnico de arquitectura: del diseño actual a StackWise + Palo Alto L3
 
-**Estado: preparación para laboratorio, NO cambio activo.** El simulador publicado conserva WAN → Cisco C8300 router-on-a-stick → PA-1410 virtual-wire → SW1 ↔ Po1 ↔ SW2 hasta que toda la migración esté coherente. El diagrama gráfico se actualizará al final, según lo solicitado.
+**Estado: migración COMPLETADA EN EL SIMULADOR, NO en equipos físicos.** La vista DESPUÉS publicada usa WAN → C8300 Po10 (2×10G) → PA-1410 Layer3 ae1/ae2 → C9200L StackWise-80 Po20 (4×1G), con los gateways VLAN en el PA y el diagrama SVG correspondiente. La vista ANTES conserva los comandos históricos para regresión. Quedan pendientes únicamente los parámetros físicos/contractuales y comprobaciones sobre IOS-XE/PAN-OS reales, además de seguridad y HA de equipo según presupuesto.
 
 ## Fuentes de fabricante y skill empleadas
 
