@@ -3152,6 +3152,23 @@ function smTab(tab, btn){
 }
 
 // Laboratorio interactivo aislado: no modifica las consolas del perfil viejo.
+const REDUNDANT_LAB_POLICY = new Map();
+function getRedundantLabPolicy(sedeId){
+  if(!REDUNDANT_LAB_POLICY.has(sedeId))
+    REDUNDANT_LAB_POLICY.set(sedeId,{from:'GUESTS',to:'MGMT-DATA',application:'ssh'});
+  return REDUNDANT_LAB_POLICY.get(sedeId);
+}
+function setRedundantLabPolicy(sedeId,key,value){
+  const allowed={
+    from:['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'],
+    to:['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'],
+    application:['ssh','dns','ssl','web-browsing','ntp','sip','bittorrent']
+  };
+  if(!allowed[key]?.includes(value))throw new Error('Opción de política no permitida');
+  getRedundantLabPolicy(sedeId)[key]=value;
+  if(SM_ID===sedeId&&SM_TAB==='lab')
+    document.getElementById('sm-body').innerHTML=renderRedundantLabTab(SEDES.find(s=>s.id===sedeId));
+}
 const REDUNDANT_LAB_STATES = new Map();
 function getRedundantLabState(sedeId){
   const s=SEDES.find(site=>site.id===sedeId);
@@ -3193,6 +3210,18 @@ function renderRedundantLabTab(s){
   const wanBtns=model.WAN_ORDER.map(id=>toggleRow('wan',id,wanNames[id]+' · cable',state.wan[id])+
     toggleRow('gateway',id,wanNames[id]+' · gateway ISP',state.wanGateway[id])+
     toggleRow('upstream',id,wanNames[id]+' · salida real',state.wanUpstream[id])).join('');
+  const policy=getRedundantLabPolicy(s.id);
+  const policyResult=model.evaluatePanPolicy(policy.from,policy.to,policy.application);
+  const policyOptions=(field,values)=>'<select aria-label="'+field+'" style="background:var(--panel2);color:var(--text);border:1px solid var(--text2);padding:6px;margin:4px" onchange="setRedundantLabPolicy(&quot;'+s.id+'&quot;,&quot;'+field+'&quot;,this.value)">'+
+    values.map(value=>'<option value="'+value+'"'+(policy[field]===value?' selected':'')+'>'+value+'</option>').join('')+'</select>';
+  const policyPanel='<div class="dsec" id="lab-pan-policy"><div class="dslbl">4. Política Palo Alto por zona y aplicación</div>'+
+    '<p>Prueba de reglas simuladas. Los permisos web usan App-ID y puertos predeterminados; el resto de conexiones entre zonas se deniega.</p>'+
+    '<label>Origen '+policyOptions('from',['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'])+'</label>'+
+    '<label>Destino '+policyOptions('to',['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'])+'</label>'+
+    '<label>Aplicación '+policyOptions('application',['ssh','dns','ssl','web-browsing','ntp','sip','bittorrent'])+'</label>'+
+    '<p id="lab-policy-result" style="margin:8px 4px;font-weight:700;color:'+(policyResult.action==='allow'?'var(--green)':'var(--red)')+'">'+
+      (policyResult.action==='allow'?'ALLOW':'DENY')+' · '+policyResult.rule+'</p>'+
+    '<p style="font-size:12px;color:var(--text2)">Solo evaluación lógica; no son sesiones ni contadores de un PA-1410 físico.</p></div>';
   const candidate=model.siteCandidate(s.num,PC_COUNT[s.id]);
   const configuration=[['router','Cisco C8300 (Po10)'],['palo','Palo Alto Layer3 (ae1/ae2)'],['stack','Catalyst StackWise (Po20)']].map(([key,title])=>
     '<details style="margin:8px 0"><summary style="cursor:pointer;font-weight:700">'+title+'</summary><pre style="overflow:auto;max-height:330px;padding:12px;background:var(--bg);font-size:11px;white-space:pre">'+escapeCLI(key==='router'?candidate.cisco:candidate[key])+'</pre></details>').join('');
@@ -3217,8 +3246,9 @@ function renderRedundantLabTab(s){
     '<div class="dsec"><div class="dslbl">1. Simular fallo de equipo</div>'+nodeBtns+'</div>'+
     '<div class="dsec"><div class="dslbl">2. Cortar / recuperar cables LACP y StackWise</div>'+bundleBtns+'</div>'+
     '<div class="dsec"><div class="dslbl">3. WAN: cable, gateway y salida aguas arriba independientes</div>'+wanBtns+'</div>'+
-    '<div class="dsec"><div class="dslbl">4. Configuración candidata (solo lectura)</div>'+configuration+'</div>'+
-    '<p style="color:var(--text2);font-size:12px;margin-top:12px">Para despliegue real faltan: gestión OOB, políticas de seguridad PAN-OS, IP/SLA del operador, VPN y validación IOS-XE. Un PA único sigue siendo punto único de falla.</p></div>';
+    policyPanel+
+    '<div class="dsec"><div class="dslbl">5. Configuración candidata (solo lectura)</div>'+configuration+'</div>'+
+    '<p style="color:var(--text2);font-size:12px;margin-top:12px">Para despliegue real faltan: gestión OOB, validación/aprobación de políticas PAN-OS, IP/SLA del operador, VPN y validación IOS-XE. Un PA único sigue siendo punto único de falla.</p></div>';
 }
 function topoToolbar(s){
   const active = ST.mode === 'antes' ? 'MPLS Entel' : (LK_NAME[activeLink(s.id)] || 'Sin enlace');
