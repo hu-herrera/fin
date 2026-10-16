@@ -52,7 +52,8 @@
   if(dst.kind==='invalid')return result(false,'IPv4 de destino inválida.','BAD_DEST');
   const sourceSite=env.site(siteNum);
   if(!sourceSite)return result(false,'No existe estado de origen para esta sede.','MISSING_SITE');
-  const sourceUp=sourceSite.switchLocalL2?.[member]===true;
+  const sourceUp=sourceSite.switchLocalL2?.[member]===true&&
+    (typeof env.sourceReady!=='function'||env.sourceReady(input)!==false);
   if(!hop('Host · acceso al switch '+member,sourceUp,
      sourceUp?'VLAN '+zone+' disponible en miembro '+member:'Miembro de acceso apagado'))
    return result(false,'Sin enlace físico lógico desde el host al switch.','ACCESS_DOWN');
