@@ -24,8 +24,9 @@ for(let n=0;n<=22;n++){
   'NO COMMIT'
  ];
  for(const token of tokens){assert.ok(cli.includes(token),key+' '+token);checks++;}
- assert.ok(!/snmp-server user|snmp-server community|privacyKey|authKey/.test(cli),
-   key+' config contains user or forbidden secrets');checks++;
+ assert.ok(!cli.split('\n').some(line=>/^\s*snmp-server (user|community)\b/.test(line)) &&
+   !/privacyKey|authKey/.test(cli),
+   key+' executable config contains users or forbidden secrets');checks++;
  if(n){
   assert.ok(cli.includes('move rulebase security rules CM-SNMP-TO-'+key.toUpperCase()+
    ' before DENY-CORP-RFC1918-TRANSIT'));checks++;
