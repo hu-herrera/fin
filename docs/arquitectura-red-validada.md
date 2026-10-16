@@ -45,3 +45,10 @@ Referencias de fabricante:
 - Cisco EtherChannel Catalyst 9200: https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst9200/software/release/17-8/configuration_guide/lyr2/b_178_lyr2_9200_cg/configuring_etherchannels.html
 - Cisco StackWise-80 C9200L: https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-9200-series-switches/nb-06-stackwise-architecture-cte-en.html
 - PAN-OS Aggregate Ethernet LACP y modos: https://docs.paloaltonetworks.com/ngfw/help/11-1/network/network-interfaces/aggregate-ethernet-ae-interface-group
+
+## Restricción adicional verificada: puertos físicos C8300 y LACP al firewall
+La ficha de Cisco para C8300-2N2S-4T2X especifica **4 puertos RJ45 de 1GbE y 2 puertos SFP+ de 10GbE**. El Cisco 8300 admite EtherChannel L3 (LACP) en puertos onboard, pero un mismo bundle debe tener miembros de velocidad compatible. Fuentes:
+- https://www.cisco.com/c/en/us/products/collateral/routers/catalyst-8300-series-edge-platforms/cat-8300-8200-series-edge-plat-og.html
+- https://www.cisco.com/c/en/us/products/collateral/networking/sdwan-routers/8000-series-secure-routers-faq.html
+
+**Asignación modelada actual:** Gi0/0/0 = conexión LAN hacia PA; Gi0/0/1 Starlink, Gi0/0/2 Leo, Gi0/0/3 5G, Te0/0/4 4G. Por tanto, los puertos integrados no dejan otro 1GbE libre para un LACP 2x1GbE Router↔PA sin reasignación del cableado y/o un NIM adecuado. No agregar ficticiamente un segundo Gi0/0/x. Antes de migrar PA a Layer3, cerrar un plan de puertos que preserve cuatro WAN y dos enlaces a firewall, verificando transceptores, módulos y velocidades negociadas.
