@@ -140,3 +140,35 @@ test('Los tres fabricantes muestran configuraciones objetivo sin alterar las CLI
   expect(report.classicFirewall).toContain('virtual wire');
   expect(report.classicSwitch).toContain('channel-group 1 mode active');
 });
+
+test('Palo Alto: políticas inter-VLAN protegen invitados y gestión, permiten web controlada',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(url);
+  await page.evaluate(()=>openSedeModal('s01'));
+  await page.locator('#sm-tabs button').filter({hasText:'StackWise / LACP'}).click();
+  const policy=page.locator('#lab-pan-policy');
+  await expect(policy.locator('#lab-policy-result')).toContainText('DENY · DENY-GUEST-TO-CORP');
+  await policy.locator('select[aria-label="to"]').selectOption('TRANSIT');
+  await policy.locator('select[aria-label="application"]').selectOption('ssl');
+  await expect(policy.locator('#lab-policy-result')).toContainText('ALLOW · ALLOW-GUESTS-WEB-OUT');
+  await policy.locator('select[aria-label="application"]').selectOption('ssh');
+  await expect(policy.locator('#lab-policy-result')).toContainText('DENY · interzone-default');
+  await policy.locator('select[aria-label="from"]').selectOption('USERS');
+  await policy.locator('select[aria-label="to"]').selectOption('MGMT-DATA');
+  await expect(policy.locator('#lab-policy-result')).toContainText('DENY · DENY-USERS-TO-MGMT');
+  await policy.locator('select[aria-label="from"]').selectOption('GUESTS');
+  await expect(policy.locator('#lab-policy-result')).toContainText('DENY · DENY-GUEST-TO-CORP');
+  const integrity=await page.evaluate(()=>{
+    const s=SEDES.find(site=>site.id==='s01');
+    const cfg=window.RedundantLab.routerCandidate(s.num);
+    return {guestDenied:cfg.includes('ip prefix-list SITE-LAN-1 seq 400 deny 10.70.1.176/28'),
+      guestExported:cfg.includes('permit 10.70.1.176/28'),
+      panos:window.RedundantLab.paloCandidate(s.num),
+      current:genRouterRunningConfig(s)};
+  });
+  expect(integrity.guestDenied).toBe(true);
+  expect(integrity.guestExported).toBe(false);
+  expect(integrity.panos).toContain('set rulebase security rules DENY-GUEST-TO-CORP');
+  expect(integrity.current).toContain('GigabitEthernet0/0/0.10');
+  expect(errors).toEqual([]);
+});
