@@ -1,6 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict');
 const {CM_SERVICES,ROUTER_NTP_SOURCES,paloCandidate}=require('../network/redundant-configs.cjs');
+const {exportCandidate}=require('../network/export-candidate.cjs');
 const {addressReview,policyReview,assessManagementServices,renderManagementServicesCandidate}=
   require('../network/management-services-candidate.cjs');
 const valid=n=>({
@@ -29,6 +30,10 @@ for(let n=0;n<=22;n++){
  ok(a.routerSource===ROUTER_NTP_SOURCES[n],key+': invalid loopback source');
  ok(a.stackSource==='10.70.'+n+'.162',key+': invalid stack SVI source');
  const text=renderManagementServicesCandidate(n,valid(n));
+ const exported=exportCandidate(key,'mgmt-services',valid(n));
+ ok(exported.includes('SOLO LABORATORIO')&&exported.includes(text),
+   key+': CLI export omits NTP review warnings');
+ ok(!exported.includes('ntp authentication-key'),key+': accidental key in export');
  for(const source of ['Loopback0','Vlan30']){
    for(const ip of CM_SERVICES.ntp)
      ok(text.includes('ntp server '+ip+' source '+source),
@@ -64,6 +69,7 @@ for(const altered of [
  ok(assessManagementServices(1,altered).status==='BLOCKED','Changed service IP must block');
 }
 ok(assessManagementServices(1).status==='BLOCKED','Missing verification must block');
+assert.throws(()=>exportCandidate('s01','mgmt-services'),/SERVICIOS CENTRALES NO GENERADOS/);
 assert.throws(()=>renderManagementServicesCandidate(1),/NO GENERADOS/);
 assert.throws(()=>assessManagementServices(23,valid(1)),/Sede/);
 console.log('Central DNS/NTP: '+checks+
