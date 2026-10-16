@@ -17,6 +17,7 @@ for(let n=0;n<=22;n++){
  const p='set network dhcp interface ae2.40 server';
  for(const fragment of [
    p+' mode enabled',
+   p+' probe-ip yes',
    p+' ip-pool [ 10.70.'+n+'.178-10.70.'+n+'.190 ]',
    p+' option gateway 10.70.'+n+'.177',
    p+' option subnet-mask 255.255.255.240',
