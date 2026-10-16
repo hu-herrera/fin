@@ -38,6 +38,9 @@ for(let n=0;n<=22;n++){
     label+' Loopback0 /32 missing or mismatched');
   check(c.includes('router ospf 1\n router-id '+routerId+'\n passive-interface default'),
     label+' OSPF Router-ID is not explicitly configured');
+  for(const tunnel of [100,200,300,400])
+    check(c.includes(' no passive-interface Tunnel'+tunnel),
+      label+' OSPF tunnel '+tunnel+' unintentionally left passive');
   check(c.includes(' ip nat inside'),label+' Cisco transit lacks NAT inside');
   for(const [type,iface] of Object.entries(PORTS.wan)){
     const rule='NAT-'+type.toUpperCase();
