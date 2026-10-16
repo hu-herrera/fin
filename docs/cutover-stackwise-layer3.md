@@ -68,7 +68,7 @@ npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs --browse
 
 ## Estado del candidato (octubre 2026)
 - 23 sedes modeladas, 650 puertos PC mapeados a los miembros del stack, VLAN/AP y zonas PAN-OS preparadas.
-- Pruebas Node integradas en GitHub Actions; **el simulador publicado sigue con el diseño viejo**. Pasar un test de configuración en cadena no demuestra que PAN-OS acepte un commit ni que IOS-XE negocie un LAG físico.
+- Pruebas Node integradas en GitHub Actions; **la vista DESPUÉS publicada ya opera con StackWise + Palo Alto Layer3; la vista ANTES conserva el diseño anterior para regresión**. Pasar un test de configuración en cadena no demuestra que PAN-OS acepte un commit ni que IOS-XE negocie un LAG físico.
 - La configuración Palo Alto propuesta no está lista para despliegue: faltan reglas de seguridad aprobadas, gestión segura VLAN30, un camino de recuperación por consola y rutas WAN/VPN reales. OOB físico sigue siendo opcional. Las pruebas de salud upstream son estados lógicos, no IP SLA desplegado en interfaces reales.
 
 ## Interfaz de pruebas habilitada en la web
@@ -76,10 +76,10 @@ npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs --browse
 2. Elegir **🧪 StackWise / LACP**. Cada sede conserva sus fallas aisladas de las demás; el botón **Restaurar todos los enlaces** elimina las fallas del laboratorio.
 3. Cortar individualmente los enlaces T1/T2, D1–D4 y STACK-A/B, o apagar SW1/SW2, C8300 y PA-1410.
 4. Observar por separado el estado L2 de los PCs, el gateway PA, el camino hacia Cisco y la WAN. En WAN se prueba el estado de la interfaz, del gateway del ISP y de un supuesto destino aguas arriba.
-5. Para comparar configuraciones, abrir la ventana Router/Firewall/Switch y elegir **🧪 Objetivo L3**. La CLI vigente no cambia.
+5. Para comparar configuraciones, abrir la ventana Router/Firewall/Switch y elegir **🧪 Objetivo L3**. La vista DESPUÉS usa la CLI simulada StackWise/Layer3; las configuraciones reales de equipos no se han modificado.
 6. Ejecutar `node network/build-browser-lab.cjs --check` cuando cambie el motor Node; regenerar con `node network/build-browser-lab.cjs` y someterlo a CI antes de publicarlo.
 
-[Suite de navegador y motor candidato aprobados](https://github.com/hu-herrera/fin/actions/runs/38842086249): 28/28 Playwright + 8/8 WAN + 162 escenarios de falla + 2.237 comprobaciones de candidatos. La capa de laboratorio fue probada desde el navegador, **sin convertir la topología actual en arquitectura Layer3 activa**.
+[Suite de navegador y motor candidato aprobados](https://github.com/hu-herrera/fin/actions/runs/38842086249): 28/28 Playwright + 8/8 WAN + 162 escenarios de falla + 2.237 comprobaciones de candidatos. La capa de laboratorio fue probada desde el navegador, **con arquitectura Layer3 activa únicamente dentro del simulador; el hardware real continúa sin validarse**.
 
 ## Requisitos WAN, NAT y servicios centrales antes del corte
 - Confirmar para cada uno de los cuatro proveedores la IP WAN real, next-hop y dos destinos públicos ICMP permitidos por conexión. Referencia: [datos para generar IP SLA](wan-sla-datos-operadores.md).
@@ -100,3 +100,12 @@ npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs --browse
 - Las sedes sólo solicitan DNS a `10.70.0.110`/`.111` y NTP de gestión a `10.70.0.116`/`.117`; el PA de casa matriz sólo admite consultas a esos destinos desde las subredes específicas de las 22 sucursales. Las respuestas pertenecen a la sesión permitida, sin abrir conexiones nuevas indiscriminadas desde TRANSIT.
 - Todo tráfico corporativo hacia otras direcciones privadas a través de la zona TRANSIT se deniega **antes** de permisos generales web. Otros servicios financieros quedan bloqueados hasta disponer de una matriz de aplicaciones, orígenes y destinos aprobada.
 - El generador de plantillas y las pruebas están en `network/redundant-configs.cjs` y `tests/intersite-routing.test.cjs`. Esta es una política de simulador, no una configuración ya aplicada en equipos físicos.
+
+## Refinamiento funcional y pruebas de fallo — 16 octubre 2026
+
+- **Switching local realista:** el trazado de PCs dentro de la misma VLAN no requiere router C8300, PA-1410 ni uplinks Po10/Po20. Sólo depende de puertos de acceso válidos y de StackWise si atraviesa los dos miembros. No se dibuja un salto LAN falso a través del PA Layer3.
+- **CLI Cisco:** `Port-channel10` y el alias `Po10` apagan/restauran correctamente ambos enlaces físicos de tránsito y actualizan RIB/estado WAN; el gateway LAN puede continuar operativo en el PA.
+- **CLI StackWise:** `Po20` es un único agregado distribuido y un `shutdown` desde cualquiera de las consolas afecta a sus cuatro miembros. Una interfaz `Gi2/0/X` se reconoce desde cualquiera de las consolas del stack.
+- **Persistencia:** el perfil activo carga los estados `startup-config` guardados antes de computar rutas y topología, incluso antes de abrir la consola. Los controles de ping local usan disponibilidad L2 en vez de exigir el gateway.
+- **Pruebas añadidas:** fallos de PA/C8300/Po20, pérdida de uno/dos cables StackWise, caída SW1, control administrativo de Po10, control lógico Po20 y cambios Gi2 desde la consola de otro miembro, en la suite de navegador `tests/active-topology.spec.cjs`.
+- Las suites siguen siendo **pruebas del simulador**, no una ejecución de comandos sobre equipos Cisco o Palo Alto.
