@@ -72,3 +72,10 @@ La ficha de Cisco para C8300-2N2S-4T2X especifica **4 puertos RJ45 de 1GbE y 2 p
 ## Validación posterior (2026-10-16)
 - [GitHub Actions 24/24 PASS](https://github.com/hu-herrera/fin/actions/runs/38831383312) + WAN unitario: grafo intersede coherente con caída/restauración de casa matriz, AP trunks VLAN nativa y permitidas validadas en 46 switches.
 - **No cambia** que la topología Layer3+StackWise del nuevo documento sea solo diseño candidato pendiente de migración integral.
+
+## Laboratorio interactivo integrado (octubre de 2026)
+- En `index.html`, pestaña por sede **🧪 StackWise / LACP**: utiliza el motor `network/redundant-browser.js`, generado desde `network/redundant-model.cjs` y `network/redundant-configs.cjs`.
+- Se pueden simular fallos de C8300/PA/SW1/SW2, de Po10 (2×10G), Po20 (4×1G), de los dos cables StackWise y de ISP con distinción entre interfaz, gateway y salida real aguas arriba. Indicadores separados de conmutación VLAN, L2 local, gateway Palo Alto y conectividad al Cisco/Internet.
+- Pestaña **🧪 Objetivo L3** dentro del dispositivo permite consultar las configuraciones candidatas Cisco/Palo Alto/StackWise junto a la consola histórica; no modifica running-config.
+- CI: [28/28 pruebas Playwright](https://github.com/hu-herrera/fin/actions/runs/38842086249), 8/8 WAN unitarias, 162 escenarios de falla, 1.615 aserciones de redundancia, 23 sedes/650 PCs/2.237 verificaciones del plan.
+- El **laboratorio candidato** está integrado en el sitio web; la **topología de operación principal** continúa siendo la antigua hasta que se completen OOB, políticas PAN-OS, IP SLA real, IPsec/OSPF y la migración de CLI y rutas. El dibujo sigue reservado para el ajuste final.
