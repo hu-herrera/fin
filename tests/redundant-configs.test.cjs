@@ -33,6 +33,11 @@ for(let n=0;n<=22;n++){
   }
   check(!c.includes('GigabitEthernet0/0/0.10'),label+' legacy router-on-a-stick remains');
   check(c.includes('interface Port-channel10'),label+' Cisco LACP transit missing');
+  const routerId='10.70.100.'+(n===0?1:n+10);
+  check(c.includes('interface Loopback0\n description ROUTER-ID-OSPF-OVERLAY\n ip address '+routerId+' 255.255.255.255\n ip ospf 1 area 0'),
+    label+' Loopback0 /32 missing or mismatched');
+  check(c.includes('router ospf 1\n router-id '+routerId+'\n passive-interface default'),
+    label+' OSPF Router-ID is not explicitly configured');
   check(c.includes(' ip nat inside'),label+' Cisco transit lacks NAT inside');
   for(const [type,iface] of Object.entries(PORTS.wan)){
     const rule='NAT-'+type.toUpperCase();
