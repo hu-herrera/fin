@@ -11,7 +11,7 @@ Este documento adapta **literalmente los cinco puntos del profesor** al avance d
 
 ## Escena 2 — Avances desde la última revisión (60 segundos)
 
-> Desde la última revisión nos concentramos en convertir el diseño en un simulador que reaccione a nuestras acciones. Organizamos la arquitectura de cada sede desde los enlaces WAN hacia un router Cisco C8300, un firewall Palo Alto PA-1410 y dos switches Catalyst C9200L funcionando como un stack lógico. Modelamos EtherChannel con LACP, el tránsito entre router y firewall, la segmentación por VLAN y las políticas de acceso. Una mejora reciente fue incorporar un laboratorio de paquetes que muestra cada salto y la causa de un permiso o una denegación.
+> Desde la última revisión nos concentramos en convertir el diseño en un simulador que reaccione a nuestras acciones. Organizamos la arquitectura de cada sede desde los enlaces WAN hacia un router Cisco C8300, un firewall Palo Alto PA-1410 y dos switches Catalyst C9200L funcionando como un stack lógico. Modelamos EtherChannel con LACP, el tránsito entre router y firewall, la segmentación por VLAN y las políticas de acceso. Una mejora reciente fue hacer más clara la pestaña Ping / Trace que ya existía: ahora la prueba deja visible su resultado y los saltos lógicos en la misma ventana de la sede.
 
 **Acción:** avanzar una escena. Explicar el recorrido Cisco → PA → StackWise y señalar que se conserva la comparación ANTES/DESPUÉS en el panel NOC.
 
@@ -23,13 +23,13 @@ Este documento adapta **literalmente los cinco puntos del profesor** al avance d
 
 ## Escena 4 — Evidencias concretas (100 segundos)
 
-> Ahora vamos a demostrarlo, no solamente mostrar imágenes. Primero seleccionamos la sucursal S01 y un computador, y simulamos una consulta DNS al servidor reservado de casa matriz, `10.70.0.110`. El sistema muestra el recorrido y qué reglas de Palo Alto la permiten. En segundo lugar intentamos utilizar SSH contra ese mismo destino, y el firewall bloquea el tráfico no autorizado. Finalmente cortamos el enlace principal, Starlink. El modelo elige la siguiente WAN disponible según prioridad, Amazon Leo en este escenario, y cuando restauramos el enlace vuelve a la ruta original. Además de las pruebas visibles, nuestro repositorio tiene pruebas automatizadas con GitHub Actions: la última versión anterior a esta presentación registró 55 pruebas de navegador aprobadas, y las nuevas versiones vuelven a ejecutarlas.
+> Ahora vamos a demostrarlo en la página. Seleccionamos la sucursal S01, abrimos su topología interna y entramos a Ping / Trace. Elegimos S02 y pulsamos Enviar ping: el resultado se muestra sin cerrar la ventana, con la respuesta del modelo, los saltos lógicos y un RTT estimado. Si queremos, podemos abrir la animación de ese mismo ping sobre el mapa. Después mostramos la pestaña StackWise / LACP y simulamos una caída WAN para observar el proveedor alternativo. Los resultados son reproducibles dentro del modelo; no son mediciones de tráfico físico.
 
 **Acción paso a paso (sin salir de la web):**
-1. En la escena de evidencias, pulsar **Probar DNS, SSH y WAN**: se abre el **simulador original de S01** desde su ventana de topología interna, en la pestaña **📦 Flujo de paquetes**.
-2. Sede S01, IP origen `10.70.1.10`; destino `10.70.0.110`; aplicación DNS. Confirmar **PERMITIDO** (significa que el modelo autoriza el flujo, no que un DNS real respondió).
-3. Pulsar **SSH bloqueado** y mostrar **BLOQUEADO** y la política responsable.
-4. Pulsar **DNS permitido**, luego **Cortar Starlink**. Mostrar el cambio a Amazon Leo; **Recuperar Starlink** para restaurar el escenario.
+1. En la escena de evidencias, pulsar **Probar Ping / Trace de S01**: se abre el simulador original en su pestaña de Ping / Trace.
+2. Seleccionar S02 como destino y pulsar **Enviar ping**. Mostrar el estado, la ruta lógica y el RTT estimado; la ventana debe permanecer abierta.
+3. Pulsar **Ver animación del ping en el mapa** si se quiere mostrar el recorrido visual.
+4. Volver a la sede, abrir **StackWise / LACP** y simular una caída WAN. Explicar que se observa el failover lógico del escenario.
 5. Pulsar **Volver a la exposición** (o Esc). Regresa desde la misma ventana original de sede a la escena de evidencias; avanzar con flecha derecha.
 
 **Evidencia externa:** [última CI aprobada antes de preparar esta presentación](https://github.com/hu-herrera/fin/actions/runs/38964467044), con 55 pruebas de Chromium y 126 comprobaciones de forwarding, además de pruebas de red anteriores. Consultar la ejecución más reciente en GitHub Actions para cifras actualizadas; nunca inventar pruebas de hardware.
@@ -56,8 +56,8 @@ Comparte el objetivo de experimentar con topologías y fallos, pero tiene otro n
 **¿Por qué usaron Cisco y Palo Alto juntos?**  
 Para separar las funciones de conectividad/ruteo WAN y los controles de seguridad, segmentación y políticas de un NGFW, simulando una arquitectura empresarial heterogénea.
 
-**¿Qué significa que la prueba DNS esté permitida?**  
-Significa que el motor lógico no detectó un bloqueo de ruta o de política. No significa que se haya consultado un servidor DNS real o negociado una VPN real.
+**¿Qué significa que el ping tenga respuesta?**  
+Significa que el modelo encuentra una ruta ICMP disponible entre las sedes. El RTT es estimado; no se midió sobre una red física.
 
 **¿Qué ocurre si falla Starlink?**  
 En el escenario, la política de selección considera el siguiente enlace disponible. Se ve la transición a Amazon Leo; es una opción del simulador, no una confirmación de disponibilidad comercial del proveedor.
@@ -71,7 +71,7 @@ No. Son pruebas automatizadas del software de simulación en navegador. Los cand
 ## Lista de control para entrar a clases
 
 - Abrir `index.html` o el sitio publicado. Probar el botón **▣ Presentar**.
-- Antes de demostrar, entrar al laboratorio y confirmar que la consulta DNS de S01 dé PERMITIDO.
+- Antes de demostrar, abrir Ping / Trace y confirmar que la prueba S01 → S02 muestre la ruta y la respuesta simulada.
 - Si quedó Starlink caído por un ensayo, recuperarlo antes de comenzar.
 - Mostrar las notas solo si se necesitan; la tecla **N** las oculta o muestra. **Esc** cierra la vista.
 - Mantener a mano la [evidencia CI](https://github.com/hu-herrera/fin/actions/runs/38964467044) para el punto «Evidencias».
