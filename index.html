@@ -443,6 +443,12 @@ body{background:var(--bg);color:var(--text);
 .ping-result{padding:8px;border-radius:4px;margin-top:10px;font-size:11px;font-weight:600;}
 .ping-result.ok{background:#1a3520;color:var(--green);border:1px solid #2a5030;}
 .ping-result.fail{background:#3a1010;color:var(--red);border:1px solid #5a2020;}
+.ping-route-summary{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 14px;
+  padding:10px;background:#102b29;border:1px solid #2a6d5c;border-radius:5px;
+  color:var(--text);font-size:11px;margin:8px 0;}
+.ping-route-summary strong{color:var(--green);letter-spacing:.3px;}
+.ping-map-action{margin-top:10px;}
+.ping-note{font-size:10px;color:var(--text2);line-height:1.5;margin-top:8px;}
 .ping-src-sel{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   padding:8px;background:var(--panel2);border-radius:4px;margin-bottom:8px;}
 .dashboard-ping-form{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;
@@ -730,7 +736,6 @@ body{background:var(--bg);color:var(--text);
       <button class="sm-tab active" onclick="smTab('topo',this)">🖧 Topología</button>
       <button class="sm-tab" onclick="smTab('cmd',this)">⌨ Comandos</button>
       <button class="sm-tab" onclick="smTab('ping',this)">📡 Ping / Trace</button>
-      <button class="sm-tab" id="sm-tab-packet" onclick="smTab('packet',this)">📦 Flujo de paquetes</button>
       <button class="sm-tab" onclick="smTab('tables',this)">📋 Tablas</button>
       <button class="sm-tab" onclick="smTab('kpis',this)">📊 KPIs</button>
       <button class="sm-tab" onclick="smTab('lab',this)">🧪 StackWise / LACP</button>
@@ -3151,8 +3156,7 @@ function closeSedeModal(){
   SM_ID = null;
 }
 function smTab(tab, btn){
-  // El trazador forma parte de este mismo modal. Conservar sus eventos al cambiar de pestaña.
-  window.PacketWorkbench?.detach();
+  // Mantener una única experiencia: la pestaña Ping/Trace original.
   SM_TAB = tab;
   document.querySelectorAll('.sm-tab').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
@@ -3164,10 +3168,6 @@ function smTab(tab, btn){
   if(tab==='tables') body.innerHTML = renderTablesTab(s);
   if(tab==='kpis') body.innerHTML = renderKPIsTab(s);
   if(tab==='lab') body.innerHTML = renderRedundantLabTab(s);
-  if(tab==='packet'){
-    body.innerHTML = '<div id="sm-packet-host"></div>';
-    window.PacketWorkbench?.mountInTopology(s.id);
-  }
   if(tab==='topo'){
     requestAnimationFrame(() => initTopologyWorkspace(s));
   }
@@ -3294,8 +3294,8 @@ function topoToolbar(s){
     <strong>Topología interna · ${s.code}</strong>
     <span>Haz clic en un router, firewall, switch o PC para abrir su consola.</span>
     <span class="topo-state">WAN: ${active}</span>
-    <button type="button" class="btn btn-acc" id="topo-packet-tool"
-      onclick="smTab('packet',document.getElementById('sm-tab-packet'))">📦 Seguir un paquete</button>
+    <button type="button" class="btn btn-acc" id="topo-ping-tool"
+      onclick="smTab('ping',document.querySelector('#sm-tabs .sm-tab:nth-child(3)'))">📡 Probar Ping / Trace</button>
     <div class="topo-zoom">
       <button type="button" class="btn btn-n" onclick="topologyZoom(this,-.15)" title="Alejar">−</button>
       <button type="button" class="btn btn-n" onclick="topologyZoom(this,.15)" title="Acercar">+</button>
@@ -3800,17 +3800,20 @@ function renderCmdTab(s){
 }
 
 function renderPingTab(s){
-  const opts = SEDES.filter(x=>x.id!==s.id).map(x=>`<option value="${x.id}">${x.code} — ${x.city}</option>`).join('');
+  const opts = '<option value="local">Otro PC de esta sede (misma VLAN)</option>'+SEDES.filter(x=>x.id!==s.id).map(x=>`<option value="${x.id}">${x.code} — ${x.city} (ICMP intersede sujeto a firewall)</option>`).join('');
   return `
   <div class="ping-src-sel">
     <span style="font-size:11px;color:var(--text2)">Origen:</span>
     <strong style="font-size:11px">${s.code} — ${s.city}</strong>
-    <span style="font-size:11px;color:var(--text2);margin-left:10px">Destino:</span>
-    <select id="ping-dest" style="background:var(--panel2);color:var(--text);border:1px solid var(--panel3);padding:3px 6px;border-radius:3px;font-size:11px">${opts}</select>
-    <button type="button" class="btn btn-acc" onclick="runPing('${s.id}')">▶ Ejecutar Ping</button>
-    <button type="button" class="btn btn-b" onclick="startPingSelection()">🖱 Elegir en mapa</button>
+    <label for="ping-dest" style="font-size:11px;color:var(--text2)">Destino:</label>
+    <select id="ping-dest" style="background:var(--panel2);color:var(--text);border:1px solid var(--panel3);padding:6px 8px;border-radius:4px;font-size:12px">${opts}</select>
+    <button type="button" class="btn btn-acc" onclick="runPing('${s.id}')">▶ Enviar ping</button>
+    <button type="button" class="btn btn-b" onclick="startPingSelection()">🖱 Elegir destino en mapa</button>
   </div>
-  <div id="ping-result" style="min-height:200px"></div>`;
+  <p class="ping-note">Elige una sede y pulsa <strong>Enviar ping</strong>. El resultado muestra el recorrido lógico y un RTT estimado. Puedes abrir la animación del mismo ping sobre el mapa.</p>
+  <div id="ping-result" role="status" aria-live="polite" style="min-height:200px">
+    <div class="ping-result">Listo para probar ICMP local o entre sedes desde ${s.code}.</div>
+  </div>`;
 }
 
 function renderTablesTab(s){
@@ -6735,41 +6738,75 @@ function animatePacket(srcId, destId, linkType, ok, route, detailedRoute){
 }
 
 function runPing(srcId){
-  closeSedeModal();
-  const destId=document.getElementById('ping-dest').value;
-  const src=SEDES.find(x=>x.id===srcId);
-  const dst=SEDES.find(x=>x.id===destId);
+  const destSelect=document.getElementById('ping-dest');
   const div=document.getElementById('ping-result');
-  const localOnly=Boolean(src && dst && src.id===dst.id);
-  const srcPc=src && findAvailableSimulationPC(src,localOnly);
-  const destPc=dst && findAvailableSimulationPC(dst,localOnly);
-  const detailedRoute = src && dst && srcPc && destPc
+  const src=SEDES.find(x=>x.id===srcId);
+  const local=destSelect?.value==='local';
+  const dst=local?src:SEDES.find(x=>x.id===destSelect?.value);
+  if(!src||!dst||!div){
+    addLog('⚠ No se pudo iniciar Ping / Trace','alert');
+    return;
+  }
+  if(local&&window.ActiveProfile?.enabled()===false){
+    div.innerHTML='<div class="ping-result fail">El ping local requiere el perfil DESPUÉS.</div>';
+    return;
+  }
+  const srcPc=findAvailableSimulationPC(src,local);
+  const destPc=local
+    ? getPCs(src).find(pc=>pc.ip!==srcPc?.ip&&pc.vlan===srcPc?.vlan&&
+        isSwitchPCPortAvailable(src.id,pc)&&isPCOnConfiguredVlan(src.id,pc))
+    : findAvailableSimulationPC(dst,false);
+  if(!srcPc||!destPc){
+    div.innerHTML='<div class="ping-result fail">No hay dos equipos activos en el mismo segmento para completar esta prueba.</div>';
+    return;
+  }
+  const policy=packetPolicyDecision(src,dst,srcPc,destPc,'icmp');
+  const detailedRoute=policy.action==='allow'
     ? buildPacketRoute(src,dst,false,srcPc,destPc)
     : [];
-  const route = collapsePacketRoute(detailedRoute,src,dst);
-  const endpoint=src ? getPacketRouteEndpoint(src,detailedRoute) : {type:'—',label:'Sin ruta'};
-  const baseLat = src ? getLinkLatency(src,endpoint.type) : 0;
-  const totalLat=baseLat*2+4;
-  const routeOk = detailedRoute.length >= 2;
-  animatePacket(srcId,destId,endpoint.type,routeOk,route,detailedRoute);
-  addLog(`ICMP ${src.code} → ${dst.code} · ${routeOk ? `ruta ${LK_NAME[endpoint.type] || endpoint.type.toUpperCase()}` : 'paquete descartado'}`,
-    routeOk ? 'ok' : 'alert');
-  setTimeout(()=>{
-    if(!routeOk){
-      div.innerHTML='<div class="ping-result fail">⚠ Timeout · no existe una ruta de extremo a extremo disponible.</div>';
+  const route=collapsePacketRoute(detailedRoute,src,dst);
+  const endpoint=srcPc?getPacketRouteEndpoint(src,detailedRoute):{type:'—',label:'Sin ruta'};
+  const routeOk=detailedRoute.length>=2;
+  const totalLat=routeOk?(local?2:getLinkLatency(src,endpoint.type)*2+4):0;
+  const routeLabel=routeOk?(local?'LAN local':LK_NAME[endpoint.type]||endpoint.type.toUpperCase()):'sin ruta';
+  div.innerHTML='<div class="ping-result">⏳ Simulando ICMP desde '+src.code+' hacia '+(local?'otro equipo de la misma sede':dst.code)+'…</div>';
+  addLog('ICMP '+src.code+' → '+(local?'host local':dst.code)+' · '+(routeOk?'ruta '+routeLabel:
+    policy.action!=='allow'?'bloqueado por firewall':'paquete descartado'),routeOk?'ok':'warn');
+  window.setTimeout(()=>{
+    if(policy.action!=='allow'){
+      div.innerHTML='<div class="ping-result fail">⊘ BLOQUEADO por la política del firewall: '+policy.rule+'. El modelo no envía ICMP entre sedes con las reglas actuales.</div><p class="ping-note">Esto es una denegación de seguridad esperada, no un fallo de la animación.</p><button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap(\''+src.id+'\',\''+dst.id+'\')">🗺 Ver el bloqueo sobre el mapa</button>';
       return;
     }
+    if(!routeOk){
+      div.innerHTML='<div class="ping-result fail">✕ Tiempo agotado: la política permite ICMP, pero no existe una ruta activa. Revisa los equipos, el StackWise y la WAN.</div>';
+      return;
+    }
+    const middle=route.slice(1,-1).map((hop,index)=>
+      '<tr><td>'+(index+2)+'</td><td>'+hop.label+'</td><td>—</td><td>Tramo lógico</td></tr>'
+    ).join('');
     div.innerHTML=`
+      <div class="ping-route-summary">
+        <strong>ICMP · RESPUESTA SIMULADA</strong>
+        <span>${src.code} (${srcPc.ip}) → ${dst.code} (${destPc.ip})</span>
+      </div>
       <table class="ping-table">
-        <tr><th>HOP</th><th>Dispositivo</th><th>IP</th><th>Tiempo</th></tr>
-        <tr><td>1</td><td>${srcPc.id}</td><td>${srcPc.ip}</td><td class="ping-ok">—</td></tr>
-        ${route.slice(1, -1).map((hop, index) => `<tr><td>${index + 2}</td><td>${hop.label}</td><td>—</td><td class="ping-ok">${index === 0 ? '2 ms' : baseLat + ' ms'}</td></tr>`).join('')}
-        <tr><td>${route.length}</td><td>${destPc.id}</td><td>${destPc.ip}</td><td class="ping-ok">${totalLat} ms</td></tr>
+        <thead><tr><th>HOP</th><th>Dispositivo / tramo</th><th>IP</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>${srcPc.id}</td><td>${srcPc.ip}</td><td class="ping-ok">Origen</td></tr>
+          ${middle}
+          <tr><td>${route.length}</td><td>${destPc.id}</td><td>${destPc.ip}</td><td class="ping-ok">Respuesta</td></tr>
+        </tbody>
       </table>
-      <div class="ping-result ok">✓ ${route.length}/${route.length} saltos · RTT ${totalLat} ms · Vía ${endpoint.type.toUpperCase()}</div>`;
-  }, 800);
+      <div class="ping-result ok">✓ Respuesta ICMP simulada · ${route.length} saltos · RTT estimado ${totalLat} ms · ${routeLabel}</div>
+      ${local?'':'<button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap(\''+src.id+'\',\''+dst.id+'\')">🗺 Ver animación del ping en el mapa</button>'}
+      <p class="ping-note">Los tiempos son estimaciones del modelo; no son mediciones de una red física.</p>`;
+    addLog('ICMP reply simulado '+src.code+' → '+(local?'host local':dst.code)+' · RTT estimado '+totalLat+' ms','ok');
+  },350);
 }
-
+function showPingOnMap(srcId,destId){
+  closeSedeModal();
+  runMapPing(srcId,destId);
+}
 function openDashboardPing(){
   const options = SEDES.map(s => `<option value="${s.id}">${s.code} — ${s.city}</option>`).join('');
   document.getElementById('dashboard-ping-body').innerHTML = `
@@ -6893,7 +6930,6 @@ addLog('Modo DESPUÉS: 23 sedes + 4 enlaces inalámbricos + satélites LEO','ok'
 addLog('Modo ANTES: hardware legacy 2014-2015 (Cisco 1921/2901, C2960, ASA 5512-X)','warn');
 addLog('Click en sede/satélite/torre/proveedor → modal de configuración','ok');
 </script>
-<script src="./network/packet-simulator.js"></script>
 <script src="./network/packet-workbench.js"></script>
 </body>
 </html>
