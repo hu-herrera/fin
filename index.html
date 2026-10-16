@@ -775,11 +775,12 @@ body{background:var(--bg);color:var(--text);
 <script src="./map-geography.js"></script>
 <script src="./network/redundant-browser.js"></script>
 <script src="./network/active-profile.js"></script>
+<link rel="stylesheet" href="./network/packet-workbench.css">
 <script>
 const SEDES = [
   { id:'cm',  code:'CM',  name:'Casa Matriz / Datacenter', city:'Santiago Centro',
     lat:-33.45, lon:-70.65, ip:'10.70.0.1',  num:0,  isCM:true,
-    router:'RTR-CM-01 (activo) / RTR-CM-02 (pasivo)',
+    router:'RTR-CM-01 (único; HA por evaluar)',
     switches:'SW-CM-01, SW-CM-02 (Catalyst C9200L-48T-4G-E)', ha:true,
     links:{ starlink:{bw:'180 Mbps',lat:'25 ms'}, kuiper:{bw:'130 Mbps',lat:'35 ms'}, g5:{bw:'300 Mbps',lat:'18 ms'}, g4:{bw:'60 Mbps',lat:'40 ms'} } },
   { id:'s01', code:'S01', name:'Sucursal 01', city:'Providencia', lat:-33.43, lon:-70.61, ip:'10.70.1.1', num:1,
@@ -3138,7 +3139,7 @@ function openSedeModal(id){
   SM_ID = id; SM_TAB = 'topo';
   const s = SEDES.find(x=>x.id===id);
   document.getElementById('sm-icon').textContent = s.isCM?'🏛':s.isIsland?'🏝':s.isAntarctic?'🔬':'🏢';
-  document.getElementById('sm-title').textContent = s.name+(s.isCM?' [Casa Matriz / HA]':'');
+  document.getElementById('sm-title').textContent = s.name+(s.isCM?' [Casa Matriz / nodo central]':'');
   document.getElementById('sm-sub').textContent   = `${s.city}  ·  ${s.ip}  ·  ${PC_COUNT[id]} PCs  ·  ${ST.mode==='antes' ? 'Topología legacy 2014' : 'Topología rediseñada 2026'}`;
   document.getElementById('sm-overlay').classList.add('vis');
   smTab('topo', document.querySelector('.sm-tab'));
@@ -6846,7 +6847,7 @@ function openComparativa(){
       <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px">✓ DESPUÉS — Rediseño 2026</div>
       <div class="drow"><span class="dkey">Routers</span><span class="dval" style="color:var(--green)">Cisco Catalyst C8300-2N2S-4T2X + gateway 5G externo (modelo por validar)</span></div>
       <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--green)">C9200L-48T-4G-E x2 (StackWise-80, 2 cables traseros)</span></div>
-      <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--green)">24x PA-1410 (2 CM + 22 sedes)</span></div>
+      <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--green)">23x PA-1410 (1 por sede)</span></div>
       <div class="drow"><span class="dkey">WAN</span><span class="dval" style="color:var(--green)">4 enlaces inalámbricos</span></div>
       <div class="drow"><span class="dkey">Uptime</span><span class="dval" style="color:var(--green)">99.95% (meta)</span></div>
       <div class="drow"><span class="dkey">RTO</span><span class="dval" style="color:var(--green)">&le;5 min (meta)</span></div>
@@ -6875,5 +6876,7 @@ addLog('Modo DESPUÉS: 23 sedes + 4 enlaces inalámbricos + satélites LEO','ok'
 addLog('Modo ANTES: hardware legacy 2014-2015 (Cisco 1921/2901, C2960, ASA 5512-X)','warn');
 addLog('Click en sede/satélite/torre/proveedor → modal de configuración','ok');
 </script>
+<script src="./network/packet-simulator.js"></script>
+<script src="./network/packet-workbench.js"></script>
 </body>
 </html>
