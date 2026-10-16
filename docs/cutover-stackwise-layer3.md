@@ -24,7 +24,7 @@
 ### BLOQUEOS reales, antes de habilitar el objetivo
 
 1. **PAN-OS:** finalizar zonas, VR, reglas específicas de permiso/denegación, perfiles de seguridad y rutas intersede. El firewall debe filtrar inter-VLAN; una política permisiva genérica invalida el objetivo.
-2. **Gestión del PA:** cambiar la administración fuera de banda del actual `10.70.N.164/28` por una red física OOB dedicada, con gateway, puerto y mecanismo de acceso definido. No asignar la misma VLAN/subred al plano de gestión fuera de banda y a la interfaz de datos como solución improvisada.
+2. **Gestión:** utilizar la VLAN30 de datos de gestión con políticas restringidas y AAA en los equipos existentes; asegurar consola y respaldo local durante el corte. La red OOB con hardware dedicado es una **mejora opcional**, no una compra requerida para las 23 sedes. No reutilizar MGT físico como si fuera una interfaz de datos Layer3.
 3. **C8300:** redes e interfaces WAN configuradas según contrato. El diseño usa Gi0/0/0..3 para los 4 ISP (incluyendo gateway Ethernet de GTD), y Te0/0/4..5 para el PA; verificar conectores ópticos/DAC/SFP+; mapeo de fuentes IPsec; NAT/retorno; SSH/AAA.
 4. **Switches:** validar cable StackWise/kit para cada C9200L y los troncales de 4 enlaces MEC a PA. La distribución de los 650 PCs ya está mapeada y probada en el generador (`Gi1/0/X` o `Gi2/0/X`), pero debe comprobarse físicamente en cada sede antes de desplegarla.
 5. **VPN WAN:** peer central real accesible (los `203.0.113.x` son documentación), IKEv2/IPsec y OSPF verificados sobre IOS-XE con cuatro proveedores (CGNAT posible), sin afirmar rutas FULL ni túneles cifrados no probados.
@@ -36,10 +36,10 @@
 2. Ejecutar los dos scripts de modelo candidato y comprobar cada sitio; generar diferencias por interfaz frente al inventario hardware de cada sede.
 3. En laboratorio aislado, crear stack físico primero; configurar MEC `Po20` en ambos miembros y `ae2` en PA; verificar convergencia de enlace con un cable fuera.
 4. Crear tránsito PA `ae1` ↔ C8300 `Po10`, confirmar negociación y conectividad de 10.72.N.1 ↔ .2 sin cambiar todavía gateways en producción.
-5. Configurar seguridad y OOB; migrar los cuatro gateways de VLAN, rutas estáticas/OSPF y NAT como **una unidad reversible**. Revisar ACL para invitados, gestión, DNS, telefonía y aplicaciones financieras.
+5. Configurar seguridad y gestión VLAN30 protegida; migrar los cuatro gateways de VLAN, rutas estáticas/OSPF y NAT como **una unidad reversible**. Revisar ACL para invitados, gestión, DNS, telefonía y aplicaciones financieras.
 6. Ensayos de fallas físicas: desconexión de cada miembro LACP, falla de SW1/SW2 (solo sobreviven usuarios del miembro restante), interrupción de un cable StackWise, pérdida de PA (caída esperada), ISP upstream caído pero gateway responde.
 7. Sólo tras validar: sustituir el modelo del simulador activo, las consolas, los tests de versión vieja y al final la representación gráfica.
-8. Guardar `startup-config` / commit PAN-OS únicamente con respaldo OOB y plan de reversión confirmado.
+8. Guardar `startup-config` / commit PAN-OS con acceso de consola/rollback confirmado; OOB físico puede mejorar la recuperación, pero no es obligatorio para este diseño.
 
 ## Consulta de configuraciones candidatas por sede
 
@@ -69,7 +69,7 @@ npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs --browse
 ## Estado del candidato (octubre 2026)
 - 23 sedes modeladas, 650 puertos PC mapeados a los miembros del stack, VLAN/AP y zonas PAN-OS preparadas.
 - Pruebas Node integradas en GitHub Actions; **el simulador publicado sigue con el diseño viejo**. Pasar un test de configuración en cadena no demuestra que PAN-OS acepte un commit ni que IOS-XE negocie un LAG físico.
-- La configuración Palo Alto propuesta no está lista para despliegue: sin gestión OOB, políticas de seguridad cerradas, ACL de aplicaciones y rutas WAN/VPN reales. Las pruebas de salud upstream son estados lógicos, no IP SLA desplegado en interfaces reales.
+- La configuración Palo Alto propuesta no está lista para despliegue: faltan reglas de seguridad aprobadas, gestión segura VLAN30, un camino de recuperación por consola y rutas WAN/VPN reales. OOB físico sigue siendo opcional. Las pruebas de salud upstream son estados lógicos, no IP SLA desplegado en interfaces reales.
 
 ## Interfaz de pruebas habilitada en la web
 1. Abrir cualquier sede en la versión actual de GitHub Pages.
@@ -85,7 +85,7 @@ npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs --browse
 - Confirmar para cada uno de los cuatro proveedores la IP WAN real, next-hop y dos destinos públicos ICMP permitidos por conexión. Referencia: [datos para generar IP SLA](wan-sla-datos-operadores.md).
 - Cisco C8300: `routerNatCandidate` genera ACL y PAT asociados con `match interface`; `renderWanSlaCandidate` devuelve IP SLA + tracking + rutas host únicamente tras recibir ocho destinos sin duplicaciones. Validar NAT/CEF/VPN sobre la WAN elegida en laboratorio.
 - Verificar y reservar DNS `10.70.0.110` y `.111`, TACACS `.112/.113`, NTP `.116/.117`, syslog `.100` y monitoreo `.101`. No se afirma que esas máquinas estén instaladas: deberán cotizarse y aprovisionarse, y lo ideal será migrar infraestructura a su VLAN segura si el alcance lo permite.
-- Servicios de casa matriz deben contar con rutas de retorno, reglas PAN-OS interzona restrictivas, DNS/NTP autorizados, acceso OOB independiente y procedimientos de revocación de credenciales.
+- Servicios de casa matriz deben contar con rutas de retorno, reglas PAN-OS interzona restrictivas, DNS/NTP autorizados, acceso de administración restringido y procedimientos de revocación de credenciales. OOB independiente es opcional.
 - El despliegue solo se aprueba con pruebas **reales** de `show track`, `show ip nat translations`, `show ip ospf neighbor` y políticas/commit PAN-OS; la web es evidencia de coherencia del modelo, no del hardware.
 
 ## Gestión OOB y resiliencia de recuperación (fase aprobada en simulación)
@@ -93,4 +93,10 @@ npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs --browse
 - [Configuración candidata OOB y presupuesto de hardware](oob-management-design.md). Generador: `network/oob-management.cjs`. CLI: `node network/export-candidate.cjs s01 oob`; nunca aplicar sin gateway/switch/cableado real.
 - El motor simula fallo de gateway, switch, ruta NOC y cables MGT, independientemente de la caída de C8300, PA dataplane o switches de producción. Los escenarios no afirman que el hardware OOB esté instalado.
 - CI aprobada: **31/31 Playwright**, 8/8 WAN, 185 escenarios de falla, 2.029 aserciones de redundancia, 2.536 verificaciones de candidatos, 911 de política, 1.162 IP SLA y **784 de OOB** sobre 23 sedes/650 PCs. [Ejecución](https://github.com/hu-herrera/fin/actions/runs/38856652658).
-- **Bloqueo real de migración:** aprovisionar 23 caminos OOB independientes, validar el puerto/VRF de C8300 concreto y el acceso remoto desde NOC, además de completar políticas PAN-OS, contratos WAN/IPsec, OSPF y pruebas de corte.
+- **Bloqueos reales de migración:** gestión segura sobre los switches existentes, AAA, acceso de consola y rollback; completar políticas PAN-OS, contratos WAN/IPsec, OSPF y pruebas de corte. Los 23 caminos OOB independientes son una alternativa de alta resiliencia **opcional**, no equipos agregados al presupuesto base.
+
+## Control de tráfico intersede — mínimo privilegio (diseño candidato)
+- Las VLAN 10/20/30 de cada sede son anunciables por el C8300 mediante rutas estáticas hacia PA y redistribución filtrada a OSPF. La VLAN40 de invitados nunca se anuncia.
+- Las sedes sólo solicitan DNS a `10.70.0.110`/`.111` y NTP de gestión a `10.70.0.116`/`.117`; el PA de casa matriz sólo admite consultas a esos destinos desde las subredes específicas de las 22 sucursales. Las respuestas pertenecen a la sesión permitida, sin abrir conexiones nuevas indiscriminadas desde TRANSIT.
+- Todo tráfico corporativo hacia otras direcciones privadas a través de la zona TRANSIT se deniega **antes** de permisos generales web. Otros servicios financieros quedan bloqueados hasta disponer de una matriz de aplicaciones, orígenes y destinos aprobada.
+- El generador de plantillas y las pruebas están en `network/redundant-configs.cjs` y `tests/intersite-routing.test.cjs`. Esta es una política de simulador, no una configuración ya aplicada en equipos físicos.
