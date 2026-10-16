@@ -19,6 +19,8 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Probar logica WAN
         run: node tests/wan.test.cjs
+      - name: Probar redundancia futura StackWise y LACP en 23 sedes
+        run: node tests/redundant-model.test.cjs
       - name: Probar simulador en navegador
         run: npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs --browser chromium --reporter=line --trace retain-on-failure
       - name: Guardar diagnóstico de fallos
