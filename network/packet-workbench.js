@@ -147,6 +147,12 @@ function environment(){
    return Boolean(site&&window.ActiveProfile.overlayInterfaceUp(site.id));},
   policy:(num,from,to,app,dst,src)=>window.RedundantLab.evaluateSitePanPolicy(
     num,from,to,app,dst,src),
+  sourceReady:input=>{
+   if(input.zone!=='USERS')return true;
+   const site=SEDES.find(s=>s.num===input.siteNum);
+   const pc=site&&getPCs(site).find(p=>p.ip===input.sourceIp);
+   return Boolean(pc&&isSwitchPCPortAvailable(site.id,pc)&&isPCOnConfiguredVlan(site.id,pc));
+  },
   destinationMember:(num,ip)=>{
    const site=SEDES.find(s=>s.num===num);
    const pc=site&&getPCs(site).find(p=>p.ip===ip);
