@@ -18,7 +18,7 @@ Todas estas direcciones son **reservas** en VLAN10, `10.70.0.0/25`. Gateway PA `
 
 ## Política de acceso NTP para routers y stacks
 
-El C8300 usa `Loopback0 10.70.100.x/32` como Router-ID/posible origen de NTP. El origen de la casa matriz es `10.70.100.1`; las sucursales `s01..s22` usan `10.70.100.11..32`. El firewall CM solo admite desde estas **23 direcciones exactas** la aplicación NTP con destinos `.116` y `.117`. No permite DNS/SSH ni otros destinos por esa excepción.
+El C8300 usa `Loopback0 10.70.100.x/32` como Router-ID y origen controlado de DNS/NTP. El origen de la casa matriz es `10.70.100.1`; las sucursales `s01..s22` usan `10.70.100.11..32`. El firewall CM solo admite desde estas **23 direcciones exactas** NTP hacia `.116`/`.117` y DNS hacia `.110`/`.111`, cada servicio con su propia regla App-ID y destino restringido; SSH y otros destinos siguen denegados.
 
 Los Catalyst utilizan `Vlan30 10.70.N.162` como interfaz origen de NTP. Desde sucursales requieren que el PA local permita `MGMT-DATA → TRANSIT` y el PA de CM `TRANSIT → USERS`, ambos hacia los NTP. En CM se requiere `MGMT-DATA → USERS`. Las políticas actuales dan esas autorizaciones pero **no demuestran que exista un servidor o que funcione OSPF/IPsec**.
 
@@ -37,8 +37,10 @@ El archivo JSON se mantiene **privado** y declara: `approvedInLab`, `dnsServersO
 
 El candidato utiliza:
 
-- C8300: `ntp server 10.70.0.116 source Loopback0 prefer` y servidor secundario `.117`.
-- C9200L: `ntp server 10.70.0.116 source Vlan30 prefer` y servidor secundario `.117`.
+- C8300: `ip domain lookup source-interface Loopback0` y `ntp server 10.70.0.116 source Loopback0 prefer` (más secundario `.117`).
+- C9200L: `ip domain lookup source-interface Vlan30` y `ntp server 10.70.0.116 source Vlan30 prefer` (más secundario `.117`).
+
+El origen explícito de DNS evita que los routers hagan consultas desde interfaces WAN/túneles no autorizadas. Verificar la sintaxis y el estado `up` de ambas interfaces origen según IOS-XE instalado.
 
 **Seguridad NTP:** no se inventan claves de autenticación ni se genera configuración incompleta de cifrado. Validar funciones disponibles en la versión IOS-XE objetivo, origen de hora fiable, control de clientes, NTP autenticado cuando sea posible y fallos por desincronización. No habilitar NTP sin evaluación de seguridad.
 
@@ -69,5 +71,6 @@ En C8300 remoto, también `show ip ospf neighbor`, `show crypto ikev2 sa`, `show
 ## Referencias oficiales
 
 - [Cisco IOS XE 17 — NTP source interface](https://www.cisco.com/c/en/us/td/docs/switches/lan/c9000/time-sync/ntp-configuration-guide/m-network-time-protocol.html)
+- [Cisco IOS-XE — ip domain lookup source-interface](https://www.cisco.com/c/en/us/td/docs/routers/sl_using_policy/b-sl-using-policy/task_library.html)
 - [CiscoDevNet skill IOS Patterns](https://github.com/CiscoDevNet/skills/blob/main/skills/ios/cisco-ios-patterns/SKILL.md)
 - [Palo Alto App-ID application-default](https://docs.paloaltonetworks.com/ngfw/administration/app-id/application-default)
