@@ -3800,7 +3800,7 @@ function renderCmdTab(s){
 }
 
 function renderPingTab(s){
-  const opts = SEDES.filter(x=>x.id!==s.id).map(x=>`<option value="${x.id}">${x.code} — ${x.city}</option>`).join('');
+  const opts = '<option value="local">Otro PC de esta sede (misma VLAN)</option>'+SEDES.filter(x=>x.id!==s.id).map(x=>`<option value="${x.id}">${x.code} — ${x.city} (ICMP intersede sujeto a firewall)</option>`).join('');
   return `
   <div class="ping-src-sel">
     <span style="font-size:11px;color:var(--text2)">Origen:</span>
@@ -3812,7 +3812,7 @@ function renderPingTab(s){
   </div>
   <p class="ping-note">Elige una sede y pulsa <strong>Enviar ping</strong>. El resultado muestra el recorrido lógico y un RTT estimado. Puedes abrir la animación del mismo ping sobre el mapa.</p>
   <div id="ping-result" role="status" aria-live="polite" style="min-height:200px">
-    <div class="ping-result">Listo para probar la conectividad simulada de ${s.code}.</div>
+    <div class="ping-result">Listo para probar ICMP local o entre sedes desde ${s.code}.</div>
   </div>`;
 }
 
@@ -6741,32 +6741,48 @@ function runPing(srcId){
   const destSelect=document.getElementById('ping-dest');
   const div=document.getElementById('ping-result');
   const src=SEDES.find(x=>x.id===srcId);
-  const dst=SEDES.find(x=>x.id===destSelect?.value);
+  const local=destSelect?.value==='local';
+  const dst=local?src:SEDES.find(x=>x.id===destSelect?.value);
   if(!src||!dst||!div){
     addLog('⚠ No se pudo iniciar Ping / Trace','alert');
     return;
   }
-  if(src.id===dst.id){
-    div.innerHTML='<div class="ping-result fail">Elige una sede distinta como destino.</div>';
+  if(local&&window.ActiveProfile?.enabled()===false){
+    div.innerHTML='<div class="ping-result fail">El ping local requiere el perfil DESPUÉS.</div>';
     return;
   }
-  const srcPc=findAvailableSimulationPC(src,false);
-  const destPc=findAvailableSimulationPC(dst,false);
-  const detailedRoute=srcPc&&destPc?buildPacketRoute(src,dst,false,srcPc,destPc):[];
+  const srcPc=findAvailableSimulationPC(src,local);
+  const destPc=local
+    ? getPCs(src).find(pc=>pc.ip!==srcPc?.ip&&pc.vlan===srcPc?.vlan&&
+        isSwitchPCPortAvailable(src.id,pc)&&isPCOnConfiguredVlan(src.id,pc))
+    : findAvailableSimulationPC(dst,false);
+  if(!srcPc||!destPc){
+    div.innerHTML='<div class="ping-result fail">No hay dos equipos activos en el mismo segmento para completar esta prueba.</div>';
+    return;
+  }
+  const policy=packetPolicyDecision(src,dst,srcPc,destPc,'icmp');
+  const detailedRoute=policy.action==='allow'
+    ? buildPacketRoute(src,dst,false,srcPc,destPc)
+    : [];
   const route=collapsePacketRoute(detailedRoute,src,dst);
   const endpoint=srcPc?getPacketRouteEndpoint(src,detailedRoute):{type:'—',label:'Sin ruta'};
   const routeOk=detailedRoute.length>=2;
-  const totalLat=routeOk?getLinkLatency(src,endpoint.type)*2+4:0;
-  const routeLabel=routeOk?(LK_NAME[endpoint.type]||endpoint.type.toUpperCase()):'sin ruta';
-  div.innerHTML='<div class="ping-result '+(routeOk?'ok':'fail')+'">⏳ Simulando ICMP desde '+src.code+' hacia '+dst.code+'…</div>';
-  addLog('ICMP '+src.code+' → '+dst.code+' · '+(routeOk?'ruta '+routeLabel:'paquete descartado'),routeOk?'ok':'alert');
+  const totalLat=routeOk?(local?2:getLinkLatency(src,endpoint.type)*2+4):0;
+  const routeLabel=routeOk?(local?'LAN local':LK_NAME[endpoint.type]||endpoint.type.toUpperCase()):'sin ruta';
+  div.innerHTML='<div class="ping-result">⏳ Simulando ICMP desde '+src.code+' hacia '+(local?'otro equipo de la misma sede':dst.code)+'…</div>';
+  addLog('ICMP '+src.code+' → '+(local?'host local':dst.code)+' · '+(routeOk?'ruta '+routeLabel:
+    policy.action!=='allow'?'bloqueado por firewall':'paquete descartado'),routeOk?'ok':'warn');
   window.setTimeout(()=>{
+    if(policy.action!=='allow'){
+      div.innerHTML='<div class="ping-result fail">⊘ BLOQUEADO por la política del firewall: '+policy.rule+'. El modelo no envía ICMP entre sedes con las reglas actuales.</div><p class="ping-note">Esto es una denegación de seguridad esperada, no un fallo de la animación.</p><button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap(\''+src.id+'\',\''+dst.id+'\')">🗺 Ver el bloqueo sobre el mapa</button>';
+      return;
+    }
     if(!routeOk){
-      div.innerHTML='<div class="ping-result fail">✕ Tiempo agotado: no hay una ruta de extremo a extremo disponible. Revisa el estado del PC, el firewall, el router y la WAN.</div>';
+      div.innerHTML='<div class="ping-result fail">✕ Tiempo agotado: la política permite ICMP, pero no existe una ruta activa. Revisa los equipos, el StackWise y la WAN.</div>';
       return;
     }
     const middle=route.slice(1,-1).map((hop,index)=>
-      '<tr><td>'+(index+2)+'</td><td>'+hop.label+'</td><td>—</td><td>Simulado</td></tr>'
+      '<tr><td>'+(index+2)+'</td><td>'+hop.label+'</td><td>—</td><td>Tramo lógico</td></tr>'
     ).join('');
     div.innerHTML=`
       <div class="ping-route-summary">
@@ -6781,10 +6797,10 @@ function runPing(srcId){
           <tr><td>${route.length}</td><td>${destPc.id}</td><td>${destPc.ip}</td><td class="ping-ok">Respuesta</td></tr>
         </tbody>
       </table>
-      <div class="ping-result ok">✓ Respuesta ICMP simulada · ${route.length} saltos · RTT estimado ${totalLat} ms · vía ${routeLabel}</div>
-      <button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap('${src.id}','${dst.id}')">🗺 Ver animación del ping en el mapa</button>
+      <div class="ping-result ok">✓ Respuesta ICMP simulada · ${route.length} saltos · RTT estimado ${totalLat} ms · ${routeLabel}</div>
+      ${local?'':'<button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap(\''+src.id+'\',\''+dst.id+'\')">🗺 Ver animación del ping en el mapa</button>'}
       <p class="ping-note">Los tiempos son estimaciones del modelo; no son mediciones de una red física.</p>`;
-    addLog('ICMP reply simulado '+src.code+' → '+dst.code+' · RTT estimado '+totalLat+' ms','ok');
+    addLog('ICMP reply simulado '+src.code+' → '+(local?'host local':dst.code)+' · RTT estimado '+totalLat+' ms','ok');
   },350);
 }
 function showPingOnMap(srcId,destId){
