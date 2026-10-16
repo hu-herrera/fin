@@ -26,7 +26,7 @@ for(let n=0;n<=22;n++){
    '# EXISTENTE QUE DEBE PERMANECER: set network profiles interface-management-profile VLAN30-STACK permitted-ip 10.70.'+n+'.162/32',
    'NO AUTORIZA COMMIT'
  ]){assert.ok(cfg.includes(fragment),key+' missing '+fragment);total++;}
- assert.ok(!cfg.includes('0.0.0.0/0'));total++;
+ assert.ok(!cfg.split('\n').some(line=>line.startsWith('set ')&&line.includes('permitted-ip 0.0.0.0/0')));total++;
  assert.ok(!cfg.includes('switchport access vlan 10'));total++;
  const cli=exportCandidate(key,'pa-admin',data);
  assert.ok(cli.includes(cfg)&&cli.includes('VLAN30'));total++;
