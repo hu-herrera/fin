@@ -218,6 +218,12 @@ function routerCandidate(num){
     'router ospf 1',
     ' router-id '+loopback,
     ' passive-interface default',
+    // Sólo túneles OSPF explícitos: sin estas excepciones, no habrá adyacencia
+    // incluso después de provisionar IKEv2/IPsec en IOS-XE.
+    ' no passive-interface Tunnel100',
+    ' no passive-interface Tunnel200',
+    ' no passive-interface Tunnel300',
+    ' no passive-interface Tunnel400',
     ' redistribute static subnets route-map EXPORT-SITE-LAN',
     '! conservar Tunnel100/200/300/400 y revisar adyacencias y costes reales',
     '! FALTAN: WAN IP/MTU y SLA extremo-a-extremo por ISP; VPN peers autenticos',
