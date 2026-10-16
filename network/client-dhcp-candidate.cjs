@@ -4,7 +4,15 @@
 // Gateways for VLAN10 and VLAN20 terminate on PA ae2.10 / ae2.20, not C8300.
 const {checkSiteNum}=require('./redundant-model.cjs');
 const {ipv4}=require('./wan-sla-candidate.cjs');
-const {pcInventory}=require('./export-candidate.cjs');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const path=require('node:path');
+function pcInventory(){
+ const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+ const match=html.match(/const PC_COUNT\\s*=\\s*(\\{[\\s\\S]*?\\});/);
+ if(!match)throw new Error('Inventario PC_COUNT ausente');
+ return vm.runInNewContext('('+match[1]+')');
+}
 const CENTRAL_DNS=Object.freeze(['10.70.0.110','10.70.0.111']);
 const USER_FIRST=10, VOICE_FIRST=130, VOICE_LAST=158;
 
