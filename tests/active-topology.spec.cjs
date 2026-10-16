@@ -169,3 +169,31 @@ test('Consolas principales no anuncian sesiones IPsec o licencias PA falsamente 
  });
  expect(failures).toEqual([]);
 });
+
+test('Los paquetes intersede no eluden las políticas PAN-OS aunque haya WAN operativa',async({page})=>{
+ await page.goto(url);
+ const r=await page.evaluate(()=>{
+   const issues=[],cm=SEDES.find(s=>s.id==='cm'),s1=SEDES.find(s=>s.id==='s01'),
+     s2=SEDES.find(s=>s.id==='s02');
+   const p1=getPCs(s1)[0],p2=getPCs(s2)[0],pcCM=getPCs(cm)[0];
+   const check=(x,msg)=>{if(!x)issues.push(msg)};
+   check(isSiteLanAvailable(s1.id)&&isSiteLanAvailable(s2.id)&&isSiteLanAvailable(cm.id),
+      'physical WAN should be available before the ACL check');
+   const deny=packetPolicyDecision(s1,s2,p1,p2);
+   check(deny.action==='deny','branch-to-branch ICMP not denied by PA');
+   check(buildPacketRoute(s1,s2,true,p1,p2).length===0,'Packet graph routed unauthorized site-to-site ICMP');
+   check(packetPolicyDecision(s1,cm,p1,pcCM).action==='deny','branch-to-CM PC ping should be denied');
+   check(buildPacketRoute(s1,cm,true,p1,pcCM).length===0,'CM PC ping bypasses policy');
+   check(buildPacketRoute(cm,s1,true,pcCM,p1).length===0,'CM-initiated ICMP bypasses policy');
+   check(buildPacketRoute(s1,s1,true,p1,getPCs(s1)[1]).length>0,'local same-site connectivity improperly denied');
+   const dns=window.RedundantLab.evaluateSitePanPolicy(1,'USERS','TRANSIT','dns',
+      '10.70.0.110',p1.ip);
+   const cmPolicy=window.RedundantLab.evaluateSitePanPolicy(0,'TRANSIT','USERS','dns',
+      '10.70.0.110',p1.ip);
+   check(dns.action==='allow'&&cmPolicy.action==='allow','explicit CM DNS exception was blocked');
+   check(!getPCs(cm).some(pc=>pc.ip==='10.70.0.110'),
+      'Central DNS address must remain reserved until a real server is provisioned');
+   return issues;
+ });
+ expect(r).toEqual([]);
+});
