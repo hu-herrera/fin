@@ -99,7 +99,7 @@ show jobs all
 2. Direccionamiento, MTU, modo DHCP/CGNAT, gateways y probes autorizados de cada operador; Amazon Leo no se considera desplegado.
 3. Peers/identidades/secretos IPsec, negociación NAT-T, pruebas de interoperabilidad IOS-XE y adyacencias OSPF reales.
 4. Servidores DNS/NTP/AAA, matriz de aplicaciones financieras autorizadas, políticas de seguridad, inspección/firmas y registros de eventos reales.
-5. Capacidad de telefonía: VLAN20 /27 = 30 hosts por sede; **casa matriz necesita revisión si se instala más de un teléfono por cada uno de sus 55 puestos**. VLAN40 /28 = 14 invitados simultáneos como máximo sin rediseño. No inventar teléfonos/invitados que no figuran en el inventario.
+5. Capacidad de telefonía: VLAN20 /27 = 30 hosts por sede; **casa matriz necesita ampliación si se instala un teléfono IP por cada uno de sus 55 puestos**. VLAN40 /28 = 14 invitados simultáneos como máximo sin rediseño. No inventar teléfonos/invitados que no figuran en el inventario.
 6. Disponibilidad de equipos: un C8300 y un PA por sede continúan siendo puntos únicos de falla; Po10/Po20 no los redundan. La opción OOB es separada y no debe sumarse al presupuesto base.
 
 ## 6. Estado final por sede
