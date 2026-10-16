@@ -6,6 +6,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const {siteCandidate}=require('./redundant-configs.cjs');
 const {renderWanSlaCandidate}=require('./wan-sla-candidate.cjs');
+const {oobCandidate}=require('./oob-management.cjs');
 function pcInventory(){
   const html=fs.readFileSync(require('node:path').join(__dirname,'..','index.html'),'utf8');
   const match=html.match(/const PC_COUNT\s*=\s*(\{[\s\S]*?\});/);
@@ -17,8 +18,8 @@ function exportCandidate(site,device,wanSettings){
   if(!/^(cm|s(?:0[1-9]|1[0-9]|2[0-2]))$/.test(key)){
     throw new Error('Sede desconocida; usar cm o s01..s22');
   }
-  if(!['router','stack','palo','wan-sla'].includes(device)){
-    throw new Error('Equipo desconocido; usar router, stack, palo o wan-sla');
+  if(!['router','stack','palo','wan-sla','oob'].includes(device)){
+    throw new Error('Equipo desconocido; usar router, stack, palo, wan-sla u oob');
   }
   const num=key==='cm'?0:Number(key.slice(1)),counts=pcInventory();
   if(!Number.isInteger(counts[key]))throw new Error('Sin inventario de PCs para '+key);
@@ -27,6 +28,14 @@ function exportCandidate(site,device,wanSettings){
     return '# LABORATORIO, VALIDAR CON OPERADOR ANTES DE APLICAR\n'+
       '# Sede '+key.toUpperCase()+' - pruebas WAN autorizadas\n'+
       renderWanSlaCandidate(wanSettings);
+  }
+  if(device==='oob'){
+    const p=oobCandidate(num);
+    return ['# SOLO LABORATORIO - NO APLICAR SIN GATEWAY Y SWITCH DE GESTION OOB',
+      '# Sede '+key.toUpperCase(),'# Bloqueadores: '+p.blockers.join('; '),
+      '# Red reservada: '+p.addressing.network,
+      '', '# PA-1410 MGT',p.firewall,'', '# C9200L Mgmt-vrf',p.stack,
+      '', '# C8300 NO CONFIGURADO',p.router].join('\n');
   }
   const c=siteCandidate(num,counts[key]);
   return [
