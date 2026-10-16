@@ -39,14 +39,20 @@ for(let n=0;n<23;n++){
  if(branch){
   const srcUsers='10.70.'+n+'.10';
   const srcMgmt='10.70.'+n+'.162';
+  const srcVoice='10.70.'+n+'.130';
   decision(n,'USERS','TRANSIT','dns',CM_SERVICES.dns[0],srcUsers,dnsRule,'allow');
   decision(n,'USERS','TRANSIT','dns',CM_SERVICES.dns[0],'10.70.0.10',
     'DENY-CORP-RFC1918-TRANSIT','deny');
   decision(n,'MGMT-DATA','TRANSIT','ntp',CM_SERVICES.ntp[0],
     '10.70.'+(n===10?11:10)+'.162',
     'DENY-CORP-RFC1918-TRANSIT','deny');
-  ok(cfg.includes('set address-group BR-LOCAL-DNS-CLIENTS static [ BR-LOCAL-USERS BR-LOCAL-MGMT ]'),
-    'Branch DNS source group absent');
+  ok(cfg.includes('set address-group BR-LOCAL-DNS-CLIENTS static [ BR-LOCAL-USERS BR-LOCAL-MGMT BR-LOCAL-VOICE ]'),
+    'Branch DNS source group omits voice clients');
+  decision(n,'VOICE','TRANSIT','dns',CM_SERVICES.dns[0],srcVoice,dnsRule,'allow');
+  decision(n,'VOICE','TRANSIT','ssl',CM_SERVICES.dns[0],srcVoice,
+    'DENY-CORP-RFC1918-TRANSIT','deny');
+  decision(n,'VOICE','TRANSIT','dns','10.70.0.12',srcVoice,
+    'DENY-CORP-RFC1918-TRANSIT','deny');
   ok(cfg.includes('set rulebase security rules BRANCH-NTP-TO-CM source BR-LOCAL-MGMT'),
     'Branch NTP may be sourced from any network');
   decision(n,'MGMT-DATA','TRANSIT','dns',CM_SERVICES.dns[1],srcMgmt,dnsRule,'allow');
@@ -63,10 +69,23 @@ for(let n=0;n<23;n++){
  }else{
   ok(cfg.includes('set address-group BRANCH-DNS-CLIENTS static [ BR-01-USERS BR-01-MGMT'), 'CM DNS client objects missing');
   ok(cfg.includes('set address-group BRANCH-MGMT-CLIENTS static [ BR-01-MGMT'), 'CM NTP client objects missing');
+  decision(0,'VOICE','USERS','dns',CM_SERVICES.dns[0],'10.70.0.130',
+    'CM-LOCAL-VOICE-DNS','allow');
+  decision(0,'MGMT-DATA','USERS','dns',CM_SERVICES.dns[1],'10.70.0.162',
+    'CM-LOCAL-MGMT-DNS','allow');
+  decision(0,'MGMT-DATA','USERS','ntp',CM_SERVICES.ntp[0],'10.70.0.162',
+    'CM-LOCAL-MGMT-NTP','allow');
+  decision(0,'VOICE','USERS','ssl',CM_SERVICES.dns[0],'10.70.0.130',
+    'interzone-default','deny');
+  decision(0,'MGMT-DATA','USERS','ssh',CM_SERVICES.ntp[0],'10.70.0.162',
+    'interzone-default','deny');
   for(let remote=1;remote<=22;remote++){
-   const u='10.70.'+remote+'.10',m='10.70.'+remote+'.162',g='10.70.'+remote+'.180';
+   const u='10.70.'+remote+'.10',m='10.70.'+remote+'.162',
+     v='10.70.'+remote+'.130',g='10.70.'+remote+'.180';
    decision(0,'TRANSIT','USERS','dns',CM_SERVICES.dns[0],u,dnsRule,'allow');
    decision(0,'TRANSIT','USERS','dns',CM_SERVICES.dns[1],m,dnsRule,'allow');
+   decision(0,'TRANSIT','USERS','dns',CM_SERVICES.dns[0],v,dnsRule,'allow');
+   decision(0,'TRANSIT','USERS','ssl',CM_SERVICES.dns[0],v,'interzone-default','deny');
    decision(0,'TRANSIT','USERS','ntp',CM_SERVICES.ntp[0],m,ntpRule,'allow');
    decision(0,'TRANSIT','USERS','ssh',CM_SERVICES.dns[0],u,'interzone-default','deny');
    decision(0,'TRANSIT','USERS','dns',CM_SERVICES.dns[0],g,'interzone-default','deny');
