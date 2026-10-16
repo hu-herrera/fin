@@ -205,23 +205,29 @@ function switchCommand(s,member,cmd){
       '<br>StackWise ring is NOT a Port-channel.';
   }
   if(cmd==='show switch'||cmd==='show stack'||cmd==='show switch stack-ports'){
-    return prefix+'Switch# Role State Model<br>1 '+(z.activeStackMembers.includes(1)?'Active/Ready':'Down')+
-      ' C9200L-48T-4G<br>2 '+(z.activeStackMembers.includes(2)?'Standby/Ready':'Down')+
+    const role=id=>!z.activeStackMembers.includes(id)?'Down':
+      id===z.activeStackMembers[0]?'Active/Ready':'Standby/Ready';
+    return prefix+'Switch# Role State Model<br>1 '+role(1)+
+      ' C9200L-48T-4G<br>2 '+role(2)+
       ' C9200L-48T-4G<br>StackWise cables: '+m.PORTS.stack.map(id=>id+':'+(rawSite(s.id).links[id]?'up':'down')).join(' ')+
       '<br>'+(z.stackPartitioned?'PARTITION: forwarding across stack not guaranteed':'Single logical stack (model)');
   }
   if(cmd==='show spanning-tree'||cmd==='show spanning-tree brief')
     return prefix+'VLAN0010 rapid-pvst<br>Logical bridge: STACK-'+s.code+
-      '<br>Po20 Desg '+(z.stackFunctional?'FWD':'BLK')+' 4x1G distributed uplink<br>'+
+      '<br>Po20 Desg '+(z.stackFunctional&&z.paStackMembers.length?'FWD':'BLK')+' 4x1G distributed uplink<br>'+
       'StackWise links are internal fabric, not STP ports';
   if(cmd==='show interfaces trunk'){
     return prefix+'Port Mode Status Native VLAN Allowed<br>'+
-      'Po20 trunk '+(z.paStackMembers.length?'trunking':'down')+' 999 10,20,30,40<br>'+
-      [1,2].flatMap(sw=>[33,34].map(p=>'Gi'+sw+'/0/'+p+' trunk trunking 999 10,40')).join('<br>');
+      'Po20 trunk '+(z.stackFunctional&&z.paStackMembers.length?'trunking':'down')+' 999 10,20,30,40<br>'+
+      [1,2].flatMap(sw=>[33,34].map(p=>{
+        const name='Gi'+sw+'/0/'+p;
+        const up=l2Local(s.id,sw)&&!isDeviceInterfaceAdminDown(s.id,'sw'+sw,name);
+        return name+' trunk '+(up?'trunking':'down')+' 999 10,40';
+      })).join('<br>');
   }
   if(cmd==='show ip interface brief'){
     return prefix+'Vlan30 10.70.'+n+'.162 YES manual '+(z.stackFunctional?'up up':'down down')+
-      '<br>Port-channel20 unassigned YES unset '+(z.paStackMembers.length?'up up':'down down')+'<br>'+
+      '<br>Port-channel20 unassigned YES unset '+(z.stackFunctional&&z.paStackMembers.length?'up up':'down down')+'<br>'+
       m.PORTS.distribution.map(p=>p.switch+' unassigned YES unset '+(z.paStackMembers.includes(p.id)?'up up':'down down')).join('<br>');
   }
   if(cmd==='show ip route')
@@ -230,22 +236,28 @@ function switchCommand(s,member,cmd){
     for(const memberId of [1,2]){
       const pcs=getSwitchPCPorts(s,memberId);
       for(const {pc,port:pt} of pcs){
-        rows.push('Gi'+memberId+'/0/'+pt+' '+pc.id+' '+(l2Local(s.id,memberId)?'connected':'disabled')+' 10');
+        rows.push('Gi'+memberId+'/0/'+pt+' '+pc.id+' '+(isSwitchPCPortAvailable(s.id,pc)?'connected':'disabled')+' '+
+          (getSwitchPCPortSettings(s.id,pc)?.switchportMode==='trunk'?'trunk':getSwitchPCVlan(s.id,pc)));
       }
-      for(const portNo of [33,34])rows.push('Gi'+memberId+'/0/'+portNo+' AP-WIFI-'+portNo+' '+(l2Local(s.id,memberId)?'connected':'disabled')+' trunk');
+      for(const portNo of [33,34]){
+        const name='Gi'+memberId+'/0/'+portNo;
+        const up=l2Local(s.id,memberId)&&!isDeviceInterfaceAdminDown(s.id,'sw'+memberId,name);
+        rows.push(name+' AP-WIFI-'+portNo+' '+(up?'connected':'disabled')+' trunk');
+      }
     }
     for(const p of m.PORTS.distribution)rows.push(port(p)+' '+p.id+' '+(z.paStackMembers.includes(p.id)?'connected':'notconnect')+' trunk');
     return prefix+'Port Name Status VLAN<br>'+rows.join('<br>');
   }
   if(cmd==='show mac address-table'||cmd==='show mac address-table dynamic'){
-    const rows=getPCs(s).filter(pc=>l2Local(s.id,pc.sw)).map(pc=>{
+    const rows=getPCs(s).filter(pc=>isSwitchPCPortAvailable(s.id,pc)&&getSwitchPCPortSettings(s.id,pc)?.switchportMode!=='trunk').map(pc=>{
       const num=getSwitchPCPorts(s,pc.sw).find(p=>p.pc.idx===pc.idx)?.port;
-      return '10 '+pc.mac.replace(/:/g,'').toLowerCase().match(/.{1,4}/g).join('.')+' DYNAMIC Gi'+pc.sw+'/0/'+num;
+      return getSwitchPCVlan(s.id,pc)+' '+pc.mac.replace(/:/g,'').toLowerCase().match(/.{1,4}/g).join('.')+' DYNAMIC Gi'+pc.sw+'/0/'+num;
     });
     return prefix+'Vlan MAC Type Port<br>'+rows.join('<br>');
   }
   if(cmd==='show vlan brief'){
-    return prefix+'10 USERS active '+getPCs(s).length+' access ports<br>20 VOICE active<br>'+
+    const userPorts=getPCs(s).filter(pc=>getSwitchPCVlan(s.id,pc)===10&&getSwitchPCPortSettings(s.id,pc)?.switchportMode!=='trunk').length;
+    return prefix+'10 USERS active '+userPorts+' access ports<br>20 VOICE active<br>'+
       '30 MGMT active (SVI .162)<br>40 GUESTS active (AP trunks)<br>999 NATIVE-ISOLATED active';
   }
   if(cmd==='show cdp neighbors'||cmd==='show lldp neighbors')
@@ -255,6 +267,8 @@ function switchCommand(s,member,cmd){
 function routerDetail(s,cmd){
   const n=s.num,z=status(s.id),p='RTR-'+s.code+'> <span class="ios-cmd">'+escapeCLI(cmd)+'</span><br><br>';
   if(cmd==='show ip route')return activeRoute(s);
+  if(cmd==='show standby'||cmd==='show standby brief')
+    return p+'HSRP no configurado: C8300 único. Failover WAN por selección de proveedor; gateways VLAN en Palo Alto.';
   if(cmd==='show ip interface brief'){
     const ports=Object.keys(mapPort).map(key=>mapPort[key]+' '+wanIp(n,key)+' YES manual '+
       (rawSite(s.id).wan[reverseWan[key]]?'up up':'down down'));

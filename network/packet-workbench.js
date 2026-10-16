@@ -1,7 +1,4 @@
-/* Browser workstation, trace visualizer and presentation-stage shell.
- * Uses the existing ActiveProfile and StackWise lab as source of truth.
- * Not an emulator of real IOS-XE/PAN-OS binaries.
- */
+/* Presentation view of the original site simulator and its Ping / Trace tab. */
 (function(){
 'use strict';
 
@@ -18,17 +15,17 @@ const scenes=[
   description:'Pasamos de diagramas y configuraciones candidatas a un modelo interactivo: enlaces LACP, stack, rutas, reglas de firewall y pruebas Ping / Trace en el navegador.',
   facts:['Topología Cisco C8300 → PA-1410 → StackWise','Ping / Trace incorporado','Regresiones de red automatizadas'],
   time:'1:00',
-  notes:'Desde nuestra última revisión avanzamos en la arquitectura y, especialmente, en convertirla en comportamiento interactivo. Modelamos un Cisco C8300 conectado al PA-1410 por LACP, seguido de dos Catalyst C9200L unidos por StackWise. Integramos cuatro opciones WAN, sus prioridades y las VLAN de usuarios, voz, gestión e invitados. También añadimos un Ping/Trace integrado en la topología y ver el resultado, la ruta lógica y el RTT estimado. Estos cambios ya tienen pruebas en GitHub.'},
+  notes:'Desde nuestra última revisión avanzamos en la arquitectura y en su comportamiento interactivo. Modelamos un Cisco C8300 conectado al PA-1410 por LACP, seguido de dos Catalyst C9200L unidos por StackWise. Integramos cuatro opciones WAN, sus prioridades y las VLAN de usuarios, voz, gestión e invitados. Mejoramos el Ping/Trace de la topología para mostrar el resultado, el recorrido lógico y el RTT estimado. Los cambios se verifican con pruebas automatizadas.'},
  {kicker:'03 / Estado actual e implementaciones',title:'Una red que responde',
   description:'La topología DESPUÉS está operativa en el modelo: se puede explorar cada sede, abrir consolas simuladas, revisar políticas, interrumpir enlaces y observar rutas alternativas.',
   facts:['LACP Po10 + Po20 y fabric StackWise','Gateway y segmentación en Palo Alto','Consolas IOS-XE y PAN-OS simplificadas'],
   time:'1:00',
   notes:'En su estado actual tenemos 23 sedes y 650 computadores representados. Cada sede incluye router Cisco, firewall Palo Alto, dos switches formando un stack lógico y cuatro rutas WAN modeladas. El firewall es la puerta de enlace de las VLAN 10, 20, 30 y 40. Las consolas aceptan un subconjunto educativo de comandos, y los cambios que representamos en ellas influyen en el estado de los enlaces y los paquetes. Es importante diferenciarlo de GNS3: nuestro navegador modela comportamientos de red; no ejecuta binarios reales de IOS-XE o PAN-OS.'},
  {kicker:'04 / Evidencias de trabajo',title:'La red demuestra lo que hace',
-  description:'Demostración en vivo: desde Ping / Trace de S01 enviar ICMP a otra sede, leer la ruta y el RTT estimado, y observar la ruta alternativa al simular una caída WAN.',
-  facts:['Ping entre sedes con ruta lógica visible','RTT estimado y resultado en la misma ventana','Fallos WAN visibles en el simulador'],
+  description:'Demostración en vivo: comprobar el ping local de S01, explicar por qué el firewall bloquea ICMP hacia S02 y observar el cambio de WAN al simular una caída.',
+  facts:['Ping local: respuesta y recorrido por switches','Ping intersede: regla de bloqueo visible','Fallos WAN y recuperación en el mismo modelo'],
   time:'1:40',
-  notes:'La evidencia principal es una prueba que se puede repetir en la página. Abrimos la sede S01 y entramos a Ping / Trace. Elegimos S02 y enviamos el ping: la misma ventana muestra si hay respuesta, los saltos lógicos y un RTT estimado. Si queremos ver el movimiento sobre el mapa, usamos el botón de animación del resultado. Después podemos cambiar a StackWise / LACP, simular la caída del enlace WAN principal y comprobar qué proveedor queda activo. Son resultados del modelo educativo, no mediciones de una red física.'},
+  notes:'Abrimos S01 y entramos a Ping / Trace. Primero dejamos Otro PC de esta sede y enviamos el ping: observamos la respuesta local, los pasos por switches y el RTT estimado. Después elegimos S02: la política actual bloquea ICMP entre sedes y el resultado identifica la regla del firewall. Podemos mostrar ese bloqueo en el mapa. Finalmente abrimos StackWise / LACP, interrumpimos Starlink y observamos el proveedor alternativo; al restaurar el escenario, la WAN principal se recupera. Son resultados del modelo educativo.'},
  {kicker:'05 / Dificultades e inconvenientes',title:'Problemas que resolvimos',
   description:'Nos enfrentamos a rutas mal interpretadas, separación de funciones Cisco/Palo Alto, conexiones LACP/StackWise y pruebas que debían reflejar las fallas en el salto correcto.',
   facts:['Separar StackWise de LACP','Gateway VLAN en el PA, no en C8300','Diferenciar simulación de protocolo real'],
@@ -66,7 +63,7 @@ function build(){
  <p id="stage-description" class="stage-description"></p>
  <div class="stage-actions"><button class="packetlab-btn primary" type="button" id="stage-lab">Abrir Ping / Trace de S01 →</button>
  <button class="packetlab-btn" type="button" id="stage-notes-toggle" aria-pressed="false">Guion del expositor</button>
- <a class="packetlab-btn" id="stage-ci" href="https://github.com/hu-herrera/fin/actions/runs/38964467044" target="_blank" rel="noopener noreferrer">Ver evidencias CI ↗</a></div></div>
+ <a class="packetlab-btn" id="stage-ci" href="https://github.com/hu-herrera/fin/actions/workflows/simulator-tests.yml" target="_blank" rel="noopener noreferrer">Ver evidencias CI ↗</a></div></div>
  <div class="stage-facts" id="stage-facts"></div>
  </div>
  <aside class="stage-speaker-notes" id="stage-notes" hidden><strong>Guion sugerido (no proyectar durante la exposición):</strong><p id="stage-notes-text"></p></aside>
@@ -84,6 +81,7 @@ function build(){
  $('stage-lab').addEventListener('click',()=>{
   state.returnToStage=true;
   closeStage();
+  if(ST.mode==='antes')toggleMode();
   openSedeModal('s01');
   smTab('ping',document.querySelector('#sm-tabs .sm-tab:nth-child(3)'));
  });

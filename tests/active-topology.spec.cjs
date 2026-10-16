@@ -2,6 +2,107 @@ const {test,expect}=require('@playwright/test');
 const {pathToFileURL}=require('node:url');
 const path=require('node:path');
 const url=pathToFileURL(path.resolve(__dirname,'../index.html')).href;
+
+test('WAN de controles, mapa, métricas y reset comparten el estado operativo',async({page})=>{
+ await page.goto(url);
+ const result=await page.evaluate(()=>{
+  selectSede('s01');openSedeModal('s01');smTab('lab',null);
+  toggleRedundantLab('s01','upstream','starlink');
+  const failover={wan:activeLink('s01'),metric:document.getElementById('m-wan').textContent,
+    detail:document.getElementById('detail-panel').innerText};
+  toggleRedundantLab('s01','node','router');
+  const downMetric=document.getElementById('m-wan').textContent;
+  const downKpis=renderKPIsTab(SEDES.find(s=>s.id==='s01'));
+  sc_reset();
+  const reset={router:ActiveProfile.rawSite('s01').nodes.router,wan:activeLink('s01'),metric:document.getElementById('m-wan').textContent};
+  sc_e1();
+  resetRedundantLab('s08');
+  deviceCliSession('s01','router').interfaces['GigabitEthernet0/0/0']={shutdown:true};
+  sc_reset();
+  return {failover,downMetric,downKpis,reset,siteReset:activeLink('s08'),cliPreserved:activeLink('s01')};
+ });
+ expect(result.failover.wan).toBe('kuiper');
+ expect(result.failover.metric).toContain('Amazon Leo');
+ expect(result.failover.detail).toMatch(/Starlink[\s\S]*CAÍDO/);
+ expect(result.downMetric).toBe('Sin servicio');
+ expect(result.downKpis).toContain('100%');
+ expect(result.reset).toEqual({router:true,wan:'starlink',metric:'Estable'});
+ expect(result.siteReset).toBe('starlink');
+ expect(result.cliPreserved).toBe('kuiper');
+});
+
+test('Casa matriz y E3 representan un router único sin inventar HSRP',async({page})=>{
+ await page.goto(url);
+ const result=await page.evaluate(()=>{
+  selectSede('cm');
+  const detail=document.getElementById('detail-panel').innerText;
+  const s=SEDES.find(s=>s.id==='cm'),pcs=getPCs(s);
+  sc_e3();const down=ActiveProfile.rawSite('cm').nodes.router;
+  const local=buildPacketRoute(s,s,false,pcs[0],pcs[1]);
+  sc_e3();return {detail,down,up:ActiveProfile.rawSite('cm').nodes.router,local:local.length,hsrp:genHSRP(s)};
+ });
+ expect(result.detail).toContain('C8300 único');expect(result.detail).not.toContain('Router pasivo');
+ expect(result.detail).not.toContain('HSRP + preemption');
+ expect(result.down).toBe(false);expect(result.up).toBe(true);expect(result.local).toBe(3);
+ expect(result.hsrp).toContain('HSRP no configurado');
+});
+
+test('La animación satelital respeta la WAN sana y no adelanta el retorno controlado',async({page})=>{
+ await page.goto(url);
+ const result=await page.evaluate(()=>{
+  toggleRedundantLab('s01','upstream','starlink');calcularIluminacion();
+  const satellite=ILUMINACION.s01?.tipo||null;
+  sc_e1();sc_e7();calcularIluminacion();sincronizarEstados();
+  return {satellite,wan:activeLink('s01'),pending:ST.links.s08.starlink,backup:activeLink('s08')};
+ });
+ expect([null,'kuiper']).toContain(result.satellite);
+ expect(result.wan).toBe('kuiper');
+ expect(result.pending).toBe('recuperando');
+ expect(result.backup).toBe('kuiper');
+});
+
+test('Una consola del stack puede recuperar el puerto apagado desde la otra y guardar el resultado',async({page})=>{
+ await page.goto(url);
+ const consoleFor=async type=>page.evaluate(type=>{
+  const host=document.getElementById('audit-cli')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'audit-cli'}));
+  host.innerHTML=genDeviceCLI(SEDES.find(s=>s.id==='s01'),type);
+ },type);
+ const send=async cmd=>{await page.locator('#device-term-input').fill(cmd);await page.locator('#device-term-input').press('Enter');};
+ await consoleFor('sw1');
+ for(const cmd of ['enable','configure terminal','interface Gi2/0/3','shutdown','end','write memory'])await send(cmd);
+ expect(await page.evaluate(()=>isSwitchPCPortAvailable('s01',getPCs(SEDES.find(s=>s.id==='s01')).find(p=>p.sw===2)))).toBe(false);
+ await consoleFor('sw2');
+ for(const cmd of ['enable','configure terminal','interface Gi2/0/3','no shutdown','switchport access vlan 40','end','write memory'])await send(cmd);
+ await page.reload();
+ const recovered=await page.evaluate(()=>{
+  const s=SEDES.find(s=>s.id==='s01'),pc=getPCs(s).find(p=>p.sw===2);
+  return {up:isSwitchPCPortAvailable(s.id,pc),vlan:getSwitchPCVlan(s.id,pc),same:deviceCliSession(s.id,'sw1').interfaces===deviceCliSession(s.id,'sw2').interfaces,
+    startup:deviceCliSession(s.id,'sw1').startup.interfaces['Gi2/0/3']};
+ });
+ expect(recovered.up).toBe(true);expect(recovered.vlan).toBe(40);expect(recovered.same).toBe(true);
+ expect(recovered.startup).toMatchObject({shutdown:false,accessVlan:40});
+});
+
+test('Diagnósticos de puertos y tabla MAC respetan shutdown y VLAN sin afectar puertos de nombre parecido',async({page})=>{
+ await page.goto(url);
+ const result=await page.evaluate(()=>{
+  const s=SEDES.find(s=>s.id==='s01'),cfg=deviceCliSession(s.id,'sw1'),pc=getPCs(s)[0];
+  cfg.interfaces['Gi1/0/3']={shutdown:true};
+  const status=applyDeviceCliConfig(ActiveProfile.switchCommand(s,1,'show interfaces status'),s,'sw1',cfg,'show interfaces status');
+  const table=ActiveProfile.switchCommand(s,1,'show mac address-table');
+  cfg.interfaces['Gi1/0/3']={shutdown:false,accessVlan:40};
+  const changed=ActiveProfile.switchCommand(s,2,'show interfaces status');
+  const mac=ActiveProfile.switchCommand(s,2,'show mac address-table');
+  toggleRedundantLab(s.id,'node','sw1');
+  return {status,table,changed,mac,macAddress:pc.mac.replace(/:/g,'').toLowerCase().match(/.{1,4}/g).join('.'),roles:ActiveProfile.switchCommand(s,2,'show switch')};
+ });
+ expect(result.status).toMatch(/Gi1\/0\/3 PC-S01-001 disabled 10/);
+ expect(result.status).toMatch(/Gi1\/0\/33 AP-WIFI-33 connected trunk/);
+ expect(result.table).not.toContain(result.macAddress);
+ expect(result.changed).toMatch(/Gi1\/0\/3 PC-S01-001 connected 40/);
+ expect(result.mac).toContain('40 '+result.macAddress);
+ expect(result.roles).toContain('2 Active/Ready');
+});
 test('Perfil activo es StackWise Layer3 en 23 sedes y 650 PCs, sin virtual-wire/Po1',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(url);
