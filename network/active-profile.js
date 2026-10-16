@@ -83,6 +83,14 @@ function siteReady(siteId){
   const z=status(siteId);
   return Boolean(z.activeWan&&(z.switchInternet[1]||z.switchInternet[2]));
 }
+function overlayInterfaceUp(siteId){
+  // Estado administrativo del túnel de la WAN seleccionada, NO prueba de
+  // SA IKEv2/IPsec ni de una adyacencia OSPF establecida en hardware.
+  const wan=selectedWan(siteId);
+  if(!wan)return false;
+  const cfg=deviceCliSession(siteId,'router');
+  return !cfg.interfaces[tunnel(wan)]?.shutdown;
+}
 function l2Local(siteId,member){return Boolean(status(siteId).switchLocalL2[member])}
 function activeRoute(s){
   const n=s.num, id=routerIdentity(s),z=status(s.id);
@@ -105,12 +113,14 @@ function activeRoute(s){
       'L '+wanIp(n,key)+'/32 is directly connected, '+mapPort[key]);
   }
   out.push('L '+id.loopback+'/32 is directly connected, Loopback0');
-  if(primary){
+  if(primary && overlayInterfaceUp(s.id)){
     const central=SEDES.find(v=>v.isCM);
-    const hubReady=s.isCM||(!central?false:siteReady(central.id));
+    const hubReady=s.isCM||(!central?false:
+      siteReady(central.id)&&overlayInterfaceUp(central.id));
     if(hubReady){
       for(const remote of SEDES){
-        if(remote.id===s.id||!siteReady(remote.id))continue;
+        if(remote.id===s.id||!siteReady(remote.id)||
+           !overlayInterfaceUp(remote.id))continue;
         for(const v of m.VLAN.filter(v=>v.id!==40)){
           out.push('O 10.70.'+remote.num+'.'+v.network+'/'+v.prefix+
             ' [110/30] via OVERLAY-'+tunnel(primary)+
@@ -283,6 +293,6 @@ function routerDetail(s,cmd){
 root.ActiveProfile=Object.freeze({
   enabled,status,rawSite,linkMembers,selectedWan,hasMember,path,directLink,l2Stack,l2Local,siteReady,
   routerConfig:runningRouter,switchConfig:runningSwitch,firewallCommand,switchCommand,
-  routerDetail,activeRoute,wanPort:mapPort
+  routerDetail,activeRoute,overlayInterfaceUp,wanPort:mapPort
 });
 })(window);
