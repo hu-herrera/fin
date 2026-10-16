@@ -1,7 +1,7 @@
 # Plan físico candidato — redundancia completa de enlaces y switches
 
-**Estado: PROPUESTA VALIDADA CONTRA FICHAS TÉCNICAS; NO implementada en el simulador actual.**
-La topología gráfica se corregirá **al final**, por petición del usuario. El perfil desplegado actualmente en `index.html` sigue siendo un router-on-a-stick + PA virtual-wire + dos switches independientes con Po1 inter-switch, cuya redundancia cubre **solo caída de un cable entre switches**.
+**Estado actualizado: IMPLEMENTADO EN EL SIMULADOR COMO PERFIL PRINCIPAL, NO DESPLEGADO EN HARDWARE.**
+El simulador web de la vista DESPUÉS usa Cisco C8300 Po10, Palo Alto Layer3 ae1/ae2 y dos C9200L formando StackWise-80 con Port-channel20 distribuido; la topología SVG final ya representa los dos cables traseros y los enlaces redundantes físicos. La vista ANTES conserva la arquitectura histórica para comparación. La aprobación de CI no prueba negociación LACP ni IPSec real.
 
 ## Arquitectura candidata más sólida para la maqueta
 WAN (4 ISP) → Cisco C8300 → Palo Alto PA-1410 **Layer 3** → stack lógico de dos C9200L con StackWise-80 → clientes.
