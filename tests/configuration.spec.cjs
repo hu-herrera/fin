@@ -356,3 +356,28 @@ test('Tráfico entre sucursales respeta caída del hub CM tanto en grafo como en
  });
  expect(report).toEqual([]);
 });
+
+
+test('Troncales de AP respetan VLAN 10/40 y native 999 en todas las sedes',async({page})=>{
+ await setOperational(page);
+ const failures=await page.evaluate(()=>{
+  const failures=[];
+  for(const site of SEDES)for(const swN of [1,2]){
+   const cfg=genSwitchRunningConfig(site,swN);
+   const trunk=genSwitchDetail(site,'sw'+swN,'show interfaces trunk');
+   for(const port of [33,34]){
+    const start=cfg.indexOf('interface GigabitEthernet1/0/'+port);
+    const end=cfg.indexOf('interface ',start+1);
+    const section=cfg.slice(start,end<0?undefined:end);
+    if(!section.includes('switchport mode trunk') ||
+       !section.includes('switchport trunk native vlan 999') ||
+       !section.includes('switchport trunk allowed vlan 10,40'))
+       failures.push(site.id+'/SW'+swN+'/Gi'+port+': running-config AP trunk incorrecta');
+    if(!trunk.includes('Gi1/0/'+port+' 10,40'))
+       failures.push(site.id+'/SW'+swN+'/Gi'+port+': salida show trunk inventa VLAN');
+   }
+  }
+  return failures;
+ });
+ expect(failures).toEqual([]);
+});
