@@ -3200,6 +3200,8 @@ function renderRedundantLabTab(s){
     kv('Po10 Router ↔ PA',textState(health.transitUp,health.transitMembers.join(' + '),'SIN ENLACE'))+
     kv('StackWise',textState(health.stackFunctional,health.activeStackMembers.join(' + '),'PARTICIÓN / SIN STACK'))+
     kv('MEC Po20 a Palo Alto',textState(health.paStackMembers.length>0&&health.stackFunctional,health.paStackMembers.join(' + '),'SIN ENLACE'))+
+    kv('Conmutación VLAN10 SW1 ↔ SW2',textState(health.interMemberL2,'CONECTADOS','AISLADOS'))+
+    kv('Acceso Router desde SW2',textState(health.switchRouterPath[2]))+
     kv('WAN seleccionada',health.activeWan?escapeCLI(wanNames[health.activeWan]):textState(false,'','SIN INTERNET'))+
     kv('SW1 · '+pc1+' PCs · L2 local',textState(health.switchLocalL2[1]))+
     kv('SW1 · gateway Palo Alto',textState(health.switchGateway[1]))+
