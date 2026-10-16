@@ -38,6 +38,8 @@ node tests/wan-sla-candidate.test.cjs
 ```
 
 Una vez verificados los campos, la salida de Cisco incluye:
+- La configuración estática `interface GigabitEthernet0/0/x`, `ip address` con máscara derivada del prefijo, `ip nat outside` y `no shutdown`. Esto solo cubre **contratos de IPv4 estática con gateway del mismo segmento**; no sustituye el aprovisionamiento de módem/terminal ni la configuración óptica o radio.
+
 - Cuatro rutas default con AD 1/10/20/30 y seguimiento mediante `track 1..4`.
 - Ocho `ip sla` ICMP (dos destinos remotos por ISP).
 - Una ruta host `/32` fija por monitor, hacia el gateway del ISP correspondiente, impidiendo que un backup haga parecer sana la conexión primaria.
@@ -52,3 +54,8 @@ Una ruta `/32` dirigida a un objetivo de prueba debe ser única por ISP; repetir
 - [Cisco IP SLA ICMP echo IOS-XE](https://www.cisco.com/c/en/us/td/docs/routers/ios/config/17-x/ip-addressing/b-ip-addressing/m_sla_icmp_echo.html)
 - [Cisco Enhanced Object Tracking, boolean OR](https://www.cisco.com/c/en/us/td/docs/routers/ios-xe/ip-addressing/ip-addressing/m_iap-eot-xe.html)
 - [Cisco IOS patterns / skill, revisión segura](https://github.com/CiscoDevNet/skills/blob/main/skills/ios/cisco-ios-patterns/SKILL.md)
+
+## Verificaciones de direcciones de host
+- Las IP del router y gateway deben pertenecer a la misma red WAN, pero no pueden ser iguales, direcciones de red ni direcciones de broadcast.
+- Se rechazan también IPv4 mal formadas, prefijos no soportados y objetivos ICMP públicos duplicados o reservados para documentación.
+- La salida muestra direcciones **introducidas por el operador/usuario**; este proyecto no puede certificar que el proveedor las haya asignado realmente.
