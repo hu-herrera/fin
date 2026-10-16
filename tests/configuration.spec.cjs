@@ -329,3 +329,30 @@ test('Cisco IKEv2 AES-GCM y SLA responden correctamente al shutdown WAN', async 
  });
  expect(failures).toEqual([]);
 });
+
+
+test('Tráfico entre sucursales respeta caída del hub CM tanto en grafo como en RIB', async ({page})=>{
+ await setOperational(page);
+ const report=await page.evaluate(()=>{
+  const failures=[];
+  const source=SEDES.find(s=>s.id==='s01'), target=SEDES.find(s=>s.id==='s02');
+  const srcPc=getPCs(source)[0], dstPc=getPCs(target)[0];
+  const cmLinks={...ST.links.cm};
+  for(const s of [source,target]){
+    ST.links[s.id]={starlink:'caido',kuiper:'caido',g5:'activo',g4:'standby'};
+    recompute(s.id);
+  }
+  const before=buildPacketRoute(source,target,true,srcPc,dstPc);
+  if(!before.length) failures.push('No existe ruta intersede inicial vía 5G');
+  ST.links.cm={starlink:'caido',kuiper:'caido',g5:'caido',g4:'caido'};recompute('cm');
+  const after=buildPacketRoute(source,target,true,srcPc,dstPc);
+  if(after.length)failures.push('El simulador permite tráfico a través del hub desconectado');
+  if(genRouterRoutes(source).includes('O 10.70.2.0/25'))
+    failures.push('La RIB anuncia rutas OSPF tras caída del concentrador');
+  ST.links.cm=cmLinks;recompute('cm');
+  if(!buildPacketRoute(source,target,true,srcPc,dstPc).length)
+    failures.push('El tráfico no se recupera al restaurar el hub');
+  return failures;
+ });
+ expect(report).toEqual([]);
+});
