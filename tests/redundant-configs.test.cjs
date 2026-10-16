@@ -46,7 +46,7 @@ for(let n=0;n<=22;n++){
     const member=k<half?1:2;
     const port=member===1?k+3:k-half+3;
     const code=n===0?'CM':'S'+String(n).padStart(2,'0');
-    const portBlock='interface GigabitEthernet'+member+'/0/'+port+'\\n description PC-'+code+'-'+String(k+1).padStart(3,'0');
+    const portBlock='interface GigabitEthernet'+member+'/0/'+port+'\n description PC-'+code+'-'+String(k+1).padStart(3,'0');
     check(sw.includes(portBlock),label+' PC '+(k+1)+' mapped to wrong stack member');
   }
   for(const member of [1,2])for(const port of [33,34]){
