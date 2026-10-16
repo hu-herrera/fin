@@ -3751,6 +3751,7 @@ function openDevice(type, sedeId){
     sw2:   [{k:'ov',l:'Overview'},{k:'cli',l:'CLI'},{k:'vlan',l:'VLANs'},{k:'ports',l:'Puertos'},{k:'macsec',l:'MACsec'}],
   };
   const tabs = tabConfigs[type]||[];
+  if(!esAntes && ['router','fw','sw1','sw2'].includes(type))tabs.push({k:'candidate',l:'🧪 Objetivo L3'});
   document.getElementById('dev-tabs').innerHTML = tabs.map((t,i)=>
     `<button class="dev-tab${i===0?' active':''}" onclick="devTab('${t.k}',this)">${t.l}</button>`
   ).join('');
@@ -3806,6 +3807,14 @@ function devTab(tab, btn){
     return;
   }
 
+  if(tab==='candidate' && ['router','fw','sw1','sw2'].includes(t)){
+    const model=window.RedundantLab;
+    if(!model){body.textContent='Motor de laboratorio no disponible';return;}
+    const candidate=model.siteCandidate(s.num,PC_COUNT[s.id]);
+    const config=t==='router'?candidate.cisco:t==='fw'?candidate.palo:candidate.stack;
+    body.innerHTML='<div style="border-left:3px solid var(--yellow);background:var(--panel2);padding:12px;margin-bottom:12px"><strong>Configuración candidata, NO instalada</strong><p>Referencia Cisco IOS-XE / PAN-OS para Layer3 y StackWise; aún requiere políticas, gestión OOB, ISP/VPN y verificación sobre equipos. Esta pestaña no cambia running-config.</p></div><pre style="font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere">'+escapeCLI(config)+'</pre>';
+    return;
+  }
   if(t==='router'){
     if(tab==='ov')    body.innerHTML=`<div class="ios">${genRouterOverview(s)}</div>`;
     if(tab==='cli')   body.innerHTML=genDeviceCLI(s,'router');
