@@ -8,6 +8,7 @@
 // node network/export-candidate.cjs s01 mgmt-services ./servicios-s01.json
 // node network/export-candidate.cjs s01 netops-services ./netops-s01.json
 // node network/export-candidate.cjs s01 pa-admin ./admin-s01.json
+// node network/export-candidate.cjs s01 pa-services ./pa-servicios-s01.json
 const fs=require('node:fs');
 const vm=require('node:vm');
 const {siteCandidate}=require('./redundant-configs.cjs');
@@ -19,6 +20,7 @@ const {assessWanIpsecReadiness}=require('./wan-ipsec-readiness.cjs');
 const {renderManagementServicesCandidate}=require('./management-services-candidate.cjs');
 const {renderNetopsCandidate}=require('./netops-services-candidate.cjs');
 const {renderAdminAccessCandidate}=require('./panos-admin-access.cjs');
+const {renderServiceRoutesCandidate}=require('./panos-service-routes.cjs');
 function pcInventory(){
   const html=fs.readFileSync(require('node:path').join(__dirname,'..','index.html'),'utf8');
   const match=html.match(/const PC_COUNT\s*=\s*(\{[\s\S]*?\});/);
@@ -30,11 +32,16 @@ function exportCandidate(site,device,wanSettings){
   if(!/^(cm|s(?:0[1-9]|1[0-9]|2[0-2]))$/.test(key)){
     throw new Error('Sede desconocida; usar cm o s01..s22');
   }
-  if(!['router','stack','palo','wan-sla','wan-readiness','oob','guest-dhcp','client-dhcp','mgmt-services','netops-services','pa-admin'].includes(device)){
-    throw new Error('Equipo desconocido; usar router, stack, palo, wan-sla, wan-readiness, mgmt-services, netops-services, pa-admin, guest-dhcp, client-dhcp u oob');
+  if(!['router','stack','palo','wan-sla','wan-readiness','oob','guest-dhcp','client-dhcp','mgmt-services','netops-services','pa-admin','pa-services'].includes(device)){
+    throw new Error('Equipo desconocido; usar router, stack, palo, wan-sla, wan-readiness, mgmt-services, netops-services, pa-admin, pa-services, guest-dhcp, client-dhcp u oob');
   }
   const num=key==='cm'?0:Number(key.slice(1)),counts=pcInventory();
   if(!Number.isInteger(counts[key]))throw new Error('Sin inventario de PCs para '+key);
+  if(device==='pa-services'){
+    return '# SERVICIOS ORIGINADOS EN PA, CANDIDATO SOLO DE LABORATORIO\n'+
+      '# Sede '+key.toUpperCase()+' — NO cambia servicio MGT global\n'+
+      renderServiceRoutesCandidate(num,wanSettings);
+  }
   if(device==='pa-admin'){
     return '# CONFIGURACION CANDIDATA DE ACCESO EN BANDA A PA, NO COMMIT\n'+
       '# Sede '+key.toUpperCase()+' — puerto dedicado del stack SIN nuevos switches\n'+
@@ -89,7 +96,7 @@ function exportCandidate(site,device,wanSettings){
 }
 if(require.main===module){
   try{
-    const needsConfig=['wan-sla','wan-readiness','guest-dhcp','client-dhcp','mgmt-services','netops-services','pa-admin'].includes(process.argv[3]);
+    const needsConfig=['wan-sla','wan-readiness','guest-dhcp','client-dhcp','mgmt-services','netops-services','pa-admin','pa-services'].includes(process.argv[3]);
     if(needsConfig&&!process.argv[4])throw new Error('Especifica un JSON de parámetros aprobados para '+process.argv[3]);
     const config=needsConfig?JSON.parse(fs.readFileSync(process.argv[4],'utf8')):undefined;
     process.stdout.write(exportCandidate(process.argv[2],process.argv[3],config)+'\n');
