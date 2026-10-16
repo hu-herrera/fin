@@ -101,11 +101,11 @@ test('Comparativa y Ping global se abren sin depender de otras ventanas ocultas'
  await expect(page.locator('#dashboard-ping-modal')).toBeHidden();
 });
 
-test('Un cambio de red cancela el resultado pendiente de ping',async({page})=>{
+test('Un cambio de red invalida el resultado de ping',async({page})=>{
  await openOriginalSite(page);await openPingTab(page);
  await page.evaluate(()=>{runPing('s01');toggleRedundantLab('s01','node','sw1');});
  await expect(page.locator('#ping-result')).toContainText('El estado de la red cambió');
- // Superar el plazo de la respuesta anterior comprueba que su callback no reaparezca.
+ // El resultado invalidado debe permanecer aunque pase el tiempo de la prueba anterior.
  await page.waitForTimeout(500);
  await expect(page.locator('#ping-result')).not.toContainText('RESPUESTA SIMULADA');
 });

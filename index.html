@@ -2607,7 +2607,7 @@ function replayMapPing(){
 function setPingDiagnosticRule(srcId,destId,source,target){
   PING_DIAGNOSTIC_RULE=srcId?{src:srcId,dst:destId,source,target}:null;
   clearPacketSimulation('La política ICMP cambió. Repite la prueba para aplicar la política actual.');
-  cancelPendingSitePing('La política ICMP cambió. Envía otro ping para aplicar la política actual.');
+  invalidateSitePing('La política ICMP cambió. Envía otro ping para aplicar la política actual.');
   addLog(srcId?'Política temporal LAB-ICMP-HOST-PAIR: '+source+' → '+target:'Excepción ICMP temporal eliminada','warn');
 }
 function toggleMapPingDiagnostic(allow){
@@ -3146,7 +3146,7 @@ function sc_reset(){
   _refresh();
 }
 function _refresh(){
-  cancelPendingSitePing('El estado de la red cambió. Envía otro ping para evaluar la ruta actual.');
+  invalidateSitePing('El estado de la red cambió. Envía otro ping para evaluar la ruta actual.');
   clearPacketSimulation('El estado de la red cambió. Repite el ping para evaluar la ruta actual.');
   renderMap(); renderAntenas(); updateMetrics();
   if(ST.selId) renderDetail(ST.selId);
@@ -3154,7 +3154,7 @@ function _refresh(){
     const source=document.getElementById('ping-source-host'),value=source.value;
     source.innerHTML=pingHostOptions(SEDES.find(s=>s.id===SM_ID));source.value=value;
     updatePingHosts(SM_ID,true);
-    cancelPendingSitePing('El estado de la red cambió. Envía otro ping para evaluar la ruta actual.');
+    invalidateSitePing('El estado de la red cambió. Envía otro ping para evaluar la ruta actual.');
   }
   if(SM_ID&&document.getElementById('sm-overlay').classList.contains('vis')){
     if(['topo','lab','kpis','tables'].includes(SM_TAB))
@@ -3270,13 +3270,11 @@ function openSedeModal(id){
   smTab('topo', document.querySelector('.sm-tab'));
 }
 function closeSedeModal(){
-  cancelPendingSitePing();
   document.getElementById('sm-overlay').classList.remove('vis');
   window.PacketWorkbench?.onSedeClosed();
   SM_ID = null;
 }
 function smTab(tab, btn){
-  cancelPendingSitePing();
   // Mantener una única experiencia: la pestaña Ping/Trace original.
   SM_TAB = tab;
   document.querySelectorAll('.sm-tab').forEach(b=>b.classList.remove('active'));
@@ -3942,7 +3940,6 @@ function pingHostOptions(s,exclude){
     (isSwitchPCPortAvailable(s.id,pc)&&isPCOnConfiguredVlan(s.id,pc)?'':' · sin acceso')+'</option>').join('');
 }
 function invalidatePingSelection(){
-  cancelPendingSitePing();
   const result=document.getElementById('ping-result');
   if(result)result.textContent='Selección actualizada. Envía otro ping para probar estos equipos.';
 }
@@ -4908,6 +4905,7 @@ function handleTermCmd(ev,sedeId,pcIdx){
   const addLine=(text,cls='term-result')=>{
     session.lines.push({text:String(text),cls});if(session.lines.length>250)session.lines.shift();
     const line=document.createElement('pre');line.className='term-line '+cls;line.style.cssText='margin:0;white-space:pre-wrap';line.textContent=text;out.append(line);
+    if(out.children.length>250)out.firstElementChild.remove();
     out.scrollTop=out.scrollHeight;
   };
   addLine(pc.id+'> '+cmd,'term-prompt');
@@ -6463,12 +6461,9 @@ ${new Date().toISOString()} info  dataplane  link state changed to up<br>${new D
 
 let PACKET_ANIMATION = { raf: 0, cleanup: 0 };
 let MAP_PING_LAST=null;
-let SITE_PING_TIMER=0;
 // Session-only, exact host pair; never exported as a deployed PAN-OS configuration.
 let PING_DIAGNOSTIC_RULE=null;
-function cancelPendingSitePing(message){
-  clearTimeout(SITE_PING_TIMER);
-  SITE_PING_TIMER=0;
+function invalidateSitePing(message){
   const result=document.getElementById('ping-result');
   if(message&&result)result.textContent=message;
 }
@@ -7020,7 +7015,6 @@ function stepMapPing(){
 }
 
 function runPing(srcId){
-  cancelPendingSitePing();
   const destSelect=document.getElementById('ping-dest');
   const div=document.getElementById('ping-result');
   const src=SEDES.find(x=>x.id===srcId);
@@ -7049,42 +7043,38 @@ function runPing(srcId){
   const routeOk=detailedRoute.length>=2;
   const totalLat=routeOk?estimatePingRtt(src,dst,detailedRoute):0;
   const routeLabel=routeOk?(local?'LAN local':LK_NAME[endpoint.type]||endpoint.type.toUpperCase()):'sin ruta';
-  div.innerHTML='<div class="ping-result">⏳ Simulando ICMP desde '+src.code+' hacia '+(local?'otro equipo de la misma sede':dst.code)+'…</div>';
   addLog('ICMP '+src.code+' → '+(local?'host local':dst.code)+' · '+(routeOk?'ruta '+routeLabel:
     policy.action!=='allow'?'bloqueado por firewall':'paquete descartado'),routeOk?'ok':'warn');
-  SITE_PING_TIMER=window.setTimeout(()=>{
-    SITE_PING_TIMER=0;
-    if(!div.isConnected||SM_ID!==srcId||SM_TAB!=='ping')return;
-    if(policy.action!=='allow'){
-      div.innerHTML='<div class="ping-result fail">⊘ BLOQUEADO por la política del firewall: '+policy.rule+'. El modelo no envía ICMP entre sedes con las reglas actuales.</div><p class="ping-note">Esto es una denegación de seguridad esperada, no un fallo de la animación.</p><button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap(\''+src.id+'\',\''+dst.id+'\')">🗺 Ver el bloqueo sobre el mapa</button>';
-      return;
-    }
-    if(!routeOk){
-      div.innerHTML='<div class="ping-result fail">✕ Tiempo agotado: no existe una ruta activa entre los PCs elegidos. Revisa sus puertos, VLAN, StackWise'+(local?'.':' y WAN.')+'</div>';
-      return;
-    }
-    const middle=route.slice(1,-1).map((hop,index)=>
-      '<tr><td>'+(index+2)+'</td><td>'+hop.label+'</td><td>—</td><td>Tramo lógico</td></tr>'
-    ).join('');
-    div.innerHTML=`
-      <div class="ping-route-summary">
-        <strong>ICMP · RESPUESTA SIMULADA</strong>
-        <span>${src.code} (${srcPc.ip}) → ${dst.code} (${destPc.ip})</span>
-      </div>
-      ${local&&window.ActiveProfile?.enabled()?renderLocalPingTopology(src,srcPc,destPc):''}
-      <table class="ping-table">
-        <thead><tr><th>Paso</th><th>Dispositivo / tramo</th><th>IP</th><th>Estado</th></tr></thead>
-        <tbody>
-          <tr><td>1</td><td>${srcPc.id}</td><td>${srcPc.ip}</td><td class="ping-ok">Origen</td></tr>
-          ${middle}
-          <tr><td>${route.length}</td><td>${destPc.id}</td><td>${destPc.ip}</td><td class="ping-ok">Respuesta</td></tr>
-        </tbody>
-      </table>
-      <div class="ping-result ok">✓ Respuesta ICMP simulada · ${route.length} pasos lógicos · RTT estimado ${totalLat} ms · ${routeLabel}</div>
-      ${local?'':'<button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap(\''+src.id+'\',\''+dst.id+'\')">🗺 Ver animación del ping en el mapa</button>'}
-      <p class="ping-note">Política: ${escapeCLI(policy.rule)}. Los tiempos son estimaciones del modelo; no son mediciones de una red física.</p>`;
-    addLog('ICMP reply simulado '+src.code+' → '+(local?'host local':dst.code)+' · RTT estimado '+totalLat+' ms','ok');
-  },350);
+  if(!div.isConnected||SM_ID!==srcId||SM_TAB!=='ping')return;
+  if(policy.action!=='allow'){
+    div.innerHTML='<div class="ping-result fail">⊘ BLOQUEADO por la política del firewall: '+policy.rule+'. El modelo no envía ICMP entre sedes con las reglas actuales.</div><p class="ping-note">Esto es una denegación de seguridad esperada, no un fallo de la animación.</p><button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap(\''+src.id+'\',\''+dst.id+'\')">🗺 Ver el bloqueo sobre el mapa</button>';
+    return;
+  }
+  if(!routeOk){
+    div.innerHTML='<div class="ping-result fail">✕ Tiempo agotado: no existe una ruta activa entre los PCs elegidos. Revisa sus puertos, VLAN, StackWise'+(local?'.':' y WAN.')+'</div>';
+    return;
+  }
+  const middle=route.slice(1,-1).map((hop,index)=>
+    '<tr><td>'+(index+2)+'</td><td>'+hop.label+'</td><td>—</td><td>Tramo lógico</td></tr>'
+  ).join('');
+  div.innerHTML=`
+    <div class="ping-route-summary">
+      <strong>ICMP · RESPUESTA SIMULADA</strong>
+      <span>${src.code} (${srcPc.ip}) → ${dst.code} (${destPc.ip})</span>
+    </div>
+    ${local&&window.ActiveProfile?.enabled()?renderLocalPingTopology(src,srcPc,destPc):''}
+    <table class="ping-table">
+      <thead><tr><th>Paso</th><th>Dispositivo / tramo</th><th>IP</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>${srcPc.id}</td><td>${srcPc.ip}</td><td class="ping-ok">Origen</td></tr>
+        ${middle}
+        <tr><td>${route.length}</td><td>${destPc.id}</td><td>${destPc.ip}</td><td class="ping-ok">Respuesta</td></tr>
+      </tbody>
+    </table>
+    <div class="ping-result ok">✓ Respuesta ICMP simulada · ${route.length} pasos lógicos · RTT estimado ${totalLat} ms · ${routeLabel}</div>
+    ${local?'':'<button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap(\''+src.id+'\',\''+dst.id+'\')">🗺 Ver animación del ping en el mapa</button>'}
+    <p class="ping-note">Política: ${escapeCLI(policy.rule)}. Los tiempos son estimaciones del modelo; no son mediciones de una red física.</p>`;
+  addLog('ICMP reply simulado '+src.code+' → '+(local?'host local':dst.code)+' · RTT estimado '+totalLat+' ms','ok');
 }
 function showPingOnMap(srcId,destId){
   const source=document.getElementById('ping-source-host')?.value,target=document.getElementById('ping-target-host')?.value;
