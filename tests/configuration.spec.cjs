@@ -37,12 +37,14 @@ test('LLD por sede: máscaras, IP únicas, configuración Cisco y firewall consi
      check(!r.includes('md5 7 104D000A0618'),'OSPF MD5 heredado');
      check(sw1.includes('10.70.'+n+'.162 255.255.255.240'),'IP gestión SW1');
      check(sw2.includes('10.70.'+n+'.163 255.255.255.240'),'IP gestión SW2');
-     check(sw1.includes('interface GigabitEthernet1/0/46'),'puerto de gestión del PA-1410');
+     check(sw1.includes('interface GigabitEthernet1/0/44')&&sw1.includes('description Management PA-1410'),'puerto de gestión del PA-1410');
      check(sw1.includes('ip default-gateway 10.70.'+n+'.161'),'gateway gestión de switch');
      check(sw1.includes('no ip routing'),'switch de acceso L2');
      check(sw2.includes('RESERVADO-SIN-ENLACE-ROUTER'),'SW2 sin segundo uplink ficticio');
-     check(!sw1.includes('interface Port-channel1'),'Port channel SW1 ficticio');
-     check(!sw2.includes('channel-group 1'),'Port channel SW2 ficticio');
+     check(sw1.includes('interface Port-channel1')&&
+       (sw1.match(/channel-group 1 mode active/g)||[]).length===2,'Port-channel1 SW1 incompleto');
+     check(sw2.includes('interface Port-channel1')&&
+       (sw2.match(/channel-group 1 mode active/g)||[]).length===2,'Port-channel1 SW2 incompleto');
      check(fw.includes('10.70.'+n+'.164'),'PA en VLAN gestión 30');
      check(!fw.includes('10.70.'+n+'.178'),'PA en subred invitados por error');
      check(!fw.includes('set network ike gateway'),'IPsec duplicado en PA');
@@ -67,19 +69,24 @@ test('LLD por sede: máscaras, IP únicas, configuración Cisco y firewall consi
  expect(report.failures).toEqual([]);
 });
 
-test('Conmutación LAN física: router vía SW1, SW2 por único troncal Gi45',async({page})=>{
+test('Conmutación LAN: Po1 sobre dos cables, uplink SW1 y recuperación',async({page})=>{
  await setOperational(page);
  const report=await page.evaluate(()=>{
-   const id='s01',a=DEVICE_CLI_SESSIONS.get('s01:sw1'),b=DEVICE_CLI_SESSIONS.get('s01:sw2');
+   const id='s01',a=deviceCliSession(id,'sw1'),b=deviceCliSession(id,'sw2');
    const issues=[],check=(ok,msg)=>{if(!ok)issues.push(msg)};
    a.interfaces={};b.interfaces={};
    check(isSwitchPathAvailable(id,1)&&isSwitchPathAvailable(id,2),'estado inicial');
    check(isSiteLanAvailable(id),'LAN inicial');
    b.interfaces['Gi1/0/45']={shutdown:true};
    check(isSwitchPathAvailable(id,1),'SW1 debe continuar conectado');
-   check(!isSwitchPathAvailable(id,2),'SW2 debe desconectarse sin Gi45');
+   check(isSwitchPathAvailable(id,2),'SW2 debe sobrevivir gracias a Gi46');
+   check(genSwitchDetail(SEDES.find(s=>s.id===id),'sw2','show etherchannel summary').includes('Gi1/0/45(D)'),'Miembro Gi45 debe indicar caída');
+   b.interfaces['Gi1/0/46']={shutdown:true};
+   check(!isSwitchPathAvailable(id,2),'SW2 debe desconectarse cuando cae el segundo miembro');
+   check(isSwitchPathAvailable(id,1),'SW1 sigue conectado al firewall');
    b.interfaces['Gi1/0/45']={shutdown:false};
-   check(isSwitchPathAvailable(id,2),'SW2 debe recuperarse');
+   check(isSwitchPathAvailable(id,2),'SW2 debe recuperar el servicio por Gi45');
+   b.interfaces['Gi1/0/46']={shutdown:false};
    a.interfaces['Gi1/0/1']={shutdown:true};
    check(!isSwitchPathAvailable(id,1)&&!isSwitchPathAvailable(id,2),'sin uplink SW1, ambos aislados');
    check(!isSiteLanAvailable(id),'LAN debe indicarse caída');
@@ -139,12 +146,12 @@ test('Consola operativa router, switch y NGFW coincide con topología y estados'
  ]);
  await testCmd('sw1',[
    ['show ip interface brief','10.70.1.162'],
-   ['show interfaces trunk','Gi1/0/45'],
+   ['show interfaces trunk','Po1 on 802.1q trunking 999'],
    ['show power inline','alimentación externa']
  ]);
  await testCmd('sw2',[
    ['show ip interface brief','10.70.1.163'],
-   ['show etherchannel summary','No EtherChannels']
+   ['show etherchannel summary','Po1(SU)']
  ]);
  await testCmd('fw',[
    ['show system info','10.70.1.164'],
