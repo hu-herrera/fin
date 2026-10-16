@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {WAN_KEYS,DISTANCE,validateWanSettings,renderWanSlaCandidate}=require('../network/wan-sla-candidate.cjs');
+const {WAN_KEYS,DISTANCE,prefixMask,validateWanSettings,renderWanSlaCandidate}=require('../network/wan-sla-candidate.cjs');
 const {PORTS}=require('../network/redundant-model.cjs');
 const {exportCandidate}=require('../network/export-candidate.cjs');
 let checks=0;
@@ -22,6 +22,9 @@ function labSite(n){
   }
   return result;
 }
+assert.equal(prefixMask(30),'255.255.255.252');
+assert.equal(prefixMask(24),'255.255.255.0');
+assert.throws(()=>prefixMask(32),/Prefijo/);
 assert.throws(()=>renderWanSlaCandidate(),/NO GENERADO/);
 assert.throws(()=>exportCandidate('s01','wan-sla'),/NO GENERADO/);
 assert.throws(()=>renderWanSlaCandidate({}),/NO GENERADO/);
@@ -36,6 +39,9 @@ for(let n=0;n<23;n++){
   verify(!text.includes('TEST-NET'), 'incorrect sample IP');
   for(const [i,type] of WAN_KEYS.entries()){
     const w=settings[type];
+    verify(text.includes('interface '+PORTS.wan[type]+'\n description WAN '+type.toUpperCase()+' - direccionamiento contractual VERIFICADO SOLO POR USUARIO\n ip address '+w.address+' '+prefixMask(w.prefix)),
+      type+' interface IP/mask missing or incorrect');
+    verify(text.includes('ip nat outside'),type+' missing NAT outside');
     verify(text.includes('ip route 0.0.0.0 0.0.0.0 '+w.gateway+' '+DISTANCE[type]+' track '+(i+1)),type+' failover distance incorrect');
     verify(text.includes('track '+(i+1)+' list boolean or'),type+' track must require one of two probes');
     verify(text.includes(' object '+(101+i*10))&&text.includes(' object '+(102+i*10)),type+' track missing members');
