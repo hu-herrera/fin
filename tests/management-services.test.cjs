@@ -30,6 +30,8 @@ for(let n=0;n<=22;n++){
  ok(a.routerSource===ROUTER_NTP_SOURCES[n],key+': invalid loopback source');
  ok(a.stackSource==='10.70.'+n+'.162',key+': invalid stack SVI source');
  const text=renderManagementServicesCandidate(n,valid(n));
+ ok(text.includes('ip domain lookup source-interface Loopback0'),key+': C8300 DNS source unspecified');
+ ok(text.includes('ip domain lookup source-interface Vlan30'),key+': StackWise DNS source unspecified');
  const exported=exportCandidate(key,'mgmt-services',valid(n));
  ok(exported.includes('SOLO LABORATORIO')&&exported.includes(text),
    key+': CLI export omits NTP review warnings');
