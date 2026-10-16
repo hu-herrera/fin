@@ -63,6 +63,10 @@ const changes=[
   [s=>{s.starlink.monitors.pop()},'dos destinos'],
   [s=>{s.starlink.gateway='192.168.1.1'},'gateway fuera'],
   [s=>{s.starlink.address='100.64.1.2'},'gateway fuera'],
+  [s=>{s.starlink.gateway='100.64.0.0'},'gateway es red'],
+  [s=>{s.starlink.gateway='100.64.0.3'},'gateway es broadcast'],
+  [s=>{s.starlink.address='100.64.0.0'},'dirección WAN es red'],
+  [s=>{s.starlink.address='100.64.0.3'},'dirección WAN es broadcast'],
   [s=>{s.starlink.monitors[1]='555.1.1.1'},'Octeto'],
   [s=>{s.starlink.prefix=0},'prefijo'],
 ];
