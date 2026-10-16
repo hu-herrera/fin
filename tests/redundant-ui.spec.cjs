@@ -216,3 +216,45 @@ test('Gestión OOB independiente: MGT y Mgmt-vrf resisten fallo de datos, no fal
   await expect(oob).toContainText('10.73.2.0/28');
   expect(browserErrors).toEqual([]);
 });
+
+test('Intersede: permisos DNS NTP exclusivos y tráfico privado restante bloqueado',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(url);
+  await page.evaluate(()=>openSedeModal('s03'));
+  await page.locator('#sm-tabs button').filter({hasText:'StackWise / LACP'}).click();
+  let policy=page.locator('#lab-pan-policy');
+  await policy.locator('select[aria-label="from"]').selectOption('USERS');
+  await policy.locator('select[aria-label="to"]').selectOption('TRANSIT');
+  await policy.locator('select[aria-label="application"]').selectOption('dns');
+  await policy.locator('select[aria-label="destinationIp"]').selectOption('10.70.0.110');
+  await expect(policy.locator('#lab-policy-result')).toContainText('ALLOW · BRANCH-DNS-TO-CM');
+  await policy.locator('select[aria-label="application"]').selectOption('ssl');
+  await expect(policy.locator('#lab-policy-result')).toContainText('DENY · DENY-CORP-RFC1918-TRANSIT');
+  await policy.locator('select[aria-label="from"]').selectOption('MGMT-DATA');
+  await policy.locator('select[aria-label="application"]').selectOption('ntp');
+  await policy.locator('select[aria-label="destinationIp"]').selectOption('10.70.0.116');
+  await expect(policy.locator('#lab-policy-result')).toContainText('ALLOW · BRANCH-NTP-TO-CM');
+  await policy.locator('select[aria-label="destinationIp"]').selectOption('10.70.0.20');
+  await expect(policy.locator('#lab-policy-result')).toContainText('DENY · DENY-CORP-RFC1918-TRANSIT');
+  await page.evaluate(()=>openSedeModal('cm'));
+  await page.locator('#sm-tabs button').filter({hasText:'StackWise / LACP'}).click();
+  policy=page.locator('#lab-pan-policy');
+  await policy.locator('select[aria-label="from"]').selectOption('TRANSIT');
+  await policy.locator('select[aria-label="to"]').selectOption('USERS');
+  await policy.locator('select[aria-label="application"]').selectOption('dns');
+  await policy.locator('select[aria-label="destinationIp"]').selectOption('10.70.0.110');
+  await expect(policy.locator('#lab-policy-result')).toContainText('ALLOW · CM-IN-DNS-FROM-BRANCHES');
+  await policy.locator('select[aria-label="application"]').selectOption('ssh');
+  await expect(policy.locator('#lab-policy-result')).toContainText('DENY · interzone-default');
+  const model=await page.evaluate(()=>{
+    const r=window.RedundantLab;
+    return {
+      ntp:r.evaluateSitePanPolicy(0,'TRANSIT','USERS','ntp','10.70.0.116','10.70.1.162'),
+      guest:r.evaluateSitePanPolicy(0,'TRANSIT','USERS','dns','10.70.0.110','10.70.1.180')
+    };
+  });
+  expect(model.ntp.rule).toBe('CM-IN-NTP-FROM-BRANCHES');
+  expect(model.ntp.action).toBe('allow');
+  expect(model.guest.action).toBe('deny');
+  expect(errors).toEqual([]);
+});
