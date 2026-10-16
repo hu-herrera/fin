@@ -4,15 +4,15 @@
 **Clasificación:** modelo didáctico de topología y failover; **no es una configuración homologada para un despliegue real**.
 
 ## 1. Estado de revisión
-La revisión de funciones JavaScript se realizó contra la [skill Cisco IOS Patterns](https://github.com/CiscoDevNet/skills/blob/main/skills/ios/cisco-ios-patterns/SKILL.md) de CiscoDevNet. Su procedimiento requiere comprobar estado inicial, jerarquía de configuración, máscaras wildcard, dirección de ACL, rutas y verificación tras cambios.
+La revisión de funciones JavaScript se realizó contra la [skill comunitaria Cisco IOS Patterns](https://github.com/CiscoDevNet/skills/blob/main/skills/ios/cisco-ios-patterns/SKILL.md) de CiscoDevNet. Su procedimiento requiere comprobar estado inicial, jerarquía de configuración, máscaras wildcard, dirección de ACL, rutas y verificación tras cambios.
 
 Se ejecutó una auditoría local de la lógica JavaScript en un entorno aislado (no un router real): **23 sedes, 650 PC simulados y 650 IP únicas**, sin errores encontrados en las comprobaciones realizadas de máscaras LAN, gateways, salidas de consola, datos de gestión y camino de switches. Esta validación lógica **no reemplaza Playwright, pruebas físicas, PAN-OS ni un emulador de IOS-XE**.
 
 Pruebas del repositorio:
 - `tests/wan.test.cjs`: 8 pruebas unitarias WAN.
-- `tests/browser.spec.cjs`: 11 pruebas de navegador.
-- `tests/configuration.spec.cjs`: 5 pruebas nuevas de auditoría técnica.
-- `.github/workflows/simulator-tests.yml`: ejecuta las 3 suites. Las pruebas nuevas **requieren confirmación mediante GitHub Actions** después de estos cambios.
+- `tests/browser.spec.cjs`: 12 pruebas de navegador.
+- `tests/configuration.spec.cjs`: 10 pruebas de auditoría técnica de red Cisco/PAN-OS.
+- `.github/workflows/simulator-tests.yml`: ejecuta las 3 suites. **Resultado confirmado:** 22/22 pruebas de navegador y 8/8 unitarias WAN aprobadas en GitHub Actions (commit `862aeba9`, [ejecución](https://github.com/hu-herrera/fin/actions/runs/38830771341)). Las pruebas validan el simulador, no hardware Cisco/PAN-OS.
 
 ## 2. Direccionamiento aprobado para el simulador
 
@@ -45,13 +45,14 @@ GTD 4G ---------- Te0/0/4      (gateway externo, SFP+ / adaptador pendiente)
                  PA-1410 ethernet1/2
                          |
                  SW1 Gi1/0/1
-                 SW1 Gi1/0/45 ---- SW2 Gi1/0/45
-                 SW1 Gi1/0/46 ---- Puerto management del PA (VLAN30)
+                 SW1 Gi1/0/45 ==== SW2 Gi1/0/45
+                 SW1 Gi1/0/46 ==== SW2 Gi1/0/46  (Po1 LACP, 2 miembros)
+                 SW1 Gi1/0/44 ---- Puerto management del PA (VLAN30)
 ```
 
 La conexión virtual-wire permite inspección transparente de VLAN sin crear gateways L3 adicionales en el Palo Alto. El software debe configurar zonas/subinterfaces y políticas adecuadas: véase [Palo Alto — Virtual Wire](https://docs.paloaltonetworks.com/ngfw/networking/configure-interfaces/virtual-wire-interfaces/layer-2-and-layer-3-packets-over-a-virtual-wire) y [Virtual Wire Subinterfaces](https://docs.paloaltonetworks.com/ngfw/networking/configure-interfaces/virtual-wire-interfaces/virtual-wire-subinterfaces).
 
-El segundo switch **no tiene uplink directo al router**; depende del primero. Esto **no constituye redundancia completa de la capa LAN**. El Palo Alto de sucursal y SW1 son puntos únicos de falla. No anunciar alta disponibilidad total de sucursales.
+En el modelo implementado, el segundo switch **no tiene uplink directo al firewall/router**; depende de SW1, aunque Po1 soporta la caída de cualquiera de sus dos cables. Esto **no constituye redundancia completa de la capa LAN**. El Palo Alto de sucursal y SW1 son puntos únicos de falla. No anunciar alta disponibilidad total de sucursales.
 
 ## 4. Routing y seguridad del modelo
 
@@ -79,3 +80,12 @@ Se puede afirmar: **«El simulador modela un diseño LAN/WAN con 23 sedes, 650 P
 No se debe afirmar: **«Las 23 sedes están instaladas», «el cifrado se verificó en Cisco/Palo Alto», «hay disponibilidad garantizada», «Amazon Leo presta servicio en Chile» o «la HA central se validó en hardware».**
 
 Esta distinción permite defender el proyecto sin presentar como medidos resultados que el prototipo no produce.
+
+## 7. Actualización de ingeniería (2026-10-16)
+
+- Suite de integración actual: **22/22 PASS**, suite WAN **8/8 PASS**, workflow LAN/LACP aprobado. [Evidencia de CI](https://github.com/hu-herrera/fin/actions/runs/38830771341).
+- RIB: muestra redes WAN físicas conectadas y distancias administrativas 1/10/20/30. Si la casa matriz pierde todos los enlaces, se retiran las rutas OSPF de sucursales, manteniendo la ruta local a Internet de cada sucursal.
+- Cisco IKEv2: propuesta AES-GCM con `prf sha256` en lugar de un algoritmo de integridad separado. Diagnóstico IP SLA considera `shutdown` de la interfaz WAN.
+- STP: SW1 raíz, Po1 en rol designado; SW2 Po1 como puerto raíz. Las interfaces reservadas apagadas no se muestran conectadas.
+- **Diseño recomendado para tolerancia a fallo de switch completo, todavía NO migrado**: C8300 de 4×1G WAN + 2×10G a PA Layer3; PA con 4×1G distribuidos entre un stack C9200L StackWise-80 de dos miembros. Consultar [plan de puertos candidato](docs/plan-puertos-redundancia-propuesto.md). StackWise utiliza dos cables traseros dedicados, **no** los mismos Gi45/Gi46 usados en Po1 del diseño provisional.
+- Queda sin resolver la nueva subred de gestión OOB del PA si migra el gateway de VLAN30 desde el Cisco al PA. Un segundo PA para HA de equipo completo y las cotizaciones necesarias siguen pendientes.
