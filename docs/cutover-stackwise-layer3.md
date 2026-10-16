@@ -80,3 +80,10 @@ npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs --browse
 6. Ejecutar `node network/build-browser-lab.cjs --check` cuando cambie el motor Node; regenerar con `node network/build-browser-lab.cjs` y someterlo a CI antes de publicarlo.
 
 [Suite de navegador y motor candidato aprobados](https://github.com/hu-herrera/fin/actions/runs/38842086249): 28/28 Playwright + 8/8 WAN + 162 escenarios de falla + 2.237 comprobaciones de candidatos. La capa de laboratorio fue probada desde el navegador, **sin convertir la topología actual en arquitectura Layer3 activa**.
+
+## Requisitos WAN, NAT y servicios centrales antes del corte
+- Confirmar para cada uno de los cuatro proveedores la IP WAN real, next-hop y dos destinos públicos ICMP permitidos por conexión. Referencia: [datos para generar IP SLA](wan-sla-datos-operadores.md).
+- Cisco C8300: `routerNatCandidate` genera ACL y PAT asociados con `match interface`; `renderWanSlaCandidate` devuelve IP SLA + tracking + rutas host únicamente tras recibir ocho destinos sin duplicaciones. Validar NAT/CEF/VPN sobre la WAN elegida en laboratorio.
+- Verificar y reservar DNS `10.70.0.110` y `.111`, TACACS `.112/.113`, NTP `.116/.117`, syslog `.100` y monitoreo `.101`. No se afirma que esas máquinas estén instaladas: deberán cotizarse y aprovisionarse, y lo ideal será migrar infraestructura a su VLAN segura si el alcance lo permite.
+- Servicios de casa matriz deben contar con rutas de retorno, reglas PAN-OS interzona restrictivas, DNS/NTP autorizados, acceso OOB independiente y procedimientos de revocación de credenciales.
+- El despliegue solo se aprueba con pruebas **reales** de `show track`, `show ip nat translations`, `show ip ospf neighbor` y políticas/commit PAN-OS; la web es evidencia de coherencia del modelo, no del hardware.
