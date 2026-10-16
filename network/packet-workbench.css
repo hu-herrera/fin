@@ -85,3 +85,21 @@
  .stage-speaker-notes{max-height:125px;padding:10px;font-size:11px}
  .stage-actions .packetlab-btn{font-size:11px;padding:8px}
 }
+
+/* The packet tool is now inside "Ver topología interna completa".
+ * No second simulator window or competing dashboard controls. */
+#sm-packet-host{width:100%;min-width:0;padding:8px 3px 18px}
+#sm-packet-host .packetlab-dialog{width:100%;max-height:none;overflow:visible;
+ border:1px solid #385775;box-shadow:none;border-radius:12px;
+ padding:clamp(14px,2vw,24px);margin:0}
+#sm-packet-host .packetlab-controls{grid-template-columns:repeat(3,minmax(0,1fr))}
+#sm-packet-host #pl-site:disabled{opacity:.72;cursor:not-allowed}
+#sm-packet-host .packetlab-heading h2{font-size:clamp(20px,2.5vw,29px)}
+#sm-packet-host .packetlab-result{margin-top:3px}
+@media(max-width:780px){
+ #sm-packet-host .packetlab-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #sm-packet-host .packetlab-trace{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:450px){
+ #sm-packet-host .packetlab-controls{grid-template-columns:1fr}
+}
