@@ -23,6 +23,16 @@ La página integra tres niveles de comportamiento:
 
 No es necesario PowerPoint. El [guion de seis escenas](presentacion-avances-16-octubre-2026.md) incluye los cinco puntos exigidos por el profesor, tiempos, secuencia de clics y preguntas probables. El guion se puede revisar después de recibir retroalimentación.
 
+## Ping entre sedes desde el mapa principal
+
+No hace falta abrir la topología. Usa **Seleccionar origen → destino** y pulsa las dos sedes sobre el mapa, o **Ping / Trace entre sedes** para elegir también los PCs exactos. Al enviar desde el formulario se cierra esa ventana y se muestra el mapa.
+
+La tarjeta identifica los PCs, las IPs y la política. Si ICMP está denegado, indica la regla y resalta el tramo hasta el firewall de origen; no muestra una llegada al destino. **Permitir solo este par ICMP y repetir** aplica la misma excepción temporal del ping interno. **Quitar excepción ICMP y repetir** restaura el bloqueo.
+
+En una ruta permitida, el punto amarillo avanza con la solicitud y el azul vuelve con la respuesta. **Pausar**, **Continuar**, **Siguiente paso** y **Repetir** permiten explicar cada tramo, incluyendo el hub de Casa Matriz y la WAN activa. **Ver recorrido paso a paso** identifica dispositivos y tramos; los elementos internos del operador son ilustrativos, no saltos TTL medidos. Con movimiento reducido se muestra directamente el resultado y el recorrido estático.
+
+El resultado permanece visible hasta **Ocultar** o una nueva prueba. Un cambio de red lo marca como **Interrumpido**; hay que repetir para evaluar el estado actual. La respuesta solo se registra al finalizar, y no se conserva un callback de éxito después de una caída.
+
 ## Ensayos de demostración recomendados
 
 | Ejercicio | Entrada | Resultado del modelo |

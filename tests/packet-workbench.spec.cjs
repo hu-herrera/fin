@@ -187,3 +187,109 @@ test('El mapa conserva los hosts elegidos y la excepción no persiste al recarga
  await page.reload();
  expect(await page.evaluate(()=>PING_DIAGNOSTIC_RULE)).toBeNull();
 });
+
+test('El ping exterior selecciona sedes, explica el firewall y conserva el resultado',async({page})=>{
+ await page.goto(url);
+ await page.getByRole('button',{name:'Seleccionar origen → destino'}).click();
+ await page.evaluate(()=>{selectPingSede('s01');selectPingSede('s02');});
+ await expect(page.locator('#sm-overlay')).toBeHidden();
+ await expect(page.locator('#ping-trace-state')).toHaveText('Descartado');
+ await expect(page.locator('#ping-trace-policy')).toContainText('DENY-CORP-RFC1918-TRANSIT');
+ await expect(page.locator('#ping-trace-steps li').last()).toContainText('FW-S01');
+ expect(await page.evaluate(()=>ST.selId)).toBe('s02');
+ await page.getByRole('button',{name:'Permitir solo este par ICMP y repetir',exact:true}).click();
+ expect(await page.evaluate(()=>ST.selId)).toBe('s02');
+ await page.getByRole('button',{name:'Quitar excepción ICMP y repetir',exact:true}).click();
+ expect(await page.evaluate(()=>ST.selId)).toBe('s02');
+ await expect(page.locator('#ping-trace-hop')).toContainText('No se transmite por la WAN');
+ await page.waitForTimeout(2000);
+ await expect(page.locator('#ping-trace-card')).toBeVisible();
+});
+
+test('El mapa permite el par elegido y avanza solicitud y respuesta paso a paso sin abrir topología',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(url);await page.evaluate(()=>runMapPing('s01','s02'));
+ await page.getByRole('button',{name:'Permitir solo este par ICMP y repetir',exact:true}).click();
+ await expect(page.locator('#ping-trace-state')).toHaveText('En tránsito');
+ await page.getByRole('button',{name:'Pausar',exact:true}).click();
+ await expect(page.locator('#ping-trace-state')).toHaveText('Pausado');
+ const route=await page.evaluate(()=>MAP_PING_LAST.route.map(h=>h.id));
+ expect(route).toContain('core');expect(route[0]).toBe('site:s01:pc:1');expect(route.at(-1)).toBe('site:s02:pc:1');
+ const selected=await page.evaluate(()=>ST.selId);
+ const initial=await page.locator('#ping-trace-hop').textContent();
+ await page.waitForTimeout(750);
+ await expect(page.locator('#ping-trace-hop')).toHaveText(initial);
+ let steps=0;
+ while(await page.locator('#map-ping-step').isEnabled()){
+  await page.locator('#map-ping-step').click();steps++;
+  if(steps>route.length*2)throw new Error('La animación no finaliza');
+ }
+ await expect(page.locator('#ping-trace-state')).toHaveText('Completado');
+ await expect(page.locator('#ping-trace-hop')).toContainText('Respuesta ICMP simulada recibida en PC-S01');
+ expect(await page.evaluate(()=>ST.selId)).toBe(selected);
+ await expect(page.locator('#sm-overlay')).toBeHidden();
+ await page.getByRole('button',{name:'Quitar excepción ICMP y repetir',exact:true}).click();
+ await expect(page.locator('#ping-trace-state')).toHaveText('Descartado');
+ expect(errors).toEqual([]);
+});
+
+test('El formulario exterior usa hosts concretos y deja visible el mapa al enviar',async({page})=>{
+ await page.goto(url);
+ await page.getByRole('button',{name:'Ping / Trace entre sedes',exact:false}).click();
+ await page.locator('#dashboard-ping-src').selectOption('s01');
+ await page.locator('#dashboard-ping-dest').selectOption('s02');
+ await page.locator('#dashboard-ping-source-host').selectOption('10.70.1.11');
+ await page.locator('#dashboard-ping-target-host').selectOption('10.70.2.12');
+ await page.getByRole('button',{name:'Enviar ping y ver mapa'}).click();
+ await expect(page.locator('#dashboard-ping-modal')).toBeHidden();
+ await expect(page.locator('#ping-trace-route')).toContainText('10.70.1.11 → 10.70.2.12');
+ await page.getByRole('button',{name:'Permitir solo este par ICMP y repetir',exact:true}).click();
+ expect(await page.evaluate(()=>[MAP_PING_LAST.srcPc.ip,MAP_PING_LAST.destPc.ip])).toEqual(['10.70.1.11','10.70.2.12']);
+ await page.getByRole('button',{name:'Pausar',exact:true}).click();
+ await page.evaluate(()=>toggleRedundantLab('cm','node','router'));
+ await expect(page.locator('#ping-trace-state')).toHaveText('Interrumpido');
+ await expect(page.locator('#ping-trace-hop')).toContainText('El estado de la red cambió');
+ await page.getByRole('button',{name:'Repetir',exact:true}).click();
+ await expect(page.locator('#ping-trace-state')).toHaveText('Descartado');
+ await expect(page.locator('#ping-trace-policy')).toContainText('Sin ruta activa');
+});
+
+test('El ping exterior usa la WAN alternativa real y respeta movimiento reducido',async({page})=>{
+ await page.emulateMedia({reducedMotion:'reduce'});await page.goto(url);
+ await page.evaluate(()=>{runMapPing('s01','s02');toggleMapPingDiagnostic(true);});
+ await expect(page.locator('#ping-trace-state')).toHaveText('Completado');
+ await page.evaluate(()=>toggleRedundantLab('s01','upstream','starlink'));
+ await page.getByRole('button',{name:'Repetir',exact:true}).click();
+ await expect(page.locator('#ping-trace-state')).toHaveText('Completado');
+ const details=await page.evaluate(()=>({wan:MAP_PING_LAST.endpoint.type,route:MAP_PING_LAST.route.map(h=>h.id)}));
+ expect(details.wan).toBe('kuiper');expect(details.route.some(id=>id.startsWith('sat:kuiper:'))).toBe(true);
+});
+
+
+test('El mapa y sus controles exteriores caben en móvil y la tarjeta no arrastra el mapa',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await page.goto(url);
+ await page.getByRole('button',{name:'Ping / Trace entre sedes',exact:false}).click();
+ await page.getByRole('button',{name:'Enviar ping y ver mapa'}).click();
+ await expect(page.locator('#ping-trace-card')).toBeVisible();
+ await page.getByRole('button',{name:'Permitir solo este par ICMP y repetir',exact:true}).click();
+ await page.getByRole('button',{name:'Pausar',exact:true}).click();
+ const sizes=await page.evaluate(()=>({width:document.documentElement.clientWidth,overflow:document.documentElement.scrollWidth,
+  map:document.getElementById('map-container').getBoundingClientRect().width,drag:DRAG.active}));
+ expect(sizes.map).toBeGreaterThan(350);expect(sizes.overflow).toBe(sizes.width);expect(sizes.drag).toBe(false);
+ await page.locator('#ping-trace-details summary').click();
+ const zoom=await page.evaluate(()=>JSON.stringify(ZOOM));
+ await page.locator('#ping-trace-steps').hover();await page.mouse.wheel(0,120);
+ expect(await page.evaluate(()=>JSON.stringify(ZOOM))).toBe(zoom);
+});
+
+
+test('El encuadre del ping incluye ambos extremos de una ruta nacional larga',async({page})=>{
+ await page.goto(url);
+ const report=await page.evaluate(()=>{
+  const src=SEDES.find(s=>s.id==='s01'),dest=SEDES.find(s=>s.id==='s22');
+  setPingDiagnosticRule(src.id,dest.id,getPCs(src)[0].ip,getPCs(dest)[0].ip);
+  const result=runMapPing(src.id,dest.id);
+  return {ok:result.ok,inside:result.route.every(h=>h.point[0]>=ZOOM.x&&h.point[0]<=ZOOM.x+ZOOM.w&&h.point[1]>=ZOOM.y&&h.point[1]<=ZOOM.y+ZOOM.h)};
+ });
+ expect(report.ok).toBe(true);expect(report.inside).toBe(true);
+});
