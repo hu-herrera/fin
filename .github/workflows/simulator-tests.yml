@@ -9,10 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
+          package-manager-cache: false
       - name: Instalar Playwright y Chromium
         run: |
           npm install --no-save @playwright/test
@@ -62,14 +63,14 @@ jobs:
       - name: Generar matriz de aceptación por sede para la entrega
         run: node network/site-readiness-report.cjs --json > acceptance-23-sites.json
       - name: Publicar matriz auditada sin secretos en GitHub Actions
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: acceptance-23-sites
           path: acceptance-23-sites.json
           if-no-files-found: error
       - name: Guardar diagnóstico de fallos
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-diagnostico
           path: test-results/
