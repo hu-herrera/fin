@@ -2,11 +2,13 @@
 // CLI para inspeccionar candidatos SIN desplegarlos ni modificar el simulador.
 // node network/export-candidate.cjs s01 router|stack|palo
 // node network/export-candidate.cjs s01 wan-sla ./monitores-s01.json
+// node network/export-candidate.cjs s01 guest-dhcp ./invitados-s01.json
 const fs=require('node:fs');
 const vm=require('node:vm');
 const {siteCandidate}=require('./redundant-configs.cjs');
 const {renderWanSlaCandidate}=require('./wan-sla-candidate.cjs');
 const {oobCandidate}=require('./oob-management.cjs');
+const {renderGuestDhcpCandidate}=require('./guest-dhcp-candidate.cjs');
 function pcInventory(){
   const html=fs.readFileSync(require('node:path').join(__dirname,'..','index.html'),'utf8');
   const match=html.match(/const PC_COUNT\s*=\s*(\{[\s\S]*?\});/);
@@ -18,8 +20,8 @@ function exportCandidate(site,device,wanSettings){
   if(!/^(cm|s(?:0[1-9]|1[0-9]|2[0-2]))$/.test(key)){
     throw new Error('Sede desconocida; usar cm o s01..s22');
   }
-  if(!['router','stack','palo','wan-sla','oob'].includes(device)){
-    throw new Error('Equipo desconocido; usar router, stack, palo, wan-sla u oob');
+  if(!['router','stack','palo','wan-sla','oob','guest-dhcp'].includes(device)){
+    throw new Error('Equipo desconocido; usar router, stack, palo, wan-sla, guest-dhcp u oob');
   }
   const num=key==='cm'?0:Number(key.slice(1)),counts=pcInventory();
   if(!Number.isInteger(counts[key]))throw new Error('Sin inventario de PCs para '+key);
@@ -28,6 +30,11 @@ function exportCandidate(site,device,wanSettings){
     return '# LABORATORIO, VALIDAR CON OPERADOR ANTES DE APLICAR\n'+
       '# Sede '+key.toUpperCase()+' - pruebas WAN autorizadas\n'+
       renderWanSlaCandidate(wanSettings);
+  }
+  if(device==='guest-dhcp'){
+    return '# CANDIDATO PAN-OS, REVISAR ANTES DE COMMIT\n'+
+      '# Sede '+key.toUpperCase()+' - DHCP local para VLAN40 invitados\n'+
+      renderGuestDhcpCandidate(num,wanSettings);
   }
   if(device==='oob'){
     const p=oobCandidate(num);
@@ -48,9 +55,9 @@ function exportCandidate(site,device,wanSettings){
 }
 if(require.main===module){
   try{
-    const isWan=process.argv[3]==='wan-sla';
-    if(isWan&&!process.argv[4])throw new Error('Especifica un JSON con contrato WAN y dos objetivos ICMP por ISP');
-    const config=isWan?JSON.parse(fs.readFileSync(process.argv[4],'utf8')):undefined;
+    const needsConfig=['wan-sla','guest-dhcp'].includes(process.argv[3]);
+    if(needsConfig&&!process.argv[4])throw new Error('Especifica un JSON de parámetros aprobados para '+process.argv[3]);
+    const config=needsConfig?JSON.parse(fs.readFileSync(process.argv[4],'utf8')):undefined;
     process.stdout.write(exportCandidate(process.argv[2],process.argv[3],config)+'\n');
   }catch(error){
     process.stderr.write('Error: '+error.message+'\n');
