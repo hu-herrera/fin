@@ -1,0 +1,40 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {pcInventory}=require('../network/export-candidate.cjs');
+const {REQUIRED_EXTERNAL,siteReport,overallReadiness}=
+ require('../network/site-readiness-report.cjs');
+const inventory=pcInventory(),r=overallReadiness(inventory);
+assert.equal(r.summary.totalSites,23);
+assert.equal(r.summary.totalPCs,650);
+assert.equal(r.summary.structurallyPassing,23);
+assert.equal(r.summary.physicallyCertified,0);
+assert.equal(r.summary.externalGateCountPerSite,16);
+assert.equal(r.summary.status,'SIMULATED_ONLY_PHYSICAL_BLOCKED');
+assert.deepEqual(r.issues,[]);
+assert.equal(r.sites.length,23);
+assert.equal(r.sites.reduce((sum,s)=>sum+s.pcs,0),650);
+const keys=new Set(REQUIRED_EXTERNAL);
+assert.equal(keys.size,16);
+for(let n=0;n<23;n++){
+ const id=n===0?'cm':'s'+String(n).padStart(2,'0'),site=r.sites[n];
+ assert.equal(site.site,id);
+ assert.equal(site.modeled,true,id);
+ assert.equal(site.certified,false,id);
+ assert.equal(site.status,'SIMULATOR_MODEL_ONLY',id);
+ assert.deepEqual(site.failures,[],id);
+ assert.equal(site.externalBlockers.length,16,id);
+ assert.ok(site.externalBlockers.includes('licensed-iosxe-and-panos-candidate-commit-validation'));
+ assert.ok(site.externalBlockers.includes('wan-isp-contracts-and-addressing'));
+ assert.ok(site.externalBlockers.includes('panos-authorized-admin-host-or-independent-mgt'));
+ assert.ok(site.externalBlockers.includes('panos-firewall-originated-service-routes'));
+}
+assert.equal(siteReport(0,inventory).warnings.length,1,'CM is conditional voice capacity warning');
+const huge={...inventory,s04:70};
+assert.equal(siteReport(4,huge).modeled,false);
+assert.equal(overallReadiness(huge).summary.status,'STRUCTURAL_FAILURE');
+const omitted={...inventory};delete omitted.s22;
+assert.equal(overallReadiness(omitted).summary.status,'STRUCTURAL_FAILURE');
+const forged={...inventory,s22:0};
+assert.equal(overallReadiness(forged).summary.status,'STRUCTURAL_FAILURE');
+assert.throws(()=>siteReport(23,inventory),/Sede/);
+console.log('Audit readiness: 23 site models, 650 PCs, 16 external acceptance gates each; no false physical certification.');
