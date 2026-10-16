@@ -476,7 +476,7 @@ function paloCandidate(num){
     'set network virtual-router default routing-table ip static-route DEFAULT interface ae1',
     'set network virtual-router default routing-table ip static-route DEFAULT nexthop ip-address 10.72.'+num+'.1',
     '# FALTAN: reglas financieras aprobadas, zonas por sitio, App-ID específico y perfiles IPS',
-    '# FALTAN: rutas remotas y servicios aprobados, gestion fuera de banda separada',
+    '# FALTAN: rutas remotas y servicios aprobados, gestion protegida por VLAN30; OOB externo opcional',
     '# FALTAN: rutas estaticas del Cisco hacia las VLAN y verificacion de NAT/VPN',
     '# FALTAN: commit validate y rollback desde consola fuera de banda');
   return lines.join('\n');
@@ -485,7 +485,7 @@ function siteCandidate(num,pcCount){
  return {siteNum:num,pcCount,addressing:candidateAddressing(num),
    cisco:routerCandidate(num),stack:stackCandidate(num,pcCount),palo:paloCandidate(num),
    deployable:false,
-   blockers:['politicas PAN-OS de referencia sin commit/validacion','management OOB sin gateway',
+   blockers:['politicas PAN-OS de referencia sin commit/validacion','gestion protegida por VLAN30 sin validar (OOB externo opcional)',
    'WAN/VPN no parametrizados','asignacion de puertos de usuarios requiere validacion en terreno',
    'sin laboratorio de hardware']};
 }
