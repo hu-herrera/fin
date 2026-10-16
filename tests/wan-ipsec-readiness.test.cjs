@@ -1,6 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict');
 const {assessWanIpsecReadiness}=require('../network/wan-ipsec-readiness.cjs');
+const {exportCandidate}=require('../network/export-candidate.cjs');
 const baseWan=()=>({
  mode:'cgnat',contractVerified:true,nextHopVerified:true,mtuVerified:true,
  outboundIkev2NatTVerified:true,returnTrafficVerified:true,
@@ -49,5 +50,11 @@ rejects(p=>{p.wan.starlink.mode='unavailable'},'ninguna WAN');
 rejects(p=>{delete p.wan.entel5g},'falta declaración');
 const nil=assessWanIpsecReadiness(1,null);
 assert.equal(nil.status,'BLOCKED');
+const cli=exportCandidate('s01','wan-readiness',good());
+assert.ok(cli.includes('NO CERTIFICA VPN REAL'));
+assert.ok(cli.includes('"status": "CANDIDATE_FOR_LAB_REVIEW"'));
+assert.ok(cli.includes('"certified": false'));
+const missingReport=exportCandidate('s01','wan-readiness',null);
+assert.ok(missingReport.includes('"status": "BLOCKED"'));
 assert.throws(()=>assessWanIpsecReadiness(23,good()),/Sede/);
 console.log('WAN IPsec/CGNAT: '+checks+' candidate assertions across 23 sites; no fictitious SA accepted as certification.');
