@@ -70,3 +70,13 @@ npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs --browse
 - 23 sedes modeladas, 650 puertos PC mapeados a los miembros del stack, VLAN/AP y zonas PAN-OS preparadas.
 - Pruebas Node integradas en GitHub Actions; **el simulador publicado sigue con el diseño viejo**. Pasar un test de configuración en cadena no demuestra que PAN-OS acepte un commit ni que IOS-XE negocie un LAG físico.
 - La configuración Palo Alto propuesta no está lista para despliegue: sin gestión OOB, políticas de seguridad cerradas, ACL de aplicaciones y rutas WAN/VPN reales. Las pruebas de salud upstream son estados lógicos, no IP SLA desplegado en interfaces reales.
+
+## Interfaz de pruebas habilitada en la web
+1. Abrir cualquier sede en la versión actual de GitHub Pages.
+2. Elegir **🧪 StackWise / LACP**. Cada sede conserva sus fallas aisladas de las demás; el botón **Restaurar todos los enlaces** elimina las fallas del laboratorio.
+3. Cortar individualmente los enlaces T1/T2, D1–D4 y STACK-A/B, o apagar SW1/SW2, C8300 y PA-1410.
+4. Observar por separado el estado L2 de los PCs, el gateway PA, el camino hacia Cisco y la WAN. En WAN se prueba el estado de la interfaz, del gateway del ISP y de un supuesto destino aguas arriba.
+5. Para comparar configuraciones, abrir la ventana Router/Firewall/Switch y elegir **🧪 Objetivo L3**. La CLI vigente no cambia.
+6. Ejecutar `node network/build-browser-lab.cjs --check` cuando cambie el motor Node; regenerar con `node network/build-browser-lab.cjs` y someterlo a CI antes de publicarlo.
+
+[Suite de navegador y motor candidato aprobados](https://github.com/hu-herrera/fin/actions/runs/38842086249): 28/28 Playwright + 8/8 WAN + 162 escenarios de falla + 2.237 comprobaciones de candidatos. La capa de laboratorio fue probada desde el navegador, **sin convertir la topología actual en arquitectura Layer3 activa**.
