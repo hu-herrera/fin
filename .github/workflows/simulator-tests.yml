@@ -23,6 +23,8 @@ jobs:
         run: node network/build-browser-lab.cjs --check
       - name: Auditar capacidad IPAM VLAN y puertos de acceso para 23 sedes
         run: node tests/ipam-capacity.test.cjs
+      - name: Validar DHCP invitados Palo Alto sin inventar contratos ni direcciones
+        run: node tests/guest-dhcp.test.cjs
       - name: Probar redundancia futura StackWise y LACP en 23 sedes
         run: node tests/redundant-model.test.cjs
       - name: Validar plantillas Cisco y PAN-OS propuestas para 23 sedes
