@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {PANOS_RULES,evaluatePanPolicy,routerCandidate,paloCandidate}=require('../network/redundant-configs.cjs');
+const {PANOS_RULES,evaluatePanPolicy,isPrivateRfc1918,routerCandidate,paloCandidate}=require('../network/redundant-configs.cjs');
 const {VLAN}=require('../network/redundant-model.cjs');
 let checks=0;
 const truth=(value,msg)=>{assert.ok(value,msg);checks++};
@@ -43,6 +43,19 @@ for(const [from,to,app] of blocked){
 for(const zone of zones){
   eq(evaluatePanPolicy(zone,zone,'ssl').action,'allow','PAN-OS intrazone-default '+zone);
 }
+for(const ip of ['10.70.0.20','10.72.1.2','172.16.1.1','172.31.255.254','192.168.1.5']){
+  eq(isPrivateRfc1918(ip),true,'RFC1918 no identificado '+ip);
+  const result=evaluatePanPolicy('GUESTS','TRANSIT','ssl',ip);
+  eq(result.action,'deny','Invitados acceden a IP privada '+ip);
+  eq(result.rule,'DENY-GUEST-RFC1918-TRANSIT','Regla de aislamiento incorrecta '+ip);
+}
+for(const ip of ['8.8.8.8','1.1.1.1','172.32.0.1','192.169.0.1']){
+  eq(isPrivateRfc1918(ip),false,'IP pública confundida con privada '+ip);
+  eq(evaluatePanPolicy('GUESTS','TRANSIT','ssl',ip).action,'allow','WEB a IP pública debería permitirse '+ip);
+}
+for(const malformed of ['10.300.1.1','hello','10.70.1','10.70.1.3.4']){
+  assert.throws(()=>evaluatePanPolicy('GUESTS','TRANSIT','ssl',malformed),/IPv4|Octeto/);
+}
 assert.throws(()=>evaluatePanPolicy('NO-ZONE','TRANSIT','dns'),/Zona/);
 const names=PANOS_RULES.map(r=>r.name);
 eq(names.length,new Set(names).size,'Reglas duplicadas');
@@ -63,6 +76,9 @@ for(let n=0;n<23;n++){
     truth(pa.includes(p+' log-end yes'),'falta auditoría de sesiones '+rule.name+' sede '+n);
     truth(pa.includes(p+' service '+(rule.action==='allow'?'application-default':'any')),'regla con servicio no validado '+rule.name+' sede '+n);
   }
+  truth(pa.includes('set address-group RFC1918-NETWORKS static [ RFC1918-10 RFC1918-172 RFC1918-192 ]'),'Faltan redes RFC1918 sede '+n);
+  truth(pa.includes('set rulebase security rules DENY-GUEST-RFC1918-TRANSIT destination RFC1918-NETWORKS'),'Falta regla invitado anti-redes privadas '+n);
+  truth(!pa.includes('set rulebase security rules ALLOW-GUESTS-WEB-OUT service any'),'Permisos invitados usan todos los puertos');
   truth(!pa.includes('action allow-any'),'allow-any insegura en sede '+n);
 }
 console.log('TOTAL política de seguridad: '+checks+' comprobaciones; '+PANOS_RULES.length+' reglas; 23 sedes.');
