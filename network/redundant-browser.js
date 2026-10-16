@@ -343,9 +343,9 @@ function intersiteRulesForSite(num){
   ];
   return [
     {name:'BRANCH-DNS-TO-CM',from:['USERS','MGMT-DATA'],to:['TRANSIT'],
-     source:'any',destination:'CM-DNS-SERVERS',apps:['dns'],action:'allow'},
+     source:'BR-LOCAL-DNS-CLIENTS',destination:'CM-DNS-SERVERS',apps:['dns'],action:'allow'},
     {name:'BRANCH-NTP-TO-CM',from:['MGMT-DATA'],to:['TRANSIT'],
-     source:'any',destination:'CM-NTP-SERVERS',apps:['ntp'],action:'allow'},
+     source:'BR-LOCAL-MGMT',destination:'CM-NTP-SERVERS',apps:['ntp'],action:'allow'},
     denyPrivate
   ];
 }
@@ -370,6 +370,10 @@ function matchSecurityAddress(selector,ip,num){
   if(selector==='RFC1918-NETWORKS')return isPrivateRfc1918(ip);
   if(selector==='CM-DNS-SERVERS')return CM_SERVICES.dns.includes(ip);
   if(selector==='CM-NTP-SERVERS')return CM_SERVICES.ntp.includes(ip);
+  if(selector==='BR-LOCAL-DNS-CLIENTS')
+    return inSubnet(ip,'10.70.'+num+'.0',25)||inSubnet(ip,'10.70.'+num+'.160',28);
+  if(selector==='BR-LOCAL-MGMT')
+    return inSubnet(ip,'10.70.'+num+'.160',28);
   if(selector==='BRANCH-DNS-CLIENTS'||selector==='BRANCH-MGMT-CLIENTS'){
     for(let n=1;n<=22;n++){
       if(inSubnet(ip,'10.70.'+n+'.160',28))return true;
@@ -406,6 +410,11 @@ function intersiteAddressCommands(num){
       lines.push('set address CM-'+upper+'-'+(i+1)+' ip-netmask '+ips[i]+'/32');
     }
     lines.push('set address-group CM-'+upper+'-SERVERS static [ CM-'+upper+'-1 CM-'+upper+'-2 ]');
+  }
+  if(num!==0){
+    lines.push('set address BR-LOCAL-USERS ip-netmask 10.70.'+num+'.0/25',
+      'set address BR-LOCAL-MGMT ip-netmask 10.70.'+num+'.160/28',
+      'set address-group BR-LOCAL-DNS-CLIENTS static [ BR-LOCAL-USERS BR-LOCAL-MGMT ]');
   }
   if(num===0){
     const users=[],mgmt=[];
