@@ -23,6 +23,11 @@ function rawSite(siteId){
   const s=SEDES.find(s=>s.id===siteId);
   if(!s)throw Error('Invalid site '+siteId);
   const b=getRedundantLabState(siteId);
+  // Cargar startup-config persistido antes de evaluar el estado operativo.
+  // La topología debe reflejar shutdowns incluso tras refrescar la página
+  // sin que el usuario tenga que abrir las consolas primero.
+  const routerSession=deviceCliSession(siteId,'router');
+  const stackSessions=[1,2].map(sw=>deviceCliSession(siteId,'sw'+sw));
   const copy={siteNum:b.siteNum,nodes:{...b.nodes},links:{...b.links},
     wan:{...b.wan},wanGateway:{...b.wanGateway},wanUpstream:{...b.wanUpstream},
     oob:{...b.oob}};
@@ -30,12 +35,12 @@ function rawSite(siteId){
   for(const [oldKey,newKey] of Object.entries(wanMap)){
     if(['caido','inactivo','recuperando'].includes(ST.links[siteId]?.[oldKey]))
       copy.wan[newKey]=false;
-    const session=DEVICE_CLI_SESSIONS.get(siteId+':router');
+    const session=routerSession;
     if(session?.interfaces && (session.interfaces[mapPort[oldKey]]?.shutdown))
       copy.wan[newKey]=false;
   }
   for(const p of m.PORTS.transit){
-    const session=DEVICE_CLI_SESSIONS.get(siteId+':router');
+    const session=routerSession;
     const short=p.router.replace('TenGigabitEthernet','Te');
     if(session?.interfaces[p.router]?.shutdown||session?.interfaces[short]?.shutdown||
        session?.interfaces.Po10?.shutdown||session?.interfaces['Port-channel10']?.shutdown)
@@ -43,7 +48,6 @@ function rawSite(siteId){
   }
   // Po20 es UN port-channel del StackWise, no dos bundles independientes.
   // Apagarlo desde cualquiera de sus consolas desactiva los cuatro miembros.
-  const stackSessions=[1,2].map(sw=>DEVICE_CLI_SESSIONS.get(siteId+':sw'+sw));
   const po20Down=stackSessions.some(session=>
     session?.interfaces.Po20?.shutdown||session?.interfaces['Port-channel20']?.shutdown);
   for(const p of m.PORTS.distribution){
