@@ -29,8 +29,12 @@ function routerCandidate(num){
   }
   // Redistribuir SOLO rutas LAN de esta sede; nunca una default aprendida.
   const pfx='SITE-LAN-'+num;
-  for(const v of VLAN)lines.push('ip prefix-list '+pfx+' seq '+(v.id*10)+
-    ' permit '+prefix+v.network+'/'+v.prefix);
+  // Seguridad WAN: SOLO los prefijos corporativos autorizados se exportan
+  // a OSPF. VLAN40 invitados se queda LOCAL (nunca se publica hacia la CM).
+  for(const v of VLAN.filter(v=>v.id!==40))
+    lines.push('ip prefix-list '+pfx+' seq '+(v.id*10)+
+      ' permit '+prefix+v.network+'/'+v.prefix);
+  lines.push('ip prefix-list '+pfx+' seq 400 deny '+prefix+'176/28');
   lines.push('route-map EXPORT-SITE-LAN permit 10',
     ' match ip address prefix-list '+pfx,
     'router ospf 1',
@@ -108,6 +112,45 @@ function stackCandidate(num,pcCount){
     '! VERIFICAR: show switch; show switch stack-ports; show etherchannel summary');
   return lines.join('\n');
 }
+// PAN-OS first-match. El resto de conexiones interzona se deniega por
+// la regla predefinida interzone-default; intrazona se permite por PAN-OS.
+const PANOS_RULES=Object.freeze([
+  {name:'DENY-GUEST-TO-CORP',from:['GUESTS'],to:['USERS','VOICE','MGMT-DATA'],apps:['any'],action:'deny'},
+  {name:'DENY-USERS-TO-MGMT',from:['USERS'],to:['MGMT-DATA'],apps:['any'],action:'deny'},
+  {name:'DENY-VOICE-TO-MGMT',from:['VOICE'],to:['MGMT-DATA'],apps:['any'],action:'deny'},
+  {name:'DENY-TRANSIT-TO-GUESTS',from:['TRANSIT'],to:['GUESTS'],apps:['any'],action:'deny'},
+  {name:'ALLOW-USERS-WEB-OUT',from:['USERS'],to:['TRANSIT'],apps:['dns','ssl','web-browsing'],action:'allow'},
+  {name:'ALLOW-GUESTS-WEB-OUT',from:['GUESTS'],to:['TRANSIT'],apps:['dns','ssl','web-browsing'],action:'allow'},
+  {name:'ALLOW-VOICE-DNS-OUT',from:['VOICE'],to:['TRANSIT'],apps:['dns'],action:'allow'},
+  {name:'ALLOW-MGMT-DNS-NTP-OUT',from:['MGMT-DATA'],to:['TRANSIT'],apps:['dns','ntp'],action:'allow'},
+].map(rule=>Object.freeze({...rule,from:Object.freeze(rule.from),to:Object.freeze(rule.to),apps:Object.freeze(rule.apps)})));
+function evaluatePanPolicy(from,to,application){
+  const zones=['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'];
+  if(!zones.includes(from)||!zones.includes(to)||!application||typeof application!=='string')
+    throw new RangeError('Zona o aplicación PAN-OS desconocida');
+  const rule=PANOS_RULES.find(r=>r.from.includes(from)&&r.to.includes(to)&&
+    (r.apps.includes('any')||r.apps.includes(application)));
+  if(rule)return {action:rule.action,rule:rule.name};
+  // PAN-OS interzone-default=deny; intrazone-default=allow.
+  return {action:from===to?'allow':'deny',rule:from===to?'intrazone-default':'interzone-default'};
+}
+function panosSecurityCommands(){
+  const lines=[];
+  for(const r of PANOS_RULES){
+    const p='set rulebase security rules '+r.name;
+    lines.push(p+' from '+r.from.join(' '),
+      p+' to '+r.to.join(' '),
+      p+' source any',p+' destination any',
+      p+' application '+r.apps.join(' '),
+      p+' service '+(r.action==='allow'?'application-default':'any'),
+      p+' action '+r.action,
+      p+' log-end yes');
+  }
+  lines.push('# PAN-OS default interzone deny; intrazone allow. Revisar logging de reglas por defecto.',
+    '# Reglas permitidas solo para navegación/DNS/NTP de LAB; no habilitar intersede financiera sin inventario App-ID, orígenes y destinos.',
+    '# Aplicar perfiles Threat Prevention/URL Filtering solo con licencias, perfiles y aceptación validados.');
+  return lines;
+}
 function paloCandidate(num){
   checkSiteNum(num);
   const lines=[
@@ -133,11 +176,12 @@ function paloCandidate(num){
   const zones={10:'USERS',20:'VOICE',30:'MGMT-DATA',40:'GUESTS'};
   lines.push('set zone TRANSIT network layer3 ae1');
   for(const v of VLAN)lines.push('set zone '+zones[v.id]+' network layer3 ae2.'+v.id);
+  lines.push(...panosSecurityCommands());
   lines.push('set network virtual-router default interface [ ae1 ae2.10 ae2.20 ae2.30 ae2.40 ]',
     'set network virtual-router default routing-table ip static-route DEFAULT destination 0.0.0.0/0',
     'set network virtual-router default routing-table ip static-route DEFAULT interface ae1',
     'set network virtual-router default routing-table ip static-route DEFAULT nexthop ip-address 10.72.'+num+'.1',
-    '# FALTAN: zonas PAN-OS y reglas default-deny para TODAS las VLAN, App-ID, IPS',
+    '# FALTAN: reglas financieras aprobadas, zonas por sitio, App-ID específico y perfiles IPS',
     '# FALTAN: rutas remotas y servicios aprobados, gestion fuera de banda separada',
     '# FALTAN: rutas estaticas del Cisco hacia las VLAN y verificacion de NAT/VPN',
     '# FALTAN: commit validate y rollback desde consola fuera de banda');
@@ -147,8 +191,8 @@ function siteCandidate(num,pcCount){
  return {siteNum:num,pcCount,addressing:candidateAddressing(num),
    cisco:routerCandidate(num),stack:stackCandidate(num,pcCount),palo:paloCandidate(num),
    deployable:false,
-   blockers:['politicas PAN-OS no instaladas','management OOB sin gateway',
+   blockers:['politicas PAN-OS de referencia sin commit/validacion','management OOB sin gateway',
    'WAN/VPN no parametrizados','asignacion de puertos de usuarios requiere validacion en terreno',
    'sin laboratorio de hardware']};
 }
-module.exports={routerCandidate,stackCandidate,paloCandidate,siteCandidate};
+module.exports={routerCandidate,stackCandidate,paloCandidate,siteCandidate,PANOS_RULES,evaluatePanPolicy,panosSecurityCommands};
