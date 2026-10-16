@@ -235,3 +235,37 @@ test('Diagnósticos OSPF, CEF y puertos Cisco reflejan interfaces configuradas e
  });
  expect(result).toEqual([]);
 });
+
+
+test('Spanning Tree y estados físicos de switches coherentes en las 23 sedes', async ({page}) => {
+  await setOperational(page);
+  const issues = await page.evaluate(() => {
+    const issues = [];
+    for(const site of SEDES){
+      const a=deviceCliSession(site.id,'sw1'), b=deviceCliSession(site.id,'sw2');
+      delete a.interfaces['Gi1/0/45']; delete a.interfaces['Gi1/0/46'];
+      delete b.interfaces['Gi1/0/45']; delete b.interfaces['Gi1/0/46'];
+      delete a.interfaces.Po1; delete b.interfaces.Po1;
+      const sw1=genSwitchDetail(site,'sw1','show spanning-tree');
+      const sw2=genSwitchDetail(site,'sw2','show spanning-tree');
+      if(!sw1.includes('Po1 Desg FWD') || sw1.includes('Gi1/0/1 Root FWD'))
+        issues.push(site.id+': SW1 raíz STP incorrecta');
+      if(!sw2.includes('Po1 Root FWD'))
+        issues.push(site.id+': SW2 Po1 no es root port');
+      const brief=genShowBrief(site,'sw2','show ip interface brief');
+      if(!brief.includes('GigabitEthernet1/0/1') || !brief.includes('administratively down'))
+        issues.push(site.id+': SW2 informa Gi1/0/1 activo, aunque está reservado y shutdown');
+      b.interfaces['Gi1/0/45']={shutdown:true};
+      if(!isSwitchStackLinkAvailable(site.id)) issues.push(site.id+': la caída Gi45 no debe derribar Po1');
+      const degraded=getSwitchPortRecords(site,2).find(row=>row.port===45);
+      if(degraded.status==='connected') issues.push(site.id+': Gi45 remoto caído figura conectado');
+      b.interfaces['Gi1/0/46']={shutdown:true};
+      if(isSwitchStackLinkAvailable(site.id)) issues.push(site.id+': ambos miembros caídos');
+      if(genSwitchDetail(site,'sw2','show spanning-tree').includes('Po1 Root FWD'))
+        issues.push(site.id+': SW2 conserva root port desconectado');
+      delete b.interfaces['Gi1/0/45'];delete b.interfaces['Gi1/0/46'];
+    }
+    return issues;
+  });
+  expect(issues).toEqual([]);
+});
