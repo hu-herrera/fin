@@ -60,6 +60,10 @@ for(let n=0;n<=22;n++){
   check(count(sw,'interface Vlan30')===1,label+' stacked switches have more than one mgmt SVI');
   check(sw.includes('10.70.'+n+'.162 255.255.255.240'),label+' stack mgmt IP wrong');
   check(!fw.includes('virtual-wire'),label+' Layer3 must not use legacy virtual wire');
+  for(const [vlan,zone] of [[10,'USERS'],[20,'VOICE'],[30,'MGMT-DATA'],[40,'GUESTS']])
+    check(fw.includes('set zone '+zone+' network layer3 ae2.'+vlan),label+' VLAN '+vlan+' missing PA security zone');
+  check(fw.includes('set zone TRANSIT network layer3 ae1'),label+' transit zone absent');
+  check(!fw.includes('rulebase security rules ALLOW-ANY'),label+' unsafe allow-any policy generated');
   check(fw.includes('ae1 layer3 lacp enable yes'),label+' PA LACP ae1 disabled');
   check(fw.includes('ae2 layer3 lacp enable yes'),label+' PA LACP ae2 disabled');
   check(!fw.includes('set deviceconfig system ip-address 10.70.'+n+'.164'),label+' OOB overlap');
