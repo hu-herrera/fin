@@ -128,6 +128,11 @@ function paloCandidate(num){
     lines.push('set network interface aggregate-ethernet ae2 layer3 units '+u+' tag '+v.id,
       'set network interface aggregate-ethernet ae2 layer3 units '+u+' ip 10.70.'+num+'.'+v.offset+'/'+v.prefix);
   }
+  // L3 subinterfaces deben pertenecer a zonas diferentes: politicas inter-VLAN
+  // quedan por definir (no instalar una regla permisiva generica).
+  const zones={10:'USERS',20:'VOICE',30:'MGMT-DATA',40:'GUESTS'};
+  lines.push('set zone TRANSIT network layer3 ae1');
+  for(const v of VLAN)lines.push('set zone '+zones[v.id]+' network layer3 ae2.'+v.id);
   lines.push('set network virtual-router default interface [ ae1 ae2.10 ae2.20 ae2.30 ae2.40 ]',
     'set network virtual-router default routing-table ip static-route DEFAULT destination 0.0.0.0/0',
     'set network virtual-router default routing-table ip static-route DEFAULT interface ae1',
