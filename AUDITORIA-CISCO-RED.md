@@ -95,3 +95,10 @@ Esta distinción permite defender el proyecto sin presentar como medidos resulta
 - **24/24 Playwright aprobadas**: [GitHub Actions, commit `f09d005a`](https://github.com/hu-herrera/fin/actions/runs/38831383312), además de las 8 pruebas unitarias WAN de la suite general.
 - Nuevos casos: bloqueo de tráfico entre sucursales al perder el hub CM (también en la ruta gráfica), normalización de native VLAN 999 y VLAN permitidas 10/40 de los AP, roles STP/puertos reservados, conectadas WAN y distancias administrativas de backup, propuesta IKEv2 PRF AES-GCM y SLA ante interfaz apagada.
 - Permanecen pendientes: prueba extremo-a-extremo de Internet por proveedor con gateway local arriba, configuración real de pares IPsec, migración física a StackWise/LACP del plan nuevo, modos y políticas PA Layer3, subred de gestión OOB y HA del firewall. No confundir estas pruebas verdes con validación de esos elementos aún no implementados.
+
+## 9. Integración verificable de laboratorio StackWise en el simulador
+- El navegador carga el mismo motor Node de redundancia (archivo generado y comprobado en CI) y expone un nuevo laboratorio por sede, sin reemplazar la configuración anterior.
+- La interfaz permite cortar LACP, dividir StackWise, apagar equipos, perder upstream con gateway ISP disponible y restablecer enlaces. Se verifican estados LAN local, acceso al gateway del firewall y conectividad WAN por separado.
+- Los paneles de dispositivos disponen de una pestaña **Objetivo L3** para inspección, no aplicación, de `Po10`/PA `ae1`, `Po20`/PA `ae2`, VLAN y puertos del stack.
+- [CI última con pruebas ampliadas: 28/28 Playwright + 8/8 WAN](https://github.com/hu-herrera/fin/actions/runs/38842086249); 162 escenarios modelo y 2.237 verificaciones de candidatos.
+- Los informes y la defensa deben separar **laboratorio interactivo objetivo** de **topología operativa aún vigente**. No se ha ejecutado ni validado un cambio físico Cisco/PAN-OS.
