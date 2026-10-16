@@ -186,7 +186,17 @@ function evaluatePanPolicy(from,to,application,destinationIp='8.8.8.8'){
 // de RFC1918 por TRANSIT se bloquea antes de los permisos web genéricos.
 const CM_SERVICES=Object.freeze({
   dns:Object.freeze(['10.70.0.110','10.70.0.111']),
-  ntp:Object.freeze(['10.70.0.116','10.70.0.117'])
+  ntp:Object.freeze(['10.70.0.116','10.70.0.117']),
+  tacacs:Object.freeze(['10.70.0.112','10.70.0.113']),
+  syslog:Object.freeze(['10.70.0.100']),
+  monitor:Object.freeze(['10.70.0.101'])
+});
+// Custom PAN-OS service objects enforce TCP port and protocol. Their logical
+// labels are not guessed App-ID names; the PAN candidate uses application any
+// ONLY in conjunction with the restrictive per-protocol custom service.
+const NETOPS_SERVICES=Object.freeze({
+  'aaa-tacacs':Object.freeze({object:'SVC-TACACS-TCP49',protocol:'tcp',port:49}),
+  'syslog-tls':Object.freeze({object:'SVC-SYSLOG-TLS-TCP6514',protocol:'tcp',port:6514})
 });
 // Router-ID/Loopback0 defined in routerCandidate; the same exact /32 sources
 // are authorized for Cisco NTP, including CM's own router.
@@ -213,6 +223,18 @@ function intersiteRulesForSite(num){
     {name:'CM-IN-DNS-FROM-ROUTERS',from:['TRANSIT'],to:['USERS'],
      source:'ROUTER-DNS-SOURCES',destination:'CM-DNS-SERVERS',
      apps:['dns'],action:'allow'},
+    {name:'CM-IN-TACACS-NETOPS',from:['TRANSIT'],to:['USERS'],
+     source:'REMOTE-NETOPS-SOURCES',destination:'CM-TACACS-SERVERS',
+     apps:['aaa-tacacs'],panosService:'SVC-TACACS-TCP49',action:'allow'},
+    {name:'CM-IN-SYSLOG-NETOPS',from:['TRANSIT'],to:['USERS'],
+     source:'REMOTE-NETOPS-SOURCES',destination:'CM-SYSLOG-SERVERS',
+     apps:['syslog-tls'],panosService:'SVC-SYSLOG-TLS-TCP6514',action:'allow'},
+    {name:'CM-LOCAL-TACACS-STACK',from:['MGMT-DATA'],to:['USERS'],
+     source:'CM-LOCAL-STACK',destination:'CM-TACACS-SERVERS',
+     apps:['aaa-tacacs'],panosService:'SVC-TACACS-TCP49',action:'allow'},
+    {name:'CM-LOCAL-SYSLOG-STACK',from:['MGMT-DATA'],to:['USERS'],
+     source:'CM-LOCAL-STACK',destination:'CM-SYSLOG-SERVERS',
+     apps:['syslog-tls'],panosService:'SVC-SYSLOG-TLS-TCP6514',action:'allow'},
     // DNS/NTP centrales están en VLAN10; el PA debe admitir las peticiones
     // locales de VLAN20 y VLAN30 sin abrir acceso lateral indiscriminado.
     {name:'CM-LOCAL-VOICE-DNS',from:['VOICE'],to:['USERS'],
@@ -231,6 +253,12 @@ function intersiteRulesForSite(num){
      source:'BR-LOCAL-DNS-CLIENTS',destination:'CM-DNS-SERVERS',apps:['dns'],action:'allow'},
     {name:'BRANCH-NTP-TO-CM',from:['MGMT-DATA'],to:['TRANSIT'],
      source:'BR-LOCAL-MGMT',destination:'CM-NTP-SERVERS',apps:['ntp'],action:'allow'},
+    {name:'BRANCH-STACK-TACACS',from:['MGMT-DATA'],to:['TRANSIT'],
+     source:'BR-LOCAL-STACK',destination:'CM-TACACS-SERVERS',
+     apps:['aaa-tacacs'],panosService:'SVC-TACACS-TCP49',action:'allow'},
+    {name:'BRANCH-STACK-SYSLOG',from:['MGMT-DATA'],to:['TRANSIT'],
+     source:'BR-LOCAL-STACK',destination:'CM-SYSLOG-SERVERS',
+     apps:['syslog-tls'],panosService:'SVC-SYSLOG-TLS-TCP6514',action:'allow'},
     denyPrivate
   ];
 }
@@ -255,6 +283,14 @@ function matchSecurityAddress(selector,ip,num){
   if(selector==='RFC1918-NETWORKS')return isPrivateRfc1918(ip);
   if(selector==='CM-DNS-SERVERS')return CM_SERVICES.dns.includes(ip);
   if(selector==='CM-NTP-SERVERS')return CM_SERVICES.ntp.includes(ip);
+  if(selector==='CM-TACACS-SERVERS')return CM_SERVICES.tacacs.includes(ip);
+  if(selector==='CM-SYSLOG-SERVERS')return CM_SERVICES.syslog.includes(ip);
+  if(selector==='CM-MONITOR-SERVERS')return CM_SERVICES.monitor.includes(ip);
+  if(selector==='BR-LOCAL-STACK')return num!==0&&ip==='10.70.'+num+'.162';
+  if(selector==='CM-LOCAL-STACK')return num===0&&ip==='10.70.0.162';
+  if(selector==='REMOTE-NETOPS-SOURCES')
+    return num===0&&(ROUTER_NTP_SOURCES.includes(ip)||
+      Array.from({length:22},(_,i)=>'10.70.'+(i+1)+'.162').includes(ip));
   if(selector==='ROUTER-NTP-SOURCES'||selector==='ROUTER-DNS-SOURCES')
     return num===0&&ROUTER_NTP_SOURCES.includes(ip);
   if(selector==='BR-LOCAL-DNS-CLIENTS')
@@ -310,11 +346,13 @@ function intersiteAddressCommands(num){
     lines.push('set address BR-LOCAL-USERS ip-netmask 10.70.'+num+'.0/25',
       'set address BR-LOCAL-VOICE ip-netmask 10.70.'+num+'.128/27',
       'set address BR-LOCAL-MGMT ip-netmask 10.70.'+num+'.160/28',
-      'set address-group BR-LOCAL-DNS-CLIENTS static [ BR-LOCAL-USERS BR-LOCAL-MGMT BR-LOCAL-VOICE ]');
+      'set address-group BR-LOCAL-DNS-CLIENTS static [ BR-LOCAL-USERS BR-LOCAL-MGMT BR-LOCAL-VOICE ]',
+      'set address BR-LOCAL-STACK ip-netmask 10.70.'+num+'.162/32');
   }
   if(num===0){
     lines.push('set address CM-LOCAL-VOICE ip-netmask 10.70.0.128/27',
-      'set address CM-LOCAL-MGMT ip-netmask 10.70.0.160/28');
+      'set address CM-LOCAL-MGMT ip-netmask 10.70.0.160/28',
+      'set address CM-LOCAL-STACK ip-netmask 10.70.0.162/32');
     for(const [i,ip] of ROUTER_NTP_SOURCES.entries())
       lines.push('set address ROUTER-LOOP-'+String(i).padStart(2,'0')+
         ' ip-netmask '+ip+'/32');
@@ -322,6 +360,8 @@ function intersiteAddressCommands(num){
       .map((_,i)=>'ROUTER-LOOP-'+String(i).padStart(2,'0')).join(' ');
     lines.push('set address-group ROUTER-NTP-SOURCES static [ '+sourceMembers+' ]',
       'set address-group ROUTER-DNS-SOURCES static [ '+sourceMembers+' ]');
+    const netopsMembers=ROUTER_NTP_SOURCES
+      .map((_,i)=>'ROUTER-LOOP-'+String(i).padStart(2,'0'));
     const users=[],mgmt=[];
     for(let n=1;n<=22;n++){
       const id=String(n).padStart(2,'0');
@@ -329,10 +369,14 @@ function intersiteAddressCommands(num){
       lines.push('set address '+u+' ip-netmask 10.70.'+n+'.0/25',
         'set address '+m+' ip-netmask 10.70.'+n+'.160/28',
         'set address '+v+' ip-netmask 10.70.'+n+'.128/27');
+      const stack='BR-'+id+'-STACK';
+      lines.push('set address '+stack+' ip-netmask 10.70.'+n+'.162/32');
+      netopsMembers.push(stack);
       users.push(u,m,v);mgmt.push(m);
     }
     lines.push('set address-group BRANCH-DNS-CLIENTS static [ '+users.join(' ')+' ]',
-      'set address-group BRANCH-MGMT-CLIENTS static [ '+mgmt.join(' ')+' ]');
+      'set address-group BRANCH-MGMT-CLIENTS static [ '+mgmt.join(' ')+' ]',
+      'set address-group REMOTE-NETOPS-SOURCES static [ '+netopsMembers.join(' ')+' ]');
   }
   return lines;
 }
@@ -344,14 +388,16 @@ function panosSecurityCommands(num){
     'set address-group RFC1918-NETWORKS static [ RFC1918-10 RFC1918-172 RFC1918-192 ]'
   ];
   lines.push(...intersiteAddressCommands(num));
+  for(const service of Object.values(NETOPS_SERVICES))
+    lines.push('set service '+service.object+' protocol '+service.protocol+' port '+service.port);
   const cliList=values=>values.length===1?values[0]:'[ '+values.join(' ')+' ]';
   for(const r of securityRulesForSite(num)){
     const p='set rulebase security rules '+r.name;
     lines.push(p+' from '+cliList(r.from),
       p+' to '+cliList(r.to),
       p+' source '+(r.source||'any'),p+' destination '+(r.destination||'any'),
-      p+' application '+cliList(r.apps),
-      p+' service '+(r.action==='allow'?'application-default':'any'),
+      p+' application '+(r.panosService?'any':cliList(r.apps)),
+      p+' service '+(r.panosService||(r.action==='allow'?'application-default':'any')),
       p+' action '+r.action,
       p+' log-end yes');
   }
@@ -413,4 +459,4 @@ function siteCandidate(num,pcCount){
    'WAN/VPN no parametrizados','asignacion de puertos de usuarios requiere validacion en terreno',
    'sin laboratorio de hardware']};
 }
-module.exports={routerCandidate,routerNatCandidate,stackCandidate,paloCandidate,siteCandidate,PANOS_RULES,evaluatePanPolicy,isPrivateRfc1918,panosSecurityCommands,CM_SERVICES,ROUTER_NTP_SOURCES,intersiteRulesForSite,securityRulesForSite,evaluateSitePanPolicy};
+module.exports={routerCandidate,routerNatCandidate,stackCandidate,paloCandidate,siteCandidate,PANOS_RULES,evaluatePanPolicy,isPrivateRfc1918,panosSecurityCommands,CM_SERVICES,NETOPS_SERVICES,ROUTER_NTP_SOURCES,intersiteRulesForSite,securityRulesForSite,evaluateSitePanPolicy};
