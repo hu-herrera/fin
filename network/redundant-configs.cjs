@@ -340,7 +340,7 @@ function intersiteAddressCommands(num){
     for(let i=0;i<ips.length;i++){
       lines.push('set address CM-'+upper+'-'+(i+1)+' ip-netmask '+ips[i]+'/32');
     }
-    lines.push('set address-group CM-'+upper+'-SERVERS static [ CM-'+upper+'-1 CM-'+upper+'-2 ]');
+    lines.push('set address-group CM-'+upper+'-SERVERS static [ '+ips.map((_,i)=>'CM-'+upper+'-'+(i+1)).join(' ')+' ]');
   }
   if(num!==0){
     lines.push('set address BR-LOCAL-USERS ip-netmask 10.70.'+num+'.0/25',
