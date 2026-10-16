@@ -5335,16 +5335,15 @@ function genShowBrief(s, type, command){
     if(command==='show ip interface brief') return genIfBrief(s);
     if(command==='show vlan brief') return genRouterVLAN(s);
     const rows = [
-      `GigabitEthernet0/0/0  ${active === 'starlink' ? '100.64.10.2' : 'dhcp'}  YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (WAN ${active.toUpperCase()})`,
-      `GigabitEthernet0/0/1  10.100.${n}.1       YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (Transit)`,
-      `GigabitEthernet0/0/2  unassigned          YES unset   <span class="ios-up">up</span>  <span class="ios-up">up</span>  (LAN trunk)`,
-      `GigabitEthernet0/0/2.10 10.70.${n}.1      YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (Datos)`,
-      `GigabitEthernet0/0/2.20 10.70.${n}.129     YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (VoIP)`,
-      `GigabitEthernet0/0/2.30 10.70.${n}.161     YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (Gestion)`,
-      `GigabitEthernet0/0/2.40 10.70.${n}.177     YES NVRAM  <span class="ios-up">up</span>  <span class="ios-up">up</span>  (Invitados)`
+      'GigabitEthernet0/0/0  LAN virtual-wire PA-1410',
+      'GigabitEthernet0/0/1  WAN Starlink',
+      'GigabitEthernet0/0/2  WAN Leo',
+      'GigabitEthernet0/0/3  WAN Entel 5G',
+      'TenGigabitEthernet0/0/4 WAN GTD 4G',
+      ...[10,20,30,40].map(v=>'GigabitEthernet0/0/0.'+v+' LAN VLAN'+v)
     ];
-    if(command.includes('interfaces description')) return `${prompt}> ${header}<span class="ios-hdr">Interface              Status  Protocol  Description</span><br>${rows.map(r=>r.replace(/  .*?  YES NVRAM  /,'  <span class="ios-up">up</span>      <span class="ios-up">up</span>       ')).join('<br>')}`;
-    if(command.includes('counters errors')) return `${prompt} ${header}<span class="ios-hdr">Interface              Align  FCS  Xmit  Rcv  Giants</span><br>Gi0/0/0                0      0    0     0    0<br>Gi0/0/2                0      0    0     0    0`;
+    if(command.includes('interfaces description')) return `${prompt} ${header}<span class="ios-hdr">Interface / Description (logical design)</span><br>${rows.join('<br>')}`;
+    if(command.includes('counters errors')) return `${prompt} ${header}Sin mediciones reales de errores FCS/CRC; estas interfaces se emulan: Gi0/0/0 (LAN), Gi0/0/1-3 y Te0/0/4 (WAN).`;
     if(['show ip route connected','show ip route static','show ip route ospf'].includes(command)) {
       const routeLines = genRouterRoutes(s).replace(/<br\s*\/?\s*>/gi, '\n').split('\n');
       const prefix = command === 'show ip route connected' ? /^(?:C|L)\s/ :
@@ -5352,16 +5351,16 @@ function genShowBrief(s, type, command){
       const matching = routeLines.filter(line => prefix.test(line.trim()));
       return `${prompt} ${header}${matching.length ? matching.join('<br>') : 'No matching routes installed'}`;
     }
-    if(command === 'show ip ospf') return `${prompt} ${header}Routing Process "ospf 1" with ID 10.70.${n}.254<br>Area 0, SPF runs 12, interfaces in area: 2<br>Reference bandwidth unit is 100 mbps`;
-    if(command === 'show ip ospf neighbor') return `${prompt} ${header}<span class="ios-hdr">Neighbor ID       Pri   State       Dead Time   Address       Interface</span><br>10.70.0.1          1     FULL/ -     00:00:34    10.70.0.1     Tunnel0`;
-    if(command === 'show ip ospf interface brief') return `${prompt} ${header}<span class="ios-hdr">Interface        PID   Area  IP Address/Mask       Cost  State</span><br>Tunnel0          1     0     10.100.${n}.1/30       10    P2P<br>Gi0/0/2.10       1     0     10.70.${n}.1/24         10    DR`;
-    if(command === 'show ip protocols') return `${prompt} ${header}Routing Protocol is "ospf 1"<br>Router ID 10.70.${n}.254 · Area 0 · Passive interface Gi0/0/2`;
-    if(command === 'show track') return `${prompt} ${header}Track 1<br>  IP SLA 1 state: <span class="ios-up">Up</span><br>  Reachability is Up<br>  Latest operation return code: OK`;
+    if(command === 'show ip ospf') return `${prompt} ${header}Routing Process "ospf 1" with ID ${routerIdentity(s).loopback}<br>Area 0, interfaces VLAN 10/20/30 passive; Tunnel100/200/300/400 eligible for adjacencies.<br>SPF counters not measured (simulation).`;
+    if(command === 'show ip ospf neighbor') return `${prompt} ${header}${activeLink(s.id)?'Enlace OSPF del modelo: '+({starlink:'Tunnel100',kuiper:'Tunnel200',g5:'Tunnel300',g4:'Tunnel400'}[activeLink(s.id)])+' (vecindad FULL no verificada en equipo físico).':'No neighbor reachable: no active WAN/tunnel.'}`;
+    if(command === 'show ip ospf interface brief') return `${prompt} ${header}<span class="ios-hdr">Interface      PID  Area   IP Address/Mask      State</span><br>${[['Tunnel100',1],['Tunnel200',5],['Tunnel300',9],['Tunnel400',13]].map(([t,host])=>t+' 1 0 172.16.'+n+'.'+host+'/30 P2P (configured)').join('<br>')}<br>Gi0/0/0.10 1 0 10.70.${n}.1/25 Passive<br>Gi0/0/0.20 1 0 10.70.${n}.129/27 Passive<br>Gi0/0/0.30 1 0 10.70.${n}.161/28 Passive`;
+    if(command === 'show ip protocols') return `${prompt} ${header}Routing Protocol is "ospf 1"<br>Router ID ${routerIdentity(s).loopback}; area 0; passive-interface default; no passive-interface Tunnel100,200,300,400.`;
+    if(command === 'show track') return genWANFailover(s);
     if(command === 'show ip sla statistics') return `${prompt} ${header}<span class="ios-hdr">ID  Type       Destination    Estado simulado</span><br>${[['starlink',1,'100.64.'],['kuiper',2,'100.64.'],['g5',3,'100.85.'],['g4',4,'100.92.']].map(([key,id,prefix])=>`${id} icmp-echo ${prefix}${n}.${key==='starlink'?1:key==='kuiper'?5:1} ${ST.links[s.id]?.[key]==='caido'?'Timeout':'Reachable (modelo)'}`).join('<br>')}`;
-    if(command === 'show ip ospf database') return `${prompt} ${header}<span class="ios-hdr">Router Link States (Area 0)</span><br>10.70.${n}.254  age 321  seq# 0x8000000c  links 4`;
+    if(command === 'show ip ospf database') return `${prompt} ${header}Area 0 · router ID ${routerIdentity(s).loopback}<br>LSDB de laboratorio: no se han calculado LSAs/temporizadores físicos.`;
     if(command === 'show ip bgp summary') return `${prompt} ${header}% BGP is not configured on this router. Routing protocol: OSPF 1.`;
-    if(command === 'show arp') return `${prompt} ${header}<span class="ios-hdr">Protocol  Address          Age  Hardware Addr   Type  Interface</span><br>Internet  10.70.${n}.10       2   001a.2b${String(n).padStart(2,'0')}0a.ff ARPA  Gi0/0/2.10<br>Internet  10.70.${n}.1        -   00aa.bbcc.${String(n).padStart(2,'0')} ARPA  Gi0/0/2.10`;
-    if(command === 'show ip cef') return `${prompt} ${header}<span class="ios-hdr">Prefix                  Next Hop        Interface</span><br>0.0.0.0/0                ${active}          Gi0/0/0<br>10.70.${n}.0/25          attached        Gi0/0/2.10`;
+    if(command === 'show arp') return `${prompt} ${header}ARP: tabla dinámica no emulada; no se muestran MAC ni edades inventadas.<br>LAN router: Gi0/0/0.10 10.70.${n}.1/25; Gi0/0/0.30 10.70.${n}.161/28.`;
+    if(command === 'show ip cef') return `${prompt} ${header}<span class="ios-hdr">Prefix        Next Hop        Interface (modelo)</span><br>${activeLink(s.id)?'0.0.0.0/0 via '+({starlink:'100.64.'+n+'.1',kuiper:'100.64.'+n+'.5',g5:'100.85.'+n+'.1',g4:'100.92.'+n+'.1'}[activeLink(s.id)])+' '+routerWanInterface(activeLink(s.id)):'0.0.0.0/0 no route installed'}<br>10.70.${n}.0/25 attached Gi0/0/0.10`;
     if(command === 'show ip sla configuration') return `${prompt} ${header}SLA 1: 100.64.${n}.1 via Gi0/0/1<br>SLA 2: 100.64.${n}.5 via Gi0/0/2<br>SLA 3: 100.85.${n}.1 via Gi0/0/3<br>SLA 4: 100.92.${n}.1 via Te0/0/4<br>Probes solo al gateway ISP; comprobación extremo a extremo pendiente.`;
     if(command === 'show bfd neighbors') return `${prompt} ${header}No BFD sessions configured on satellite or cellular WAN (timers require validation).`;
     if(command === 'show crypto ikev2 sa') return `${prompt} ${header}Túneles IKEv2 configurados en laboratorio; SA reales no verificadas. WAN seleccionada: ${active}.`;
@@ -5370,7 +5369,7 @@ function genShowBrief(s, type, command){
     if(command === 'show crypto session') return `${prompt} ${header}IPsec se representa en un modelo lógico; sin sesiones criptográficas verificadas en router físico.`;
     if(command === 'show processes cpu') return `${prompt} ${header}CPU utilization for five seconds: 18%/2%; one minute: 16%; five minutes: 14%`;
     if(command === 'show memory statistics') return `${prompt} ${header}Processor Pool Total: 8192M Used: 2470M Free: 5722M`;
-    if(command === 'show cdp neighbors detail' || command === 'show lldp neighbors') return `${prompt} ${header}Device ID: SW-${s.code}-01<br>Interface: Gi0/0/2 · Port ID: Gi1/0/1<br>IP address: 10.70.${n}.2 · Platform: Cisco C9200L-48T-4G-E`;
+    if(command === 'show cdp neighbors detail') return `${prompt} ${header}No se han verificado vecinos CDP físicos; Gi0/0/0 conectado a PA-1410 virtual wire (el paso de tramas CDP requiere validación PAN-OS).`;
     if(command === 'show vlan brief') return `${prompt} ${header}10  DATOS-Usuarios  active  Gi0/0/2.10<br>20  VOIP-Telefonia  active  Gi0/0/2.20<br>30  GESTION-Red     active  Gi0/0/2.30<br>40  INVITADOS-DMZ   active  Gi0/0/2.40`;
     if(command === 'show inventory') return `${prompt} ${header}NAME: "Chassis", DESCR: "Cisco Catalyst C8300-2N2S-4T2X"<br>PID: C8300-2N2S-4T2X · SN: FOC-LAB-${String(n).padStart(3,'0')}<br>NAME: "gateway 5G externo compatible (modelo por validar)", DESCR: "Cellular module"`;
     if(command === 'show environment') return `${prompt} ${header}Temperature: <span class="ios-up">Normal</span> · CPU: 18% · Power supplies: 2/2 OK · Fans: OK`;
@@ -5379,7 +5378,7 @@ function genShowBrief(s, type, command){
     if(command === 'show ip ssh') return `${prompt} ${header}SSH Enabled - version 2.0<br>Authentication timeout: 60 secs; Authentication retries: 3`;
     if(command === 'show users') return `${prompt} ${header}  Line       User       Host(s)              Idle       Location<br>*  0 con 0    admin      idle                 00:00:00`;
     if(command === 'show line') return `${prompt} ${header}  Tty Typ     Tx/Rx    A Modem  Roty AccO AccI  Uses  Noise  Overruns<br>* 0 CTY             -        -    -    -    -     0       0`;
-    if(command === 'show ntp status') return `${prompt} ${header}Clock is synchronized, stratum 3, reference is 10.100.0.1<br>nominal freq is 250.0000 Hz, precision is 2**18`;
+    if(command === 'show ntp status') return `${prompt} ${header}NTP servers configured: 10.70.0.1, 10.70.0.2.<br>Sin medición de sincronización ni estrato de un router físico.`;
     if(command === 'show logging') return `${prompt} ${header}%LINK-3-UPDOWN: Interface Gi0/0/0, changed state to up<br>%SYS-5-CONFIG_I: Configured from console by admin`;
   }
   if(type.startsWith('sw')){
@@ -5398,7 +5397,7 @@ function genShowBrief(s, type, command){
     if(command.includes('mac address-table')) return genSwitchDetail(s,type,'show mac address-table');
     if(command === 'show spanning-tree' || command === 'show spanning-tree brief' || command === 'show spanning-tree root') return genSwitchDetail(s,type,'show spanning-tree');
     if(command === 'show cdp neighbors detail' || command === 'show lldp neighbors detail') return `${base}Device ID: RTR-${s.code}<br>Interface: Gi1/0/1 · Port ID: Gi0/0/2<br>IP address: 10.70.${n}.1 · Platform: Cisco Catalyst C8300-2N2S-4T2X`;
-    if(command === 'show lldp neighbors') return `${base}<span class="ios-hdr">Local Intf  Chassis Id        Port Id       System Name</span><br>Gi1/0/1     RTR-${s.code}           Gi0/0/2       RTR-${s.code}`;
+    if(command === 'show lldp neighbors') return `${prompt} ${header}No se validaron vecinos LLDP físicos. LAN Gi0/0/0 conecta al PA-1410 (virtual wire) antes de SW1.`;
     if(command === 'show port-channel summary' || command === 'show etherchannel summary') return genSwitchDetail(s,type,'show etherchannel summary');
     if(command === 'show switch') return `${base}<span class="ios-hdr">Switch/Stack Mac Address : Priority Version State</span><br>1        00aa.bbcc.${String(n).padStart(2,'0')}  15       READY  <span class="ios-up">Ready</span>`;
     if(command === 'show power inline') return genSwitchDetail(s,type,command);
