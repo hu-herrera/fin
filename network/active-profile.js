@@ -159,11 +159,7 @@ function firewallCommand(s,cmd){
     const lines=['# SIMULADOR - PA-1410 Layer3; NO se ha hecho commit en un equipo físico',
       'set deviceconfig system hostname PA-'+s.code,
       '# MGT físico sin dirección en este presupuesto; gestión restringida por ae2.30',
-      'set network profiles interface-management-profile LAN-MGMT ping yes',
-      'set network profiles interface-management-profile LAN-MGMT ssh yes',
-      'set network profiles interface-management-profile LAN-MGMT https yes',
-      'set network profiles interface-management-profile LAN-MGMT permitted-ip 10.70.'+n+'.162/32',
-      'set network interface aggregate-ethernet ae2 layer3 units ae2.30 interface-management-profile LAN-MGMT',
+      // Gestión en banda se define una sola vez en paloCandidate().
       ...a.palo.split('\n'),
       '# Políticas y servidores DNS/NTP reservados, no aprovisionados; sin sesiones reales'];
     return h+lines.map(escapeCLI).join('<br>');
