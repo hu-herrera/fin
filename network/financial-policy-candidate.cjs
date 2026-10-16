@@ -3,7 +3,6 @@
 // real endpoints and PAN-OS App-ID. Does not fabricate banking applications.
 // NO client traffic is authorized until a human reviews both firewalls.
 const {checkSiteNum}=require('./redundant-model.cjs');
-const {pcInventory}=require('./export-candidate.cjs');
 const {centralReservations}=require('./management-services-candidate.cjs');
 const {evaluateSitePanPolicy,paloCandidate}=require('./redundant-configs.cjs');
 const REQUIRED={
@@ -19,7 +18,7 @@ const REQUIRED={
  testedWithApplication:'Flujo legítimo no probado contra política candidata',
  rollbackAndConsoleVerified:'Consola, backup y rollback sin comprobar'
 };
-function assessFinancialFlow(siteNum,p,inventory=pcInventory()){
+function assessFinancialFlow(siteNum,p,inventory=centralReservations().pcs){
  checkSiteNum(siteNum);
  const site=siteNum===0?'cm':'s'+String(siteNum).padStart(2,'0'),issues=[];
  if(siteNum===0)issues.push('Este flujo modela sucursal → CM; CM→sucursal necesita diseño separado');
