@@ -87,3 +87,10 @@ npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs --browse
 - Verificar y reservar DNS `10.70.0.110` y `.111`, TACACS `.112/.113`, NTP `.116/.117`, syslog `.100` y monitoreo `.101`. No se afirma que esas máquinas estén instaladas: deberán cotizarse y aprovisionarse, y lo ideal será migrar infraestructura a su VLAN segura si el alcance lo permite.
 - Servicios de casa matriz deben contar con rutas de retorno, reglas PAN-OS interzona restrictivas, DNS/NTP autorizados, acceso OOB independiente y procedimientos de revocación de credenciales.
 - El despliegue solo se aprueba con pruebas **reales** de `show track`, `show ip nat translations`, `show ip ospf neighbor` y políticas/commit PAN-OS; la web es evidencia de coherencia del modelo, no del hardware.
+
+## Gestión OOB y resiliencia de recuperación (fase aprobada en simulación)
+- Se reservó una subred físicamente independiente **10.73.N.0/28** por sede, MGT PA-1410 **.2**, Mgmt-vrf Catalyst **.3**, gateway OOB **.1** y dirección **.4** reservada para C8300 sin inventar el nombre de su interfaz.
+- [Configuración candidata OOB y presupuesto de hardware](oob-management-design.md). Generador: `network/oob-management.cjs`. CLI: `node network/export-candidate.cjs s01 oob`; nunca aplicar sin gateway/switch/cableado real.
+- El motor simula fallo de gateway, switch, ruta NOC y cables MGT, independientemente de la caída de C8300, PA dataplane o switches de producción. Los escenarios no afirman que el hardware OOB esté instalado.
+- CI aprobada: **31/31 Playwright**, 8/8 WAN, 185 escenarios de falla, 2.029 aserciones de redundancia, 2.536 verificaciones de candidatos, 911 de política, 1.162 IP SLA y **784 de OOB** sobre 23 sedes/650 PCs. [Ejecución](https://github.com/hu-herrera/fin/actions/runs/38856652658).
+- **Bloqueo real de migración:** aprovisionar 23 caminos OOB independientes, validar el puerto/VRF de C8300 concreto y el acceso remoto desde NOC, además de completar políticas PAN-OS, contratos WAN/IPsec, OSPF y pruebas de corte.
