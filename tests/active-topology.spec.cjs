@@ -338,3 +338,21 @@ test('Configuracion de arranque guardada se aplica a la topologia sin abrir cons
   localStorage.removeItem(DEVICE_CLI_STORAGE_PREFIX+'s06:sw2');
  });
 });
+
+test('La seleccion de PCs para ping local no exige gateway, pero WAN si',async({page})=>{
+ await page.goto(url);
+ const faults=await page.evaluate(()=>{
+  const list=[],check=(ok,msg)=>{if(!ok)list.push(msg)};
+  const s=SEDES.find(site=>site.id==='s07'),lab=getRedundantLabState(s.id),pc2=getPCs(s)[1];
+  window.RedundantLab.setNode(lab,'firewall',false);
+  check(findAvailableSimulationPC(s)===null,'WAN ping selects host without PA');
+  const local=findAvailableSimulationPC(s,true);
+  check(Boolean(local),'Local ping cannot select a live Layer2 endpoint');
+  check(Boolean(local)&&buildPacketRoute(s,s,false,local,pc2).length===3,
+    'Local ping fails despite two working access ports');
+  window.RedundantLab.setNode(lab,'firewall',true);
+  check(Boolean(findAvailableSimulationPC(s)),'WAN host not available after PA restore');
+  return list;
+ });
+ expect(faults).toEqual([]);
+});
