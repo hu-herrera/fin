@@ -62,21 +62,45 @@ test('Laboratorio refleja corte Po10 y separación StackWise sin recargar la pá
  await page.locator('#pl-trace').click();
  await expect(page.locator('#pl-result')).toContainText('GATEWAY_DOWN');
 });
-test('Presentar abre una vista proyectable con 6 escenas y acceso al simulador',async({page})=>{
+test('Presentar cubre 5 requisitos del profesor y expone demo sin PPT',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(url);
  await page.locator('#presentation-launch').click();
  await expect(page.locator('#presentation-overlay')).toBeVisible();
- await expect(page.locator('#stage-title')).toHaveText('23 sedes. Una red.');
- await page.keyboard.press('ArrowRight');
- await expect(page.locator('#stage-title')).toHaveText('Cisco + Palo Alto');
- await page.locator('#stage-next').click();
- await expect(page.locator('#stage-title')).toHaveText('Cada flujo, una regla.');
+ await expect(page.locator('#stage-title')).toHaveText('Financiera Pacífico');
+ await expect(page.locator('#stage-notes')).toBeHidden();
+ const titles=[
+  'Del diseño a la interacción',
+  'Una red que responde',
+  'La red demuestra lo que hace',
+  'Problemas que resolvimos',
+  'Próximo paso: pulir y presentar'
+ ];
+ for(const title of titles){
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#stage-title')).toHaveText(title);
+ }
+ await expect(page.locator('#stage-progress')).toContainText('6 / 6');
+ await page.keyboard.press('ArrowLeft');
+ await expect(page.locator('#stage-title')).toHaveText('Problemas que resolvimos');
+ await page.keyboard.press('n');
+ await expect(page.locator('#stage-notes')).toBeVisible();
+ await expect(page.locator('#stage-notes-text')).toContainText('StackWise');
+ await page.keyboard.press('n');
+ await expect(page.locator('#stage-notes')).toBeHidden();
+ await page.keyboard.press('ArrowLeft');
+ await expect(page.locator('#stage-title')).toHaveText('La red demuestra lo que hace');
+ await expect(page.locator('#stage-ci')).toBeVisible();
+ await expect(page.locator('#stage-ci')).toHaveAttribute('href',/github.com\/hu-herrera\/fin\/actions\/runs\/38964467044/);
  await page.locator('#stage-lab').click();
  await expect(page.locator('#packetlab-overlay')).toBeVisible();
+ await expect(page.locator('#pl-result')).toContainText('PERMITIDO');
+ await page.locator('#pl-ssh').click();
  await expect(page.locator('#pl-result')).toContainText('BLOQUEADO');
  await expect(page.locator('#presentation-overlay')).toBeHidden();
  await page.keyboard.press('Escape');
  await expect(page.locator('#packetlab-overlay')).toBeHidden();
+ expect(errors).toEqual([]);
 });
 
 test('Puerto Cisco de PC deshabilitado impide el flujo y al levantarlo vuelve a permitirlo',async({page})=>{
