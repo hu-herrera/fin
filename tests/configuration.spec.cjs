@@ -209,3 +209,29 @@ test('Diagnósticos Cisco y PAN-OS no inventan vecinos BGP ni sesiones VPN',asyn
  });
  expect(result).toEqual([]);
 });
+
+test('Diagnósticos OSPF, CEF y puertos Cisco reflejan interfaces configuradas en las 23 sedes',async({page})=>{
+ await setOperational(page);
+ const result=await page.evaluate(()=>{
+   const issues=[];
+   for(const site of SEDES){
+     const n=site.num;
+     const ospf=genShowBrief(site,'router','show ip ospf interface brief');
+     const cef=genShowBrief(site,'router','show ip cef');
+     const protocols=genShowBrief(site,'router','show ip protocols');
+     const description=genShowBrief(site,'router','show interfaces description');
+     const neighbors=genShowBrief(site,'router','show ip ospf neighbor');
+     const ntp=genShowBrief(site,'router','show ntp status');
+     if(!ospf.includes('Gi0/0/0.10')||!ospf.includes('10.70.'+n+'.1/25'))issues.push(site.id+': OSPF LAN incorrecta');
+     if(ospf.includes('Tunnel0 ')||ospf.includes('Gi0/0/2.10')||ospf.includes('10.70.'+n+'.1/24'))issues.push(site.id+': OSPF interfaces obsoletas');
+     if(!cef.includes('Gi0/0/0.10')||cef.includes('Gi0/0/2.10'))issues.push(site.id+': CEF LAN incorrecto');
+     if(!cef.includes('GigabitEthernet0/0/1'))issues.push(site.id+': CEF WAN principal ausente');
+     if(!protocols.includes(routerIdentity(site).loopback))issues.push(site.id+': router ID OSPF incorrecto');
+     if(!description.includes('GigabitEthernet0/0/0')||!description.includes('TenGigabitEthernet0/0/4'))issues.push(site.id+': inventario WAN LAN incompleto');
+     if(neighbors.includes('Tunnel0')||neighbors.includes('FULL/ -'))issues.push(site.id+': vecindad OSPF fabricada');
+     if(ntp.includes('Clock is synchronized'))issues.push(site.id+': estado NTP fabricado');
+   }
+   return issues;
+ });
+ expect(result).toEqual([]);
+});
