@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const {oobAddressing,validateOobPlan,oobCandidate}=require('../network/oob-management.cjs');
 const {candidateAddressing}=require('../network/redundant-model.cjs');
+const {exportCandidate}=require('../network/export-candidate.cjs');
 const html=fs.readFileSync('index.html','utf8');
 const mm=html.match(/const PC_COUNT\s*=\s*(\{[\s\S]*?\});/);
 assert.ok(mm,'missing PC_COUNT');
@@ -18,6 +19,10 @@ for(let n=0;n<23;n++){
   check(a.network==='10.73.'+n+'.0/28',key+' OOB is not /28');
   check(new Set(addresses).size===5,key+' duplicated OOB hosts');
   check(b.deployable===false,key+' unprovisioned OOB marked deployed');
+  const exported=exportCandidate(key,'oob');
+  check(exported.includes('NO APLICAR SIN GATEWAY'),key+' OOB export not clearly blocked');
+  check(exported.includes('interface GigabitEthernet0/0'),key+' OOB missing Catalyst Mgmt-vrf');
+  check(exported.includes('C8300 NO CONFIGURADO'),key+' router OOB interface prematurely configured');
   check(b.requiredHardware.length>=3,key+' missing dedicated OOB equipment');
   for(const addr of addresses){
     check(!fullOob.has(addr),key+' OOB IP duplicates other site '+addr);
@@ -42,6 +47,7 @@ for(let n=0;n<23;n++){
 assert.throws(()=>oobCandidate(23),/fuera/);
 assert.throws(()=>oobCandidate(-1),/fuera/);
 check(pcCounts.cm===55,'CM inventory not expected');
+check(Object.values(pcCounts).reduce((a,b)=>a+b,0)===650,'PC inventory total changed');
 const overlap=[...fullOob].filter(ip=>fullData.has(ip));
 assert.deepEqual(overlap,[]);
 console.log('TOTAL OOB: 23 sedes, '+fullOob.size+' IP reservadas, '+checks+' comprobaciones, 650 PCs sin solapamiento.');
