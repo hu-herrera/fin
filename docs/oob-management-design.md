@@ -1,6 +1,6 @@
-# Red de gestión OOB independiente — 23 sedes (diseño candidato)
+# Red de gestión OOB independiente — mejora opcional
 
-**Estado: no desplegado.** Complementa el corte C8300 ↔ PA-1410 Layer3 ↔ StackWise-80, sin inventar interfaces del C8300 ni simular que existen switches de gestión.
+**Estado: propuesta opcional, no presupuestada ni exigida para la topología principal.** El diseño base mantiene los dos C9200L de cada sede y la VLAN30 de gestión con acceso restringido y respaldo de consola. Esta alternativa OOB independiente complementaría el corte C8300 ↔ PA-1410 Layer3 ↔ StackWise-80, sin inventar interfaces del C8300 ni simular que existen switches de gestión.
 
 ## Esquema y direccionamiento por sede
 
@@ -20,8 +20,8 @@ La red OOB `10.73.N.0/28` **no pertenece** a las VLAN 10/20/30/40 ni al tránsit
 
 ## Cableado e inventario requerido
 
-- 23 switches de gestión OOB, uno por sede, adicionales a los Catalyst del dataplane.
-- 23 gateways de gestión OOB o dispositivo equivalente con trayecto separado, uno por sede; cualquier módem/LTE debe verificarse y presupuestarse.
+- **Solo si se adopta la mejora completa:** hasta 23 switches de gestión OOB, adicionales a los Catalyst existentes. No forman parte de la compra base.
+- **Solo si se adopta la mejora completa:** hasta 23 gateways de gestión OOB con trayecto separado. No agregarlos al presupuesto base; su alcance y costo requieren una decisión explícita.
 - Para cada sede, conectar MGT del PA-1410 al switch OOB y el puerto Gi0/0 de **ambos** miembros C9200L al mismo segmento de gestión mediante cableado independiente.
 - La conexión de administración del C8300 queda pendiente de inspección del hardware físico exacto. No usar uno de los seis puertos que ya están asignados a WAN o AE1 sin rediseñar el inventario.
 - Conservar acceso serial/consola de emergencia, DNS/NTP/AAA por rutas de servicio verificadas, jump hosts y un plan de recuperación local.
