@@ -1,0 +1,118 @@
+const {test,expect}=require('@playwright/test');
+const {pathToFileURL}=require('node:url');
+const path=require('node:path');
+const url=pathToFileURL(path.resolve(__dirname,'../index.html')).href;
+test('Perfil activo es StackWise Layer3 en 23 sedes y 650 PCs, sin virtual-wire/Po1',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(url);
+ const result=await page.evaluate(()=>{
+  const failures=[];let pcs=0;
+  for(const site of SEDES){
+   pcs+=getPCs(site).length;
+   const n=site.num,router=genRouterRunningConfig(site),sw1=genSwitchRunningConfig(site,1),
+     sw2=genSwitchRunningConfig(site,2),pa=genFWCommand(site,'show running-config'),rib=genRouterRoutes(site);
+   const check=(x,msg)=>{if(!x)failures.push(site.id+': '+msg)};
+   check(window.ActiveProfile.enabled(),'StackWise operational mode disabled');
+   check(router.includes('interface Port-channel10'),'router transit Po10 missing');
+   check(router.includes('TenGigabitEthernet0/0/5'),'router second 10G absent');
+   check(!router.includes('GigabitEthernet0/0/0.10'),'router has legacy LAN gateway');
+   check(!router.includes('virtual-wire'),'router still mentions vwire');
+   check(sw1.includes('Port-channel20'),'stack Po20 missing');
+   check(sw1.includes('Gi'+'gabitEthernet2/0/45'),'stack member 2 physical not provisioned');
+   check(sw2.includes('switch 2 provision c9200l-48t-4g'),'SW2 does not show same logical stack');
+   check(!sw1.includes('channel-group 1 mode active'),'legacy peer LACP not removed');
+   check(pa.includes('aggregate-ethernet ae2 layer3'),'PA not Layer3');
+   check(!pa.includes('virtual-wire'),'PA still vwire');
+   check(!pa.includes('system ip-address 10.70.'+n+'.164'),'overlapping PA MGT and ae2.30');
+   check(rib.includes('S 10.70.'+n+'.0/25 [1/0] via 10.72.'+n+'.2'),'router LAN route not via PA');
+   check(rib.includes('C 10.72.'+n+'.0/30'),'Po10 connected subnet missing');
+   check(!rib.includes('C 10.70.'+n+'.0/25'),'router falsely has directly connected LAN');
+   check(genFWCommand(site,'show routing route').includes('10.72.'+n+'.1'),'PA lacks Cisco default route');
+   check(genSwitchDetail(site,'sw1','show etherchannel summary').includes('Po20'),'LACP summary not Po20');
+   check(genSwitchDetail(site,'sw2','show switch').includes('StackWise'),'SW2 no stack summary');
+   check(genRouterDetail(site,'show ip interface brief').includes('TenGigabitEthernet0/0/5'),'interface status wrong');
+  }
+  return {failures,pcs,sites:SEDES.length};
+ });
+ expect(result.failures).toEqual([]);
+ expect(result.pcs).toBe(650);
+ expect(result.sites).toBe(23);
+ expect(errors).toEqual([]);
+});
+test('Perfil activo: fallo de SW1 conserva SW2; fallo del C8300 conserva LAN y gestión PA',async({page})=>{
+ await page.goto(url);
+ const results=await page.evaluate(()=>{
+  const failures=[],site=SEDES.find(s=>s.id==='s01'),pc1=getPCs(site).find(p=>p.sw===1),
+    pc2=getPCs(site).find(p=>p.sw===2),lab=getRedundantLabState(site.id);
+  const check=(x,msg)=>{if(!x)failures.push(msg)};
+  check(isPCNetworkAvailable(site.id,pc1),'PC SW1 initial unreachable');
+  check(isPCNetworkAvailable(site.id,pc2),'PC SW2 initial unreachable');
+  window.RedundantLab.setNode(lab,'sw1',false);
+  check(!isPCNetworkAvailable(site.id,pc1),'SW1 failed but PC1 marked online');
+  check(isPCNetworkAvailable(site.id,pc2),'SW2 loses connectivity when SW1 fails');
+  check(isSwitchPathAvailable(site.id,2),'SW2 path to PA lost');
+  check(!isSwitchPathAvailable(site.id,1),'SW1 path stays up');
+  window.RedundantLab.setNode(lab,'sw1',true);
+  window.RedundantLab.setNode(lab,'router',false);
+  check(isPCNetworkAvailable(site.id,pc2),'PC SW2 lost local gateway when router failed');
+  check(!isSiteLanAvailable(site.id),'site falsely WAN reachable without Cisco router');
+  check(genFWCommand(site,'show routing route').includes('unreachable'),'PA does not reflect router failure');
+  const local=buildPacketRoute(site,site,true,pc1,pc2);
+  check(local.length>0,'local PC-SW1 to PC-SW2 path should survive router failure');
+  window.RedundantLab.setNode(lab,'router',true);
+  window.RedundantLab.setLink(lab,'T1',false);
+  check(isSiteLanAvailable(site.id),'Po10 failover lost after one cable');
+  window.RedundantLab.setLink(lab,'T2',false);
+  check(!isSiteLanAvailable(site.id),'Po10 both down still WAN available');
+  check(isPCNetworkAvailable(site.id,pc2),'LAN gateway should survive both Po10 members down');
+  window.RedundantLab.setLink(lab,'T1',true);
+  check(isSiteLanAvailable(site.id),'Po10 not recovered');
+  return failures;
+ });
+ expect(results).toEqual([]);
+});
+test('Perfil activo: falla de ambos StackWise aislada, Po20 distribuido y CLI por miembro',async({page})=>{
+ await page.goto(url);
+ const r=await page.evaluate(()=>{
+  const failures=[],site=SEDES.find(s=>s.id==='s02'),lab=getRedundantLabState(site.id);
+  const check=(x,msg)=>{if(!x)failures.push(msg)};
+  let summary=genSwitchDetail(site,'sw2','show etherchannel summary');
+  check(summary.includes('Gi2/0/45(P)'),'no active member2 LACP in Po20');
+  window.RedundantLab.setLink(lab,'D1',false);
+  window.RedundantLab.setLink(lab,'D2',false);
+  check(isPCNetworkAvailable(site.id,getPCs(site).find(p=>p.sw===1)),
+     'SW1 cannot reach PA via stack member2 when own Po20 cables fail');
+  window.RedundantLab.setLink(lab,'D3',false);
+  window.RedundantLab.setLink(lab,'D4',false);
+  check(!isSiteLanAvailable(site.id),'Po20 all cables fail but site still reachable');
+  window.RedundantLab.setLink(lab,'D4',true);
+  check(isSiteLanAvailable(site.id),'Po20 cannot recover with one active cable');
+  window.RedundantLab.setLink(lab,'STACK-A',false);
+  check(isSwitchStackLinkAvailable(site.id),'single StackWise cable failure should retain connectivity');
+  window.RedundantLab.setLink(lab,'STACK-B',false);
+  check(!isSwitchStackLinkAvailable(site.id),'both StackWise cables down but stack still functional');
+  check(!isPCNetworkAvailable(site.id,getPCs(site)[0]),
+     'ambiguous partition should fail closed in gateway connectivity');
+  check(genSwitchDetail(site,'sw1','show switch').includes('PARTITION'),'partition not diagnosed');
+  window.RedundantLab.setLink(lab,'STACK-A',true);
+  check(isSwitchStackLinkAvailable(site.id),'stack did not recover');
+  return failures;
+ });
+ expect(r).toEqual([]);
+});
+test('Perfil anterior permanece disponible y aislado para comparar modelos',async({page})=>{
+ await page.goto(url);
+ const r=await page.evaluate(()=>{
+  const site=SEDES.find(s=>s.id==='s01');
+  const modern={router:genRouterRunningConfig(site),stack:genSwitchRunningConfig(site,1)};
+  ST.mode='antes';
+  const classic={router:genRouterRunningConfig(site),sw1:genSwitchRunningConfig(site,1)};
+  ST.mode='despues';
+  return {modern,classic,modernAgain:genRouterRunningConfig(site)};
+ });
+ expect(r.modern.router).toContain('Port-channel10');
+ expect(r.modern.stack).toContain('Port-channel20');
+ expect(r.classic.router).toContain('GigabitEthernet0/0/0.10');
+ expect(r.classic.sw1).toContain('Port-channel1');
+ expect(r.modernAgain).toBe(r.modern.router);
+});
