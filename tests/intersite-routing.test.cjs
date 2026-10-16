@@ -95,6 +95,31 @@ for(let n=0;n<23;n++){
  }
  seen.add(n);
 }
+for(let n=0;n<23;n++){
+ const routerLoop='10.70.100.'+(n===0?1:n+10);
+ const cm=paloCandidate(0);
+ ok(cm.includes('set address ROUTER-LOOP-'+String(n).padStart(2,'0')+
+   ' ip-netmask '+routerLoop+'/32'),
+   'CM missing dedicated NTP /32 router address '+n);
+ decision(0,'TRANSIT','USERS','ntp',CM_SERVICES.ntp[0],routerLoop,
+   'CM-IN-NTP-FROM-ROUTERS','allow');
+ decision(0,'TRANSIT','USERS','ntp',CM_SERVICES.ntp[1],routerLoop,
+   'CM-IN-NTP-FROM-ROUTERS','allow');
+ decision(0,'TRANSIT','USERS','dns',CM_SERVICES.ntp[0],routerLoop,
+   'interzone-default','deny');
+ decision(0,'TRANSIT','USERS','ssh',CM_SERVICES.ntp[0],routerLoop,
+   'interzone-default','deny');
+ decision(0,'TRANSIT','USERS','ntp',CM_SERVICES.dns[0],routerLoop,
+   'interzone-default','deny');
+ ok(routerCandidate(n).includes(' ip address '+routerLoop+' 255.255.255.255'),
+   'OSPF Loopback0 address differs from NTP source '+n);
+}
+for(const rogue of ['10.70.100.2','10.70.100.10','10.70.100.33','10.70.200.11']){
+ decision(0,'TRANSIT','USERS','ntp',CM_SERVICES.ntp[0],rogue,
+   'interzone-default','deny');
+}
+ok(paloCandidate(0).includes('set rulebase security rules CM-IN-NTP-FROM-ROUTERS service application-default'),
+  'NTP router exception must use the default NTP application port');
 assert.throws(()=>evaluateSitePanPolicy(0,'TRANSIT','USERS','dns','invalid','10.70.1.10'),/IPv4/);
 assert.throws(()=>evaluateSitePanPolicy(0,'TRANSIT','USERS','dns','10.70.0.110',''),/IP origen/);
 eq(seen.size,23,'Every site must be checked');
