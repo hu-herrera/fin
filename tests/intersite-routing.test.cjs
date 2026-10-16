@@ -40,6 +40,14 @@ for(let n=0;n<23;n++){
   const srcUsers='10.70.'+n+'.10';
   const srcMgmt='10.70.'+n+'.162';
   decision(n,'USERS','TRANSIT','dns',CM_SERVICES.dns[0],srcUsers,dnsRule,'allow');
+  decision(n,'USERS','TRANSIT','dns',CM_SERVICES.dns[0],'10.70.0.10',
+    'DENY-CORP-RFC1918-TRANSIT','deny');
+  decision(n,'MGMT-DATA','TRANSIT','ntp',CM_SERVICES.ntp[0],'10.70.10.162',
+    'DENY-CORP-RFC1918-TRANSIT','deny');
+  ok(cfg.includes('set address-group BR-LOCAL-DNS-CLIENTS static [ BR-LOCAL-USERS BR-LOCAL-MGMT ]'),
+    'Branch DNS source group absent');
+  ok(cfg.includes('set rulebase security rules BRANCH-NTP-TO-CM source BR-LOCAL-MGMT'),
+    'Branch NTP may be sourced from any network');
   decision(n,'MGMT-DATA','TRANSIT','dns',CM_SERVICES.dns[1],srcMgmt,dnsRule,'allow');
   decision(n,'MGMT-DATA','TRANSIT','ntp',CM_SERVICES.ntp[0],srcMgmt,ntpRule,'allow');
   decision(n,'USERS','TRANSIT','ssl','10.70.0.110',srcUsers,'DENY-CORP-RFC1918-TRANSIT','deny');
