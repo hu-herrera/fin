@@ -4904,7 +4904,9 @@ function getInterSwitchMemberStates(sedeId){
   // El enlace deja de transportar tráfico cuando cualquiera de sus extremos está apagado.
   return [45,46].map(port=>({
     port,
-    up:!isDeviceInterfaceAdminDown(sedeId,'sw1',`Gi1/0/${port}`) &&
+    up:!isDeviceInterfaceAdminDown(sedeId,'sw1','Po1') &&
+       !isDeviceInterfaceAdminDown(sedeId,'sw2','Po1') &&
+       !isDeviceInterfaceAdminDown(sedeId,'sw1',`Gi1/0/${port}`) &&
        !isDeviceInterfaceAdminDown(sedeId,'sw2',`Gi1/0/${port}`),
   }));
 }
@@ -4941,7 +4943,7 @@ function deviceCliDefaultHostname(s, type){
 
 function canonicalDeviceInterface(name, type){
   const value = name.trim();
-  if(type.startsWith('sw')) return value.replace(/^gigabitethernet/i, 'Gi').replace(/^gi/i, 'Gi');
+  if(type.startsWith('sw')) return value.replace(/^port-channel/i, 'Po').replace(/^gigabitethernet/i, 'Gi').replace(/^gi/i, 'Gi');
   return value
     .replace(/^tengigabitethernet/i, 'TenGigabitEthernet')
     .replace(/^te(?=\d)/i, 'TenGigabitEthernet')
@@ -4972,7 +4974,7 @@ function isSupportedDeviceInterface(name, type){
     ].includes(normalized);
   }
   if(type.startsWith('sw')){
-    return /^Gi[12]\/0\/(?:[1-9]|[1-3]\d|4[0-8])$/.test(normalized);
+    return normalized === 'Po1' || /^Gi[12]\/0\/(?:[1-9]|[1-3]\d|4[0-8])$/.test(normalized);
   }
   return false;
 }
