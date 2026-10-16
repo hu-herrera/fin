@@ -102,3 +102,11 @@ Esta distinción permite defender el proyecto sin presentar como medidos resulta
 - Los paneles de dispositivos disponen de una pestaña **Objetivo L3** para inspección, no aplicación, de `Po10`/PA `ae1`, `Po20`/PA `ae2`, VLAN y puertos del stack.
 - [CI última con pruebas ampliadas: 28/28 Playwright + 8/8 WAN](https://github.com/hu-herrera/fin/actions/runs/38842086249); 162 escenarios modelo y 2.237 verificaciones de candidatos.
 - Los informes y la defensa deben separar **laboratorio interactivo objetivo** de **topología operativa aún vigente**. No se ha ejecutado ni validado un cambio físico Cisco/PAN-OS.
+
+## 10. Auditoría adicional: seguridad, NAT, IPAM y failover IOS-XE (2026-10-16)
+- Cisco router candidato **no redistribuye VLAN40 invitados a OSPF**; se anuncia solo VLAN10/20/30 mediante prefix-list y route-map.
+- Palo Alto Layer3 candidato tiene reglas explícitas entre zonas y permite tráfico web con App-ID/puerto predeterminado, mientras bloquea invitados hacia la red corporativa y las direcciones privadas RFC1918 incluso por la zona WAN. El laboratorio dispone de prueba interactiva por IP, zona y aplicación. Estas reglas **no están cargadas en hardware**; servicios financieros y perfiles IPS/URL requieren autorización.
+- Cisco WAN candidato: PAT por **route-map con match interface** para cada una de las cuatro WAN; ACL con wildcards correctas 10.70.N.0/25, .128/27 y .176/28. VLAN30 no sale por NAT público de forma genérica.
+- Generador independiente `network/wan-sla-candidate.cjs`: exige contratos WAN y ocho objetivos ICMP autorizados; crea dos probes por proveedor, rutas /32 fijadas a su ISP, trackers boolean OR y default AD 1/10/20/30. Exportación opcional `node network/export-candidate.cjs s01 wan-sla ./monitores-s01.json`. Sin parámetros reales rechaza la ejecución. [Datos solicitados a operadores](docs/wan-sla-datos-operadores.md).
+- Gestión IPAM: reservas CM DNS .110/.111, TACACS .112/.113, NTP .116/.117, syslog .100, monitoreo .101 en 10.70.0.0/25, alejadas de PCs CM .10–.64 y de los gateways. **Son direcciones reservadas, no servicios aprovisionados**.
+- Las salidas del router ya no afirman que existen vecinos OSPF en estado FULL sin negociación medida. La CLI vieja sigue apuntando al diseño virtual-wire hasta la migración técnica completa.
