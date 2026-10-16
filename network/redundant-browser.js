@@ -49,7 +49,9 @@ function makeScenario(siteNum){
     links:Object.fromEntries([...PORTS.transit,...PORTS.distribution].map(p=>[p.id,true]).concat(PORTS.stack.map(id=>[id,true]))),
     wan:Object.fromEntries(WAN_ORDER.map(k=>[k,true])),
     wanGateway:Object.fromEntries(WAN_ORDER.map(k=>[k,true])),
-    wanUpstream:Object.fromEntries(WAN_ORDER.map(k=>[k,true]))
+    wanUpstream:Object.fromEntries(WAN_ORDER.map(k=>[k,true])),
+    // Objetivo: equipos OOB dedicados. No implican hardware instalado.
+    oob:{gateway:true,switch:true,nocPath:true,paMgt:true,sw1Mgt:true,sw2Mgt:true}
   };
 }
 function setLink(s,id,up){
@@ -69,6 +71,11 @@ function setWanHealth(s,id,health){
   if(health.gateway!==undefined)s.wanGateway[id]=Boolean(health.gateway);
   if(health.upstream!==undefined)s.wanUpstream[id]=Boolean(health.upstream);
   return s;
+}
+function setOob(s,id,up){
+  if(!s.oob||!Object.prototype.hasOwnProperty.call(s.oob,id))
+    throw new RangeError('Elemento OOB inexistente: '+id);
+  s.oob[id]=Boolean(up);return s;
 }
 function inspect(s){
   const n=s.nodes;
@@ -96,7 +103,17 @@ function inspect(s){
   // estan sanos. Esto modela el requisito SLA; no implementa el probe IOS-XE.
   const activeWan=n.router?(WAN_ORDER.find(id=>s.wan[id]&&
     s.wanGateway[id]&&s.wanUpstream[id])||null):null;
+  const oob=s.oob||{};
+  const oobPath=Boolean(oob.gateway&&oob.switch&&oob.nocPath);
+  const oobManagement={
+    firewall:Boolean(oobPath&&oob.paMgt&&n.firewall),
+    sw1:Boolean(oobPath&&oob.sw1Mgt&&n.sw1),
+    sw2:Boolean(oobPath&&oob.sw2Mgt&&n.sw2)
+  };
   return {
+    oobPath,
+    oobManagement,
+    oobHardwareProvisioned:false,
     transitUp:transit.length>0,
     transitMembers:transit.map(p=>p.id),
     stackFunctional,stackPartitioned:partitioned,
@@ -132,7 +149,7 @@ function validatePortPlan(){
   return problems;
 }
 
-const MODEL={PORTS,WAN_ORDER,VLAN,checkSiteNum,candidateAddressing,makeScenario,setLink,setNode,setWan,setWanHealth,inspect,validatePortPlan};
+const MODEL={PORTS,WAN_ORDER,VLAN,checkSiteNum,candidateAddressing,makeScenario,setLink,setNode,setWan,setWanHealth,setOob,inspect,validatePortPlan};
 const CONFIGS=(function(){
 'use strict';
 // Plantillas PREVIAS AL CUTOVER: no ejecutar sobre hardware sin revision IOS-XE/PAN-OS.
