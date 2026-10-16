@@ -241,3 +241,35 @@ test('Conmutación local VLAN10 sobrevive a caída PA, Cisco y Po20; StackWise e
  });
  expect(issues).toEqual([]);
 });
+
+test('Router CLI Port-channel10 y alias Po10 realmente apagan y restauran el transito LACP',async({page})=>{
+ await page.goto(url);
+ const errors=await page.evaluate(()=>{
+  const fails=[],check=(ok,msg)=>{if(!ok)fails.push(msg)};
+  const s=SEDES.find(site=>site.id==='s04'),session=deviceCliSession(s.id,'router');
+  const a=getPCs(s)[0],b=getPCs(s)[1];
+  check(canonicalDeviceInterface('Po10','router')==='Port-channel10',
+    'Po10 abbreviation does not normalize to the supported interface');
+  check(isSupportedDeviceInterface('Po10','router'),'Router Po10 alias is rejected by CLI');
+  check(window.ActiveProfile.status(s.id).transitUp,'transit not up at baseline');
+  session.interfaces['Port-channel10']={shutdown:true};
+  const down=window.ActiveProfile.status(s.id);
+  check(!down.transitUp && down.transitMembers.length===0,
+    'Port-channel10 shutdown did not bring both physical members down');
+  check(!isSiteLanAvailable(s.id),'WAN still reachable when Po10 is administratively down');
+  check(isPCNetworkAvailable(s.id,a),'Gateway PA should survive loss of the router-facing bundle');
+  check(buildPacketRoute(s,s,false,a,b).length===3,
+    'Router Port-channel10 shutdown improperly stops intra-VLAN LAN');
+  check(!genRouterRoutes(s).includes('C 10.72.4.0/30'),
+    'Connected transit still in RIB after Po10 shutdown');
+  delete session.interfaces['Port-channel10'];
+  check(window.ActiveProfile.status(s.id).transitUp,'Po10 did not recover');
+  check(isSiteLanAvailable(s.id),'WAN did not recover after restoring Po10');
+  session.interfaces.Po10={shutdown:true};
+  check(!window.ActiveProfile.status(s.id).transitUp,
+    'Preexisting shorthand Po10 session silently ignored');
+  delete session.interfaces.Po10;
+  return fails;
+ });
+ expect(errors).toEqual([]);
+});
