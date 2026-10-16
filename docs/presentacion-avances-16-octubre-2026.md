@@ -26,11 +26,11 @@ Este documento adapta **literalmente los cinco puntos del profesor** al avance d
 > Ahora vamos a demostrarlo, no solamente mostrar imágenes. Primero seleccionamos la sucursal S01 y un computador, y simulamos una consulta DNS al servidor reservado de casa matriz, `10.70.0.110`. El sistema muestra el recorrido y qué reglas de Palo Alto la permiten. En segundo lugar intentamos utilizar SSH contra ese mismo destino, y el firewall bloquea el tráfico no autorizado. Finalmente cortamos el enlace principal, Starlink. El modelo elige la siguiente WAN disponible según prioridad, Amazon Leo en este escenario, y cuando restauramos el enlace vuelve a la ruta original. Además de las pruebas visibles, nuestro repositorio tiene pruebas automatizadas con GitHub Actions: la última versión anterior a esta presentación registró 55 pruebas de navegador aprobadas, y las nuevas versiones vuelven a ejecutarlas.
 
 **Acción paso a paso (sin salir de la web):**
-1. En la escena de evidencias, pulsar **Probar DNS, SSH y WAN**.
+1. En la escena de evidencias, pulsar **Probar DNS, SSH y WAN**: se abre el **simulador original de S01** desde su ventana de topología interna, en la pestaña **📦 Flujo de paquetes**.
 2. Sede S01, IP origen `10.70.1.10`; destino `10.70.0.110`; aplicación DNS. Confirmar **PERMITIDO** (significa que el modelo autoriza el flujo, no que un DNS real respondió).
 3. Pulsar **SSH bloqueado** y mostrar **BLOQUEADO** y la política responsable.
 4. Pulsar **DNS permitido**, luego **Cortar Starlink**. Mostrar el cambio a Amazon Leo; **Recuperar Starlink** para restaurar el escenario.
-5. Pulsar **Volver a la exposición**. Se recuperará la escena de evidencias; avanzar con flecha derecha.
+5. Pulsar **Volver a la exposición** (o Esc). Regresa desde la misma ventana original de sede a la escena de evidencias; avanzar con flecha derecha.
 
 **Evidencia externa:** [última CI aprobada antes de preparar esta presentación](https://github.com/hu-herrera/fin/actions/runs/38964467044), con 55 pruebas de Chromium y 126 comprobaciones de forwarding, además de pruebas de red anteriores. Consultar la ejecución más reciente en GitHub Actions para cifras actualizadas; nunca inventar pruebas de hardware.
 
