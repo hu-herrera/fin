@@ -41,7 +41,7 @@ function routerCandidate(num){
     '! FALTAN: NAT ACL, ruta por defecto rastreada, QoS, AAA/OOB y rollback');
   return lines.join('\n');
 }
-function stackCandidate(num,pcCount=0){
+function stackCandidate(num,pcCount){
   checkSiteNum(num);
   if(!Number.isInteger(pcCount)||pcCount<0||pcCount>60)throw new RangeError('Se excede la capacidad de 30 accesos de usuario por miembro de stack');
   const lines=[
@@ -143,7 +143,7 @@ function paloCandidate(num){
     '# FALTAN: commit validate y rollback desde consola fuera de banda');
   return lines.join('\n');
 }
-function siteCandidate(num,pcCount=0){
+function siteCandidate(num,pcCount){
  return {siteNum:num,pcCount,addressing:candidateAddressing(num),
    cisco:routerCandidate(num),stack:stackCandidate(num,pcCount),palo:paloCandidate(num),
    deployable:false,
