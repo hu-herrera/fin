@@ -5201,10 +5201,10 @@ function genRouterRoutes(s){
   const active = activeLink(s.id);
   const identity = routerIdentity(s);
   const wan = {
-    starlink: { nextHop: `100.64.${n}.1`, tunnel: 'Tunnel100', local: 1, peer: 2 },
-    kuiper: { nextHop: `100.64.${n}.5`, tunnel: 'Tunnel200', local: 5, peer: 6 },
-    g5: { nextHop: `100.85.${n}.1`, tunnel: 'Tunnel300', local: 9, peer: 10 },
-    g4: { nextHop: `100.92.${n}.1`, tunnel: 'Tunnel400', local: 13, peer: 14 },
+    starlink: { nextHop: `100.64.${n}.1`, tunnel: 'Tunnel100', local: 1, peer: 2, net:`100.64.${n}.0/30`, ip:`100.64.${n}.2/32`,distance:1 },
+    kuiper: { nextHop: `100.64.${n}.5`, tunnel: 'Tunnel200', local: 5, peer: 6, net:`100.64.${n}.4/30`, ip:`100.64.${n}.6/32`,distance:10 },
+    g5: { nextHop: `100.85.${n}.1`, tunnel: 'Tunnel300', local: 9, peer: 10, net:`100.85.${n}.0/30`, ip:`100.85.${n}.2/32`,distance:20 },
+    g4: { nextHop: `100.92.${n}.1`, tunnel: 'Tunnel400', local: 13, peer: 14, net:`100.92.${n}.0/30`, ip:`100.92.${n}.2/32`,distance:30 },
   };
   const available = PRIORITY.filter(type =>
     !['caido','inactivo','recuperando'].includes(ST.links[s.id]?.[type]) &&
@@ -5212,7 +5212,7 @@ function genRouterRoutes(s){
   // IOS XE muestra en la RIB la ruta elegida; las rutas de respaldo
   // permanecen configuradas pero no instaladas simultáneamente.
   const wanRows = active && available.includes(active)
-    ? [`S* 0.0.0.0/0 [1/0] via ${wan[active].nextHop}, ${routerWanInterface(active)}`]
+    ? [`S* 0.0.0.0/0 [${wan[active].distance}/0] via ${wan[active].nextHop}, ${routerWanInterface(active)}`]
     : [];
   const interfaces = [
     { name: 'GigabitEthernet0/0/0.10', network: `10.70.${n}.0/25`, address: `10.70.${n}.1/32` },
@@ -5227,13 +5227,24 @@ function genRouterRoutes(s){
       `C ${iface.network} is directly connected, ${iface.name}`,
       `L ${iface.address} is directly connected, ${iface.name}`,
     ]);
+  // Interfaces físicas conectadas permanecen en RIB aun cuando sean standby.
+  const wanConnectedRoutes = available.flatMap(type => [
+    `C ${wan[type].net} is directly connected, ${routerWanInterface(type)}`,
+    `L ${wan[type].ip} is directly connected, ${routerWanInterface(type)}`,
+  ]);
   const tunnelRoutes = available
     .filter(type => !isDeviceInterfaceAdminDown(s.id, 'router', wan[type].tunnel))
     .flatMap(type => [
       `C 172.16.${n}.${wan[type].local - 1}/30 is directly connected, ${wan[type].tunnel}`,
       `L 172.16.${n}.${wan[type].local}/32 is directly connected, ${wan[type].tunnel}`,
     ]);
-  const activeTunnel = active && !isDeviceInterfaceAdminDown(s.id, 'router', wan[active].tunnel)
+  // Overlay hub-and-spoke: al perderse el concentrador CM, se retiran
+  // las rutas OSPF remotas, aunque la sucursal aún tenga salida WAN propia.
+  const cm = SEDES.find(site => site.id === 'cm');
+  const cmAvailable = s.isCM || !cm ||
+    (isSiteLanAvailable('cm') && Boolean(activeLink('cm')));
+  const activeTunnel = active && cmAvailable &&
+    !isDeviceInterfaceAdminDown(s.id, 'router', wan[active].tunnel)
     ? wan[active].tunnel
     : null;
   // Las rutas remotas dependen del estado de conectividad, no de sedes fijas.
@@ -5253,6 +5264,7 @@ function genRouterRoutes(s){
     `Gateway of last resort is ${active ? wan[active].nextHop : 'not set'} to network 0.0.0.0`,
     ...wanRows,
     ...lanRoutes,
+    ...wanConnectedRoutes,
     `L ${identity.loopback}/32 is directly connected, Loopback0`,
     ...tunnelRoutes,
     ...ospfRoutes,
