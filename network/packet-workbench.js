@@ -7,7 +7,7 @@
 const traceEngine=window.PacketLab;
 if(!traceEngine||!window.ActiveProfile||!window.RedundantLab)return;
 const $=id=>document.getElementById(id);
-const state={last:null,stage:0};
+const state={last:null,stage:0,returnToStage:false};
 const scenes=[
  {kicker:'01 / Presentación del avance',title:'Financiera Pacífico',
   description:'Proyecto de Título · Simulador interactivo de redes empresariales con infraestructura Cisco y Palo Alto. Revisión de avances del 16 de octubre de 2026.',
@@ -127,8 +127,10 @@ function build(){
  $('stage-prev').addEventListener('click',()=>advance(-1));
  $('stage-next').addEventListener('click',()=>advance(1));
  $('stage-lab').addEventListener('click',()=>{
+  state.returnToStage=true;
   closeStage();
   openLab();
+  $('packetlab-close').textContent='← Volver a la exposición';
   // En la escena de evidencias siempre iniciamos una prueba reproducible,
   // sin dejar enlaces caídos ocultos de ensayos anteriores.
   $('pl-site').value='s01';refreshPcs();
@@ -137,7 +139,7 @@ function build(){
  document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
    if(!$('packetlab-overlay').hidden)closeLab();
-   if(!$('presentation-overlay').hidden)closeStage();
+   else if(!$('presentation-overlay').hidden)closeStage();
   }else if(!$('presentation-overlay').hidden&&(e.key==='n'||e.key==='N')&&
      !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))toggleSpeakerNotes();
   else if(!$('presentation-overlay').hidden&&e.key==='ArrowRight')advance(1);
@@ -229,14 +231,23 @@ function wanAction(up){
 }
 function openLab(){
  if(!$('packetlab-overlay'))return;
+ $('packetlab-close').textContent=state.returnToStage?'← Volver a la exposición':'✕ Cerrar';
  $('packetlab-overlay').hidden=false;
  if($('presentation-overlay'))$('presentation-overlay').hidden=true;
  run();
  $('pl-trace').focus();
 }
-function closeLab(){if($('packetlab-overlay'))$('packetlab-overlay').hidden=true;}
+function closeLab(){
+ if($('packetlab-overlay'))$('packetlab-overlay').hidden=true;
+ if(state.returnToStage){
+  state.returnToStage=false;
+  $('presentation-overlay').hidden=false;
+  renderStage();
+  $('stage-next').focus();
+ }
+}
 function openStage(){
- closeLab();$('presentation-overlay').hidden=false;
+ state.returnToStage=false;closeLab();$('presentation-overlay').hidden=false;
  $('stage-notes').hidden=true;$('stage-notes-toggle').setAttribute('aria-pressed','false');
  state.stage=0;renderStage();$('stage-next').focus();
 }
