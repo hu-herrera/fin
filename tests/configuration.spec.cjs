@@ -221,6 +221,7 @@ test('Diagnósticos OSPF, CEF y puertos Cisco reflejan interfaces configuradas e
      const protocols=genShowBrief(site,'router','show ip protocols');
      const description=genShowBrief(site,'router','show interfaces description');
      const neighbors=genShowBrief(site,'router','show ip ospf neighbor');
+     const detailedNeighbor=genRouterDetail(site,'show ip ospf neighbor');
      const ntp=genShowBrief(site,'router','show ntp status');
      if(!ospf.includes('Gi0/0/0.10')||!ospf.includes('10.70.'+n+'.1/25'))issues.push(site.id+': OSPF LAN incorrecta');
      if(ospf.includes('Tunnel0 ')||ospf.includes('Gi0/0/2.10')||ospf.includes('10.70.'+n+'.1/24'))issues.push(site.id+': OSPF interfaces obsoletas');
@@ -229,6 +230,7 @@ test('Diagnósticos OSPF, CEF y puertos Cisco reflejan interfaces configuradas e
      if(!protocols.includes(routerIdentity(site).loopback))issues.push(site.id+': router ID OSPF incorrecto');
      if(!description.includes('GigabitEthernet0/0/0')||!description.includes('TenGigabitEthernet0/0/4'))issues.push(site.id+': inventario WAN LAN incompleto');
      if(neighbors.includes('Tunnel0')||neighbors.includes('FULL/ -'))issues.push(site.id+': vecindad OSPF fabricada');
+     if(/State FULL|Neighbor 172\.16/.test(detailedNeighbor))issues.push(site.id+': consola anuncia vecino FULL no medido');
      if(ntp.includes('Clock is synchronized'))issues.push(site.id+': estado NTP fabricado');
    }
    return issues;
