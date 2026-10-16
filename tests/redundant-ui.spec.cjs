@@ -112,3 +112,31 @@ test('StackWise doblemente cortado: aislamiento entre miembros sin inventar caí
   expect(restored.switchGateway[1]).toBe(true);
   expect(restored.interMemberL2).toBe(true);
 });
+
+
+test('Los tres fabricantes muestran configuraciones objetivo sin alterar las CLI vigentes',async({page})=>{
+  await page.goto(url);
+  for(const [kind,needle] of [
+    ['router','interface Port-channel10'],
+    ['fw','set network interface aggregate-ethernet ae1 layer3'],
+    ['sw1','interface Port-channel20'],
+    ['sw2','interface GigabitEthernet2/0/45']]){
+    await page.evaluate(kind=>openDevice(kind,'s03'),kind);
+    await page.locator('#dev-tabs button', {hasText:'Objetivo L3'}).click();
+    const content=page.locator('#dev-body');
+    await expect(content).toContainText('Configuración candidata, NO instalada');
+    await expect(content).toContainText(needle);
+    await expect(content).toContainText('gestión OOB');
+  }
+  const report=await page.evaluate(()=>{
+    const site=SEDES.find(s=>s.id==='s03');
+    return {
+      classicRouter:genRouterRunningConfig(site),
+      classicFirewall:genFWCommand(site,'show running-config'),
+      classicSwitch:genSwitchRunningConfig(site,2),
+    };
+  });
+  expect(report.classicRouter).toContain('GigabitEthernet0/0/0.10');
+  expect(report.classicFirewall).toContain('virtual wire');
+  expect(report.classicSwitch).toContain('channel-group 1 mode active');
+});
