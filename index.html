@@ -2473,8 +2473,9 @@ function runMapPing(srcId, destId){
   const src = SEDES.find(s => s.id === srcId);
   const dest = SEDES.find(s => s.id === destId);
   if(!src || !dest) return;
-  const srcPc=findAvailableSimulationPC(src);
-  const destPc=findAvailableSimulationPC(dest);
+  const localOnly=src.id===dest.id;
+  const srcPc=findAvailableSimulationPC(src,localOnly);
+  const destPc=findAvailableSimulationPC(dest,localOnly);
   const detailedRoute = srcPc && destPc
     ? buildPacketRoute(src,dest,false,srcPc,destPc)
     : [];
@@ -5229,8 +5230,12 @@ function isPCNetworkAvailable(sedeId, pc){
     isSwitchPathAvailable(sedeId, pc.sw));
 }
 
-function findAvailableSimulationPC(sede){
-  return getPCs(sede).find(pc=>isPCNetworkAvailable(sede.id,pc)) || null;
+function findAvailableSimulationPC(sede,localOnly=false){
+  return getPCs(sede).find(pc=>{
+    if(localOnly && window.ActiveProfile?.enabled())
+      return isSwitchPCPortAvailable(sede.id,pc) && isPCOnConfiguredVlan(sede.id,pc);
+    return isPCNetworkAvailable(sede.id,pc);
+  }) || null;
 }
 
 function isSiteLanAvailable(sedeId){
@@ -6721,8 +6726,9 @@ function runPing(srcId){
   const src=SEDES.find(x=>x.id===srcId);
   const dst=SEDES.find(x=>x.id===destId);
   const div=document.getElementById('ping-result');
-  const srcPc=src && findAvailableSimulationPC(src);
-  const destPc=dst && findAvailableSimulationPC(dst);
+  const localOnly=Boolean(src && dst && src.id===dst.id);
+  const srcPc=src && findAvailableSimulationPC(src,localOnly);
+  const destPc=dst && findAvailableSimulationPC(dst,localOnly);
   const detailedRoute = src && dst && srcPc && destPc
     ? buildPacketRoute(src,dst,false,srcPc,destPc)
     : [];
@@ -6790,8 +6796,9 @@ function runDashboardPing(){
     return;
   }
   result.innerHTML = '<div class="dashboard-ping-route">⏳ Calculando ruta con los enlaces y satélites activos...</div>';
-  const srcPc=findAvailableSimulationPC(src);
-  const destPc=findAvailableSimulationPC(dest);
+  const localOnly=src.id===dest.id;
+  const srcPc=findAvailableSimulationPC(src,localOnly);
+  const destPc=findAvailableSimulationPC(dest,localOnly);
   const detailedRoute = srcPc && destPc
     ? buildPacketRoute(src,dest,false,srcPc,destPc)
     : [];
