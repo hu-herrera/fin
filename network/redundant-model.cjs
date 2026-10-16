@@ -1,6 +1,6 @@
 'use strict';
-// Modelo aislado de la arquitectura FUTURA: C8300 -> PA-1410 L3 -> StackWise-80.
-// No reemplaza la topologia actualmente publicada hasta migracion integral.
+// Modelo lógico de la vista DESPUÉS activa: C8300 -> PA-1410 L3 -> StackWise-80.
+// Simulación operativa, NO prueba ni configuración desplegada en hardware físico.
 const PORTS=Object.freeze({
   wan: Object.freeze({
     starlink:'GigabitEthernet0/0/0', leo:'GigabitEthernet0/0/1',
