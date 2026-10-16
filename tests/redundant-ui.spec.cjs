@@ -86,3 +86,29 @@ test('23 laboratorios aislados usan mismo motor Node y browser y no contaminan s
   expect(result.sites).toBe(23);
   expect(result.mapped).toBe(650);
 });
+
+
+test('StackWise doblemente cortado: aislamiento entre miembros sin inventar caída de PCs locales',async({page})=>{
+  await page.goto(url);
+  await page.evaluate(()=>openSedeModal('s03'));
+  await page.locator('#sm-tabs button[onclick*="smTab(\'lab\'"]').click();
+  const panel=page.locator('#sm-body');
+  const read=()=>page.evaluate(()=>window.RedundantLab.inspect(getRedundantLabState('s03')));
+  expect((await read()).interMemberL2).toBe(true);
+  await panel.locator('button[onclick*="\'link\',\'STACK-A\'"]').click();
+  expect((await read()).interMemberL2).toBe(true);
+  await panel.locator('button[onclick*="\'link\',\'STACK-B\'"]').click();
+  const partitioned=await read();
+  expect(partitioned.stackPartitioned).toBe(true);
+  expect(partitioned.interMemberL2).toBe(false);
+  expect(partitioned.switchLocalL2[1]).toBe(true);
+  expect(partitioned.switchLocalL2[2]).toBe(true);
+  expect(partitioned.switchGateway[1]).toBe(false);
+  await expect(panel).toContainText('Conmutación VLAN10 SW1 ↔ SW2');
+  await expect(panel).toContainText('AISLADOS');
+  await panel.locator('button[onclick*="\'link\',\'STACK-B\'"]').click();
+  const restored=await read();
+  expect(restored.stackPartitioned).toBe(false);
+  expect(restored.switchGateway[1]).toBe(true);
+  expect(restored.interMemberL2).toBe(true);
+});
