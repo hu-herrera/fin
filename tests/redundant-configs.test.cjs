@@ -1,12 +1,20 @@
 'use strict';
 const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const html=fs.readFileSync('index.html','utf8');
+const countMatch=html.match(/const PC_COUNT\s*=\s*(\{[\s\S]*?\});/);
+assert.ok(countMatch,'Inventario de PCs no existe en index.html');
+const pcCounts=vm.runInNewContext('('+countMatch[1]+')');
 const {siteCandidate}=require('../network/redundant-configs.cjs');
 const {PORTS,VLAN}=require('../network/redundant-model.cjs');
 let passed=0,checks=0;
 function check(ok,message){assert.ok(ok,message);checks++;}
 function count(s,needle){return s.split(needle).length-1;}
 for(let n=0;n<=22;n++){
-  const p=siteCandidate(n),c=p.cisco,sw=p.stack,fw=p.palo;
+  const siteKey=n===0?'cm':'s'+String(n).padStart(2,'0');
+  const pcCount=pcCounts[siteKey];
+  const p=siteCandidate(n,pcCount),c=p.cisco,sw=p.stack,fw=p.palo;
   const label='CM/Sede '+n;
   check(p.deployable===false,label+' candidate must not be marked production ready');
   check(p.blockers.length>=4,label+' blockers undocumented');
@@ -32,6 +40,23 @@ for(let n=0;n<=22;n++){
   check(sw.includes('switch 2 provision c9200l-48t-4g'),label+' stack member 2 not provisioned');
   check(count(sw,'channel-group 20 mode active')===4,label+' cross stack MEC must use four ports');
   check(!sw.includes('channel-group 1 mode active'),label+' legacy inter-switch Po1 is invalid after stacking');
+  check(count(sw,' description PC-')===pcCount,label+' port map loses PCs');
+  for(let k=0;k<pcCount;k++){
+    const half=Math.ceil(pcCount/2);
+    const member=k<half?1:2;
+    const port=member===1?k+3:k-half+3;
+    const code=n===0?'CM':'S'+String(n).padStart(2,'0');
+    const portBlock='interface GigabitEthernet'+member+'/0/'+port+'\\n description PC-'+code+'-'+String(k+1).padStart(3,'0');
+    check(sw.includes(portBlock),label+' PC '+(k+1)+' mapped to wrong stack member');
+  }
+  for(const member of [1,2])for(const port of [33,34]){
+    const start=sw.indexOf('interface GigabitEthernet'+member+'/0/'+port);
+    const next=sw.indexOf('interface ',start+1);
+    const block=sw.slice(start,next<0?undefined:next);
+    check(block.includes('switchport trunk native vlan 999') &&
+          block.includes('switchport trunk allowed vlan 10,40'),
+          label+' invalid access point trunk on member '+member);
+  }
   check(count(sw,'interface Vlan30')===1,label+' stacked switches have more than one mgmt SVI');
   check(sw.includes('10.70.'+n+'.162 255.255.255.240'),label+' stack mgmt IP wrong');
   check(!fw.includes('virtual-wire'),label+' Layer3 must not use legacy virtual wire');
@@ -42,4 +67,6 @@ for(let n=0;n<=22;n++){
   check(!c.includes('203.0.113.'),label+' nonroutable test peer incorrectly installed');
   passed++;
 }
-console.log('TOTAL '+passed+' sitios; '+checks+' verificaciones de candidato Cisco/PAN/StackWise.');
+const totalPC=Object.values(pcCounts).reduce((a,b)=>a+b,0);
+assert.equal(totalPC,650,'Inventario global esperado de 650 PCs');
+console.log('TOTAL '+passed+' sitios; '+totalPC+' PCs mapeados; '+checks+' verificaciones de candidato Cisco/PAN/StackWise.');
