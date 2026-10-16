@@ -39,6 +39,8 @@ jobs:
         run: node tests/intersite-routing.test.cjs
       - name: Validar generador Cisco IOS-XE WAN IP SLA con rutas /32 por proveedor
         run: node tests/wan-sla-candidate.test.cjs
+      - name: Validar prerrequisitos de WAN CGNAT, NAT-T, IPsec y OSPF
+        run: node tests/wan-ipsec-readiness.test.cjs
       - name: Validar gestión OOB y Mgmt-vrf independiente en 23 sedes
         run: node tests/oob-management.test.cjs
       - name: Probar simulador en navegador
