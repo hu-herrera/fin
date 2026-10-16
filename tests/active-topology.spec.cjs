@@ -273,3 +273,40 @@ test('Router CLI Port-channel10 y alias Po10 realmente apagan y restauran el tra
  });
  expect(errors).toEqual([]);
 });
+
+test('Po20 y configuracion Gi2 desde cualquiera de las consolas del stack tienen efecto real',async({page})=>{
+ await page.goto(url);
+ const issues=await page.evaluate(()=>{
+  const fails=[],check=(condition,message)=>{if(!condition)fails.push(message)};
+  const site=SEDES.find(s=>s.id==='s05'),sw1=deviceCliSession(site.id,'sw1'),
+    sw2=deviceCliSession(site.id,'sw2'),pc=getPCs(site).find(p=>p.sw===2);
+  const port=getSwitchPCPorts(site,2).find(row=>row.pc.idx===pc.idx).port;
+  const name='Gi2/0/'+port;
+  check(window.ActiveProfile.status(site.id).paStackMembers.length===4,'initial Po20 lacks members');
+  sw1.interfaces.Po20={shutdown:true};
+  check(window.ActiveProfile.status(site.id).paStackMembers.length===0,
+    'Shutting Po20 from sw1 did not disable entire distributed bundle');
+  check(buildPacketRoute(site,site,false,getPCs(site)[0],pc).length===4,
+    'Local intermember L2 should survive when Po20 is down');
+  delete sw1.interfaces.Po20;
+  check(window.ActiveProfile.status(site.id).paStackMembers.length===4,'Po20 did not recover');
+  sw2.interfaces.Po20={shutdown:true};
+  check(window.ActiveProfile.status(site.id).paStackMembers.length===0,
+    'Shutting Po20 from sw2 did not disable entire distributed bundle');
+  delete sw2.interfaces.Po20;
+  sw1.interfaces[name]={shutdown:true};
+  check(!isSwitchPCPortAvailable(site.id,pc),
+    'Gi2 port shutdown from first stack console was ignored');
+  delete sw1.interfaces[name];
+  check(isSwitchPCPortAvailable(site.id,pc),'Gi2 port did not recover');
+  sw1.interfaces[name]={accessVlan:40};
+  check(!isPCOnConfiguredVlan(site.id,pc),
+    'Gi2 access VLAN change from first stack console ignored');
+  check(buildPacketRoute(site,site,false,getPCs(site)[0],pc).length===0,
+    'Misconfigured Gi2 port still forwards VLAN10 packet');
+  delete sw1.interfaces[name];
+  check(isPCOnConfiguredVlan(site.id,pc),'Original Gi2 VLAN10 did not recover');
+  return fails;
+ });
+ expect(issues).toEqual([]);
+});
