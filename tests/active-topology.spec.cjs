@@ -385,3 +385,31 @@ test('OSPF simulado retira rutas de túneles deshabilitados sin cortar Internet 
  });
  expect(problems).toEqual([]);
 });
+
+test('DNS corporativo de VLAN20 tiene permiso mínimo y simétrico en las 22 sucursales',async({page})=>{
+ await page.goto(url);
+ const problems=await page.evaluate(()=>{
+  const issues=[],check=(ok,msg)=>{if(!ok)issues.push(msg)};
+  for(let n=1;n<=22;n++){
+   const src='10.70.'+n+'.130',dns='10.70.0.110';
+   const branch=window.RedundantLab.evaluateSitePanPolicy(n,'VOICE','TRANSIT','dns',dns,src);
+   const central=window.RedundantLab.evaluateSitePanPolicy(0,'TRANSIT','USERS','dns',dns,src);
+   check(branch.action==='allow'&&branch.rule==='BRANCH-DNS-TO-CM',
+     'Branch voice to CM DNS denied: '+n);
+   check(central.action==='allow'&&central.rule==='CM-IN-DNS-FROM-BRANCHES',
+     'CM denies valid branch voice DNS: '+n);
+   for(const [app,dest] of [['ssh',dns],['dns','10.70.0.12'],['ssl','10.70.0.111']]){
+    check(window.RedundantLab.evaluateSitePanPolicy(n,'VOICE','TRANSIT',app,dest,src).action==='deny',
+      'Branch voice over-permitted '+n+' '+app+' '+dest);
+   }
+   check(window.RedundantLab.evaluateSitePanPolicy(0,'TRANSIT','USERS','dns',dns,
+     '10.70.'+n+'.180').action==='deny','Guest posed as voice DNS '+n);
+  }
+  check(window.RedundantLab.evaluateSitePanPolicy(0,'VOICE','USERS','dns',
+    '10.70.0.110','10.70.0.130').action==='allow','CM local voice DNS blocked');
+  check(window.RedundantLab.evaluateSitePanPolicy(0,'MGMT-DATA','USERS','dns',
+    '10.70.0.111','10.70.0.162').action==='allow','CM local management DNS blocked');
+  return issues;
+ });
+ expect(problems).toEqual([]);
+});
