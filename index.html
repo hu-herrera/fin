@@ -3208,7 +3208,7 @@ function resetRedundantLab(sedeId){
 function renderRedundantLabTab(s){
   const model=window.RedundantLab;
   if(!model)return '<p>El motor redundante no cargó. Comprueba el archivo network/redundant-browser.js.</p>';
-  const state=getRedundantLabState(s.id),health=model.inspect(state);
+  const state=getRedundantLabState(s.id),health=window.ActiveProfile?.enabled()?window.ActiveProfile.status(s.id):model.inspect(state);
   const pc1=getPCs(s).filter(pc=>pc.sw===1).length,pc2=PC_COUNT[s.id]-pc1;
   const textState=(flag,up='OPERATIVO',down='CAÍDO')=>'<span style="font-weight:700;color:'+(flag?'var(--green)':'var(--red)')+'">'+(flag?up:down)+'</span>';
   const kv=(title,value)=>'<div class="drow"><span class="dkey">'+title+'</span><span class="dval">'+value+'</span></div>';
@@ -3264,16 +3264,16 @@ function renderRedundantLabTab(s){
     kv('Catalyst SW2 Mgmt-vrf',textState(health.oobManagement.sw2))+
     '</div>';
   return '<div style="max-width:1120px;margin:auto">'+
-    '<div style="border-left:3px solid var(--yellow);padding:10px 13px;background:var(--panel2)"><strong>PRUEBAS DE REDUNDANCIA DEL PERFIL ACTIVO</strong><p style="margin-top:6px">WAN → Cisco C8300 (Po10, 2×10G) → Palo Alto Layer3 (ae1/ae2) → MEC Po20 sobre StackWise-80 (4×1G). Estos controles afectan al modelo operativo del simulador y sus rutas/diagnósticos; NO modifican equipos físicos.</p></div>'+
+    '<div style="border-left:3px solid var(--yellow);padding:10px 13px;background:var(--panel2)"><strong>'+(window.ActiveProfile?.enabled()?'PRUEBAS DE REDUNDANCIA DEL PERFIL ACTIVO':'LABORATORIO AISLADO: arquitectura candidata')+'</strong><p style="margin-top:6px">WAN → Cisco C8300 (Po10, 2×10G) → Palo Alto Layer3 (ae1/ae2) → MEC Po20 sobre StackWise-80 (4×1G). '+(window.ActiveProfile?.enabled()?'Estos controles afectan al modelo operativo del simulador y sus rutas/diagnósticos; NO modifican equipos físicos.':'Este laboratorio no modifica todavía las consolas ni el diagrama principal. No representa pruebas en hardware.')+'</p></div>'+
     '<div style="margin:14px 0"><button class="btn btn-n" onclick="resetRedundantLab(\''+s.id+'\')">↺ Restaurar todos los enlaces</button></div>'+
     stateSummary+
     '<div class="dsec"><div class="dslbl">1. Simular fallo de equipo</div>'+nodeBtns+'</div>'+
     '<div class="dsec"><div class="dslbl">2. Cortar / recuperar cables LACP y StackWise</div>'+bundleBtns+'</div>'+
     '<div class="dsec"><div class="dslbl">3. WAN: cable, gateway y salida aguas arriba independientes</div>'+wanBtns+'</div>'+
     policyPanel+
-    '<div class="dsec" id="lab-oob"><div class="dslbl">5. Gestión fuera de banda · propuesta no desplegada</div><p>Red 10.73.'+s.num+'.0/28 reservada. Requiere gateway y switch OOB dedicados, acceso NOC y cables MGT independientes; estado simulado, NO hardware instalado.</p>'+oobBtns+'</div>'+
+    '<div class="dsec" id="lab-oob"><div class="dslbl">5. Gestión OOB física · mejora OPCIONAL (no presupuestada)</div><p>Red 10.73.'+s.num+'.0/28 es solo una alternativa futura que requeriría equipos extra. El proyecto base utiliza VLAN30 en los Catalyst existentes. Estos controles NO representan hardware instalado.</p>'+oobBtns+'</div>'+
     '<div class="dsec"><div class="dslbl">6. Configuración candidata (solo lectura)</div>'+configuration+'</div>'+
-    '<p style="color:var(--text2);font-size:12px;margin-top:12px">Para despliegue real faltan: gestión OOB, validación/aprobación de políticas PAN-OS, IP/SLA del operador, VPN y validación IOS-XE. Un PA único sigue siendo punto único de falla.</p></div>';
+    '<p style="color:var(--text2);font-size:12px;margin-top:12px">Para despliegue real faltan: acceso administrativo protegido por VLAN30 y consola, validación/aprobación PAN-OS, IP/SLA del operador, VPN y pruebas IOS-XE. Un PA único sigue siendo punto único de falla.</p></div>';
 }
 function topoToolbar(s){
   const active = ST.mode === 'antes' ? 'MPLS Entel' : (LK_NAME[window.ActiveProfile?.enabled()?window.ActiveProfile.selectedWan(s.id):activeLink(s.id)] || 'Sin enlace');
