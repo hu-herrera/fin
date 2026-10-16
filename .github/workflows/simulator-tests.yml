@@ -27,6 +27,8 @@ jobs:
         run: node tests/redundant-model.test.cjs
       - name: Validar plantillas Cisco y PAN-OS propuestas para 23 sedes
         run: node tests/redundant-configs.test.cjs
+      - name: Exigir evidencia real antes de aceptar hardware Cisco y Palo Alto
+        run: node tests/verify-lab-evidence.test.cjs
       - name: Auditar aislamiento OSPF y políticas NGFW de mínimo privilegio
         run: node tests/security-policy.test.cjs
       - name: Verificar rutas de retorno y permisos exactos DNS NTP entre sedes
