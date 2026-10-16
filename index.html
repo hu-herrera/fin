@@ -3155,14 +3155,15 @@ function smTab(tab, btn){
 const REDUNDANT_LAB_POLICY = new Map();
 function getRedundantLabPolicy(sedeId){
   if(!REDUNDANT_LAB_POLICY.has(sedeId))
-    REDUNDANT_LAB_POLICY.set(sedeId,{from:'GUESTS',to:'MGMT-DATA',application:'ssh'});
+    REDUNDANT_LAB_POLICY.set(sedeId,{from:'GUESTS',to:'MGMT-DATA',application:'ssh',destinationIp:'8.8.8.8'});
   return REDUNDANT_LAB_POLICY.get(sedeId);
 }
 function setRedundantLabPolicy(sedeId,key,value){
   const allowed={
     from:['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'],
     to:['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'],
-    application:['ssh','dns','ssl','web-browsing','ntp','sip','bittorrent']
+    application:['ssh','dns','ssl','web-browsing','ntp','sip','bittorrent'],
+    destinationIp:['8.8.8.8','1.1.1.1','10.70.0.20','10.72.1.2','172.16.3.1','192.168.1.1']
   };
   if(!allowed[key]?.includes(value))throw new Error('Opción de política no permitida');
   getRedundantLabPolicy(sedeId)[key]=value;
@@ -3211,7 +3212,7 @@ function renderRedundantLabTab(s){
     toggleRow('gateway',id,wanNames[id]+' · gateway ISP',state.wanGateway[id])+
     toggleRow('upstream',id,wanNames[id]+' · salida real',state.wanUpstream[id])).join('');
   const policy=getRedundantLabPolicy(s.id);
-  const policyResult=model.evaluatePanPolicy(policy.from,policy.to,policy.application);
+  const policyResult=model.evaluatePanPolicy(policy.from,policy.to,policy.application,policy.destinationIp);
   const policyOptions=(field,values)=>'<select aria-label="'+field+'" style="background:var(--panel2);color:var(--text);border:1px solid var(--text2);padding:6px;margin:4px" onchange="setRedundantLabPolicy(&quot;'+s.id+'&quot;,&quot;'+field+'&quot;,this.value)">'+
     values.map(value=>'<option value="'+value+'"'+(policy[field]===value?' selected':'')+'>'+value+'</option>').join('')+'</select>';
   const policyPanel='<div class="dsec" id="lab-pan-policy"><div class="dslbl">4. Política Palo Alto por zona y aplicación</div>'+
@@ -3219,6 +3220,7 @@ function renderRedundantLabTab(s){
     '<label>Origen '+policyOptions('from',['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'])+'</label>'+
     '<label>Destino '+policyOptions('to',['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'])+'</label>'+
     '<label>Aplicación '+policyOptions('application',['ssh','dns','ssl','web-browsing','ntp','sip','bittorrent'])+'</label>'+
+    '<label>Destino IP '+policyOptions('destinationIp',['8.8.8.8','1.1.1.1','10.70.0.20','10.72.1.2','172.16.3.1','192.168.1.1'])+'</label>'+
     '<p id="lab-policy-result" style="margin:8px 4px;font-weight:700;color:'+(policyResult.action==='allow'?'var(--green)':'var(--red)')+'">'+
       (policyResult.action==='allow'?'ALLOW':'DENY')+' · '+policyResult.rule+'</p>'+
     '<p style="font-size:12px;color:var(--text2)">Solo evaluación lógica; no son sesiones ni contadores de un PA-1410 físico.</p></div>';
