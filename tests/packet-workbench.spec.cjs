@@ -100,6 +100,12 @@ test('Presentar cubre 5 requisitos del profesor y expone demo sin PPT',async({pa
  await expect(page.locator('#presentation-overlay')).toBeHidden();
  await page.keyboard.press('Escape');
  await expect(page.locator('#packetlab-overlay')).toBeHidden();
+ await expect(page.locator('#presentation-overlay')).toBeVisible();
+ await expect(page.locator('#stage-title')).toHaveText('La red demuestra lo que hace');
+ await page.keyboard.press('ArrowRight');
+ await expect(page.locator('#stage-title')).toHaveText('Problemas que resolvimos');
+ await page.keyboard.press('Escape');
+ await expect(page.locator('#presentation-overlay')).toBeHidden();
  expect(errors).toEqual([]);
 });
 
