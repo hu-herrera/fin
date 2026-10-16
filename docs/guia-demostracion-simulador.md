@@ -8,15 +8,17 @@ La página integra tres niveles de comportamiento:
 
 1. **Topología y fallos de infraestructura:** dos miembros de Catalyst C9200L con StackWise-80, LACP hacia el PA-1410 (Po20), LACP Cisco C8300–PA (Po10), cuatro WAN con prioridad, caída de un ISP, fallo de gateway/upstream, switch, firewall y partición del fabric.
 2. **Encaminamiento y políticas:** VLAN10 usuarios, VLAN20 voz, VLAN30 gestión, VLAN40 invitados. Direcciones/gateways, rutas y acceso intersede vía casa matriz, reglas de seguridad PAN-OS simuladas y decisiones de allow/deny. No se publican invitados hacia otras sedes.
-3. **Consolas y Ping / Trace:** CLI interactiva de **subconjuntos** de comandos Cisco/PAN-OS y una prueba ICMP entre sedes desde la pestaña existente. El resultado muestra respuesta o timeout, ruta lógica y RTT estimado; la animación del mapa es una vista del mismo ping.
+3. **Consolas y Ping / Trace:** CLI interactiva de **subconjuntos** de comandos Cisco/PAN-OS y pruebas ICMP locales o entre sedes desde la pestaña existente. El resultado distingue respuesta local, bloqueo por política y falta de ruta. La LAN muestra los pasos por switches y un RTT estimado; estos pasos no equivalen a saltos IP de un traceroute.
 
 **Importante:** a diferencia de GNS3/EVE-NG/Cisco CML, el navegador no ejecuta máquinas virtuales ni el sistema operativo auténtico de los fabricantes. Tampoco abre sockets TCP reales hacia los servidores simulados. Un resultado `PERMITIDO` indica forwarding permitido por el modelo, no una respuesta de un servidor DNS/banco ni una SA IPsec establecida. Es un simulador determinista de escenarios con interactividad; no un reemplazo de emulación de imagen IOS-XE/PAN-OS.
 
 ## Entradas nuevas de la interfaz
 
-- **Ping / Trace dentro del simulador original:** seleccionar una sede, pulsar el botón amarillo **Ver topología interna completa** y abrir **📡 Ping / Trace** (o pulsar **📡 Probar Ping / Trace** en la barra de topología). Elegir una sede destino y pulsar **Enviar ping**. El resultado queda visible en la misma ventana y presenta los saltos lógicos y el RTT estimado. El botón de mapa anima ese mismo ping.
-- **↯ Cortar Starlink / ↺ Recuperar:** modifica la WAN de la sede en el escenario; la selección pasa a Amazon Leo mientras el resto de enlaces estén sanos. No significa que Amazon Leo esté contratado o disponible comercialmente.
-- **Puertos de PC:** si el puerto de acceso de un PC es deshabilitado desde la CLI Cisco simulada, el trazador debe señalar `ACCESS_DOWN`, hasta restaurarlo.
+- **Ping / Trace dentro del simulador original:** seleccionar una sede, pulsar **Ver topología interna completa** y abrir **📡 Ping / Trace**. Dejar **Otro PC de esta sede** para la prueba local. Elegir otra sede para observar el bloqueo ICMP de la política actual. El resultado permanece en la misma ventana y el bloqueo puede mostrarse sobre el mapa.
+- **StackWise / LACP:** los controles de cable WAN, gateway ISP y salida aguas arriba afectan al mismo modelo que el mapa, las métricas y las consolas. Al fallar Starlink, se selecciona Amazon Leo si está sano en el escenario. Esto no supone un servicio comercial contratado.
+- **Puertos y consolas del stack:** ambas consolas comparten la configuración de interfaces. Un puerto apagado deja de ser utilizable por el modelo y desaparece de su tabla MAC; se puede recuperar desde cualquiera de las dos consolas. `write memory` guarda un único startup-config del stack en este navegador.
+- **Restaurar:** recupera los equipos, cables y fallos WAN del escenario; conserva los comandos y configuraciones CLI. Una interfaz con `shutdown` requiere `no shutdown`.
+- **E3 Router CM:** simula la caída y recuperación del único router de casa matriz. No hay un segundo C8300 ni HSRP en el perfil activo; la conmutación local de una misma VLAN sigue disponible cuando el router cae.
 - **▣ Presentar:** ventana proyectable sobre **la misma web**. El botón de demostración abre el modal de S01 en la pestaña Ping / Trace. Seis escenas navegables con flechas de teclado, notas por escena (**N**) y retorno a la escena después de cerrar la sede. El guion de avance está en [Presentación 16 de octubre](presentacion-avances-16-octubre-2026.md).
 
 No es necesario PowerPoint. El [guion de seis escenas](presentacion-avances-16-octubre-2026.md) incluye los cinco puntos exigidos por el profesor, tiempos, secuencia de clics y preguntas probables. El guion se puede revisar después de recibir retroalimentación.
@@ -25,11 +27,11 @@ No es necesario PowerPoint. El [guion de seis escenas](presentacion-avances-16-o
 
 | Ejercicio | Entrada | Resultado del modelo |
 |---|---|---|
-| Ping entre sedes | Ping local en S01 | Destino “Otro PC de esta sede” | Respuesta simulada, saltos de switching y RTT estimado visibles sin cerrar la ventana |
+| Ping local en S01 | Destino “Otro PC de esta sede” | Respuesta simulada, pasos de switching y RTT estimado visibles sin cerrar la ventana |
 | Bloqueo intersede | Elegir S02 desde S01 | ICMP bloqueado por la política del PA-1410; la regla se indica en pantalla |
 | Ver el bloqueo | Desde la denegación intersede, abrir el mapa | El mapa marca el ping como descartado |
-| Todos los enlaces WAN caídos | Simular caída WAN desde StackWise / LACP | BLOQUEADO: WAN_DOWN |
-| Caída Po10 | Cortar T1 y T2 del enlace C8300–PA | BLOQUEADO: TRANSIT_DOWN |
+| Todos los enlaces WAN caídos | Simular caída WAN desde StackWise / LACP | WAN sin servicio; los hosts de la misma VLAN aún pueden comunicarse localmente |
+| Caída Po10 | Cortar T1 y T2 del enlace C8300–PA | Sin salida al router; la LAN y el gateway del Palo Alto siguen disponibles |
 | Fabric StackWise partido | Cortar STACK-A y STACK-B | No se garantiza gateway ni L2 entre miembros |
 | Inter-VLAN no autorizada | Usuarios hacia gestión VLAN30 | Política denegada |
 | Acceso a invitados remotos | VLAN40 cruzando sedes | No se anuncia por OSPF |
