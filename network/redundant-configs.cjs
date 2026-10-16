@@ -89,6 +89,10 @@ function stackCandidate(num,pcCount){
     'switch 2 provision c9200l-48t-4g',
     'spanning-tree mode rapid-pvst',
     'spanning-tree vlan 10,20,30,40 priority 24576',
+    // El trust de Po20 no tiene efecto sin activación global y por VLAN.
+    // El DHCP real sigue condicionado a disponer de PA ae2.x configurado.
+    'ip dhcp snooping',
+    'ip dhcp snooping vlan 10,20,40',
     'vlan 10',' name DATOS-USUARIOS',
     'vlan 20',' name VOZ',
     'vlan 30',' name GESTION',
