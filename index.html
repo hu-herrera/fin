@@ -4055,12 +4055,15 @@ function genFWOverview(s){
   return `PA-${s.code}> <span class="ios-cmd">show system info</span>
 
 Hostname:     PA-${s.code}
+ip-address:   10.70.${s.num}.164
+netmask:      255.255.255.240
+default-gateway: 10.70.${s.num}.161
 Model:        PA-1410
-SW Version:   PAN-OS 11.1.2-h1
+SW Version:   PAN-OS 11.1.2-h1 (perfil de laboratorio)
 Uptime:       ${UPTIME}
 
-Threat Prevention:     <span class="ios-up">Active</span>
-WildFire:              <span class="ios-up">Active</span>`;
+Threat Prevention:     Estado no validado en hardware
+WildFire:              Estado no validado en hardware`;
 }
 
 function genFWIfaces(s){
