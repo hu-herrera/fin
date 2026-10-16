@@ -126,7 +126,7 @@ const PANOS_RULES=Object.freeze([
   {name:'ALLOW-MGMT-DNS-NTP-OUT',from:['MGMT-DATA'],to:['TRANSIT'],apps:['dns','ntp'],action:'allow'},
 ].map(rule=>Object.freeze({...rule,from:Object.freeze(rule.from),to:Object.freeze(rule.to),apps:Object.freeze(rule.apps)})));
 function isPrivateRfc1918(ip){
-  if(typeof ip!=='string'||!/^(?:\\d{1,3}\\.){3}\\d{1,3}$/.test(ip))
+  if(typeof ip!=='string'||!/^(?:\d{1,3}\.){3}\d{1,3}$/.test(ip))
     throw new RangeError('Dirección IPv4 de destino no válida');
   const oct=ip.split('.').map(Number);
   if(oct.some(n=>n<0||n>255))throw new RangeError('Octeto IPv4 inválido');
