@@ -126,3 +126,62 @@ test('Bajar un puerto real de PC mediante consola simulada bloquea trazado en la
  await page.locator('#pl-trace').click();
  await expect(page.locator('#pl-result')).toContainText('PERMITIDO');
 });
+
+test('Simular flujo actualiza cada ejecución aun sin cambiar los valores',async({page})=>{
+ await openOriginalSite(page);
+ await openPacketFromTopology(page);
+ const before=await page.locator('#pl-execution').innerText();
+ const hops=await page.locator('#pl-hops .packetlab-hop').count();
+ await page.locator('#pl-trace').click();
+ await expect(page.locator('#pl-execution')).not.toHaveText(before);
+ await expect(page.locator('#pl-execution')).toContainText('EJECUCIÓN #2');
+ await expect(page.locator('#pl-hops .packetlab-hop')).toHaveCount(hops);
+ await expect(page.locator('#pl-result')).toHaveClass(/packetlab-updated/);
+ await page.locator('#pl-trace').click();
+ await expect(page.locator('#pl-execution')).toContainText('EJECUCIÓN #3');
+ await page.locator('#pl-dest').fill('999.999.999.999');
+ await page.locator('#pl-trace').click();
+ await expect(page.locator('#pl-result')).toContainText('BLOQUEADO');
+ await expect(page.locator('#pl-result')).toContainText('BAD_DEST');
+ await expect(page.locator('#pl-execution')).toContainText('EJECUCIÓN #4');
+});
+test('Cambio de sede recicla la interfaz sin conservar el PC de la sede previa',async({page})=>{
+ await openOriginalSite(page,'s01');
+ await openPacketFromTopology(page);
+ await expect(page.locator('#pl-pc')).toHaveValue('10.70.1.10');
+ await page.evaluate(()=>closeSedeModal());
+ await page.evaluate(()=>openSedeModal('s02'));
+ await page.locator('#sm-tab-packet').click();
+ await expect(page.locator('#pl-site')).toHaveValue('s02');
+ await expect(page.locator('#pl-pc')).toHaveValue('10.70.2.10');
+ await expect(page.locator('#pl-result')).toContainText('PERMITIDO');
+ await page.locator('#pl-trace').click();
+ await expect(page.locator('#pl-execution')).toContainText('10.70.2.10');
+});
+test('Estado verde, tarjetas y botones no pisan otros textos en escritorio y móvil',async({page})=>{
+ for(const width of [1366,768,390]){
+  await page.setViewportSize({width,height:800});
+  await openOriginalSite(page);
+  await openPacketFromTopology(page);
+  await page.locator('#pl-trace').click();
+  const violations=await page.evaluate(()=>{
+   const ids=['pl-verdict','pl-state','pl-execution','pl-reason','pl-hops'];
+   const nodes=ids.map(id=>document.getElementById(id));
+   const rects=nodes.map(el=>el.getBoundingClientRect());
+   const collision=(a,b)=>a.left<b.right-2&&a.right>b.left+2&&
+     a.top<b.bottom-2&&a.bottom>b.top+2;
+   const errors=[];
+   if(collision(rects[0],rects[1]))errors.push('green status overlaps code label');
+   if(collision(rects[2],rects[3]))errors.push('execution label overlaps reason');
+   if(collision(rects[3],rects[4]))errors.push('reason overlaps hop cards');
+   for(const hop of document.querySelectorAll('#pl-hops .packetlab-hop')){
+    if(hop.scrollWidth>hop.clientWidth+2)errors.push('card overflows horizontally');
+   }
+   const host=document.querySelector('#sm-packet-host');
+   if(host.scrollWidth>host.clientWidth+3)errors.push('packet tab overflow horizontally');
+   return errors;
+  });
+  expect(violations,'Viewport '+width).toEqual([]);
+  await page.evaluate(()=>closeSedeModal());
+ }
+});
