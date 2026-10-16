@@ -341,6 +341,11 @@ const CM_SERVICES=Object.freeze({
   dns:Object.freeze(['10.70.0.110','10.70.0.111']),
   ntp:Object.freeze(['10.70.0.116','10.70.0.117'])
 });
+// Router-ID/Loopback0 defined in routerCandidate; the same exact /32 sources
+// are authorized for Cisco NTP, including CM's own router.
+const ROUTER_NTP_SOURCES=Object.freeze(
+  Array.from({length:23},(_,n)=>'10.70.100.'+(n===0?1:n+10))
+);
 function intersiteRulesForSite(num){
   checkSiteNum(num);
   const denyPrivate={
@@ -354,6 +359,9 @@ function intersiteRulesForSite(num){
      apps:['dns'],action:'allow'},
     {name:'CM-IN-NTP-FROM-BRANCHES',from:['TRANSIT'],to:['USERS'],
      source:'BRANCH-MGMT-CLIENTS',destination:'CM-NTP-SERVERS',
+     apps:['ntp'],action:'allow'},
+    {name:'CM-IN-NTP-FROM-ROUTERS',from:['TRANSIT'],to:['USERS'],
+     source:'ROUTER-NTP-SOURCES',destination:'CM-NTP-SERVERS',
      apps:['ntp'],action:'allow'},
     // DNS/NTP centrales están en VLAN10; el PA debe admitir las peticiones
     // locales de VLAN20 y VLAN30 sin abrir acceso lateral indiscriminado.
@@ -397,6 +405,7 @@ function matchSecurityAddress(selector,ip,num){
   if(selector==='RFC1918-NETWORKS')return isPrivateRfc1918(ip);
   if(selector==='CM-DNS-SERVERS')return CM_SERVICES.dns.includes(ip);
   if(selector==='CM-NTP-SERVERS')return CM_SERVICES.ntp.includes(ip);
+  if(selector==='ROUTER-NTP-SOURCES')return num===0&&ROUTER_NTP_SOURCES.includes(ip);
   if(selector==='BR-LOCAL-DNS-CLIENTS')
     return inSubnet(ip,'10.70.'+num+'.0',25)||
       inSubnet(ip,'10.70.'+num+'.128',27)||
@@ -455,6 +464,12 @@ function intersiteAddressCommands(num){
   if(num===0){
     lines.push('set address CM-LOCAL-VOICE ip-netmask 10.70.0.128/27',
       'set address CM-LOCAL-MGMT ip-netmask 10.70.0.160/28');
+    for(const [i,ip] of ROUTER_NTP_SOURCES.entries())
+      lines.push('set address ROUTER-LOOP-'+String(i).padStart(2,'0')+
+        ' ip-netmask '+ip+'/32');
+    lines.push('set address-group ROUTER-NTP-SOURCES static [ '+
+      ROUTER_NTP_SOURCES.map((_,i)=>'ROUTER-LOOP-'+String(i).padStart(2,'0')).join(' ')+
+      ' ]');
     const users=[],mgmt=[];
     for(let n=1;n<=22;n++){
       const id=String(n).padStart(2,'0');
@@ -547,7 +562,7 @@ function siteCandidate(num,pcCount){
    'sin laboratorio de hardware']};
 }
 
-return {routerCandidate,routerNatCandidate,stackCandidate,paloCandidate,siteCandidate,PANOS_RULES,evaluatePanPolicy,isPrivateRfc1918,panosSecurityCommands,CM_SERVICES,intersiteRulesForSite,securityRulesForSite,evaluateSitePanPolicy};
+return {routerCandidate,routerNatCandidate,stackCandidate,paloCandidate,siteCandidate,PANOS_RULES,evaluatePanPolicy,isPrivateRfc1918,panosSecurityCommands,CM_SERVICES,ROUTER_NTP_SOURCES,intersiteRulesForSite,securityRulesForSite,evaluateSitePanPolicy};
 })();
 root.RedundantLab=Object.freeze({...MODEL,...CONFIGS});
 })(window);
