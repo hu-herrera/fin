@@ -112,8 +112,8 @@ body{background:var(--bg);color:var(--text);
 }
 .ping-select-status.vis{display:block;}
 .ping-trace-card{
-  position:absolute;right:12px;bottom:12px;z-index:55;
-  width:min(310px,calc(100% - 24px));display:none;
+  position:absolute;right:12px;bottom:50px;z-index:55;
+  width:min(350px,calc(100% - 24px));display:none;max-height:calc(100% - 70px);overflow:auto;
   padding:9px 11px;background:rgba(13,17,23,.94);
   border:1px solid var(--panel3);border-left:3px solid var(--accent);
   border-radius:5px;box-shadow:0 4px 16px rgba(0,0,0,.45);
@@ -122,7 +122,15 @@ body{background:var(--bg);color:var(--text);
 .ping-trace-card.vis{display:block;}
 .ping-trace-title{display:flex;justify-content:space-between;gap:8px;color:var(--text);font-size:11px;margin-bottom:4px;}
 .ping-trace-title strong{color:var(--accent);font-size:10px;text-transform:uppercase;}
-.ping-trace-route{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;}
+.ping-trace-route{overflow-wrap:anywhere;margin-bottom:6px;line-height:1.5;}
+.ping-trace-actions{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0;}
+.ping-trace-actions button{font-size:10px;}
+.ping-trace-steps{max-height:135px;overflow:auto;margin:7px 0;padding-left:25px;line-height:1.7;}
+.ping-trace-steps li{padding:2px 4px;overflow-wrap:anywhere;}
+.ping-trace-steps li[aria-current="step"]{color:#ffd166;background:#302a18;border-radius:3px;}
+.ping-trace-steps li.passed{color:var(--green);}
+.ping-trace-details summary{cursor:pointer;color:var(--text);}
+#ping-trace-policy{overflow-wrap:anywhere;}
 .ping-trace-hop{color:var(--text);line-height:1.35;}
 .map-container.legacy::after{
   background:radial-gradient(ellipse at 25% 15%, rgba(180,140,90,0.05) 0%, transparent 55%);
@@ -416,6 +424,28 @@ body{background:var(--bg);color:var(--text);
   .topo-toolbar{flex-wrap:wrap;}
   .topo-toolbar .btn{margin-left:0;}
 }
+@media (max-width:700px){
+  html,body{height:auto;min-height:100%;overflow:auto;}
+  body{min-height:100vh;}
+  #topbar{flex-wrap:wrap;gap:9px;padding:10px;}
+  .tb-metrics{order:3;width:100%;margin-left:0;justify-content:space-between;gap:5px;}
+  .metric{min-width:0;flex:1;}
+  .mval{font-size:12px;}.mlbl{font-size:8px;text-align:center;}
+  .toggle-wrap{gap:5px;flex-wrap:wrap;}
+  .main-area{display:flex;flex-direction:column;flex:none;overflow:visible;}
+  .map-panel{overflow:visible;flex:none;}
+  .map-container{flex:none;height:65vh;min-height:420px;}
+  .map-container.expanded{height:auto;min-height:0;}
+  .detail-panel{max-height:350px;border-left:0;border-top:1px solid var(--panel2);}
+  .detail-panel:has(.detail-empty){display:none;}
+  .scenarios-panel{flex-wrap:wrap;overflow:visible;gap:8px;padding:8px;}
+  .sg{min-width:0;max-width:100%;}.sg+.sg{border:0;padding-left:0;}
+  .sbtns{flex-wrap:wrap;}
+  .log-panel{height:150px;}
+  .log-entry{flex-wrap:wrap;gap:2px;}.log-msg{overflow-wrap:anywhere;}
+  .ping-trace-actions .btn{min-height:32px;}
+  .mbox{min-width:0;max-width:96vw;}
+}
 .ios-down{color:#dc4646;}
 .ios-warn{color:#f0c83c;}
 .ios-hdr{color:#6496ff;font-weight:700;}
@@ -458,8 +488,9 @@ body{background:var(--bg);color:var(--text);
 .ping-local-topology{border:1px solid var(--panel3);border-radius:8px;background:#101824;overflow:hidden;margin:12px 0;}
 .ping-table td,.ping-table th{overflow-wrap:anywhere;}
 .ping-route-summary span{min-width:0;overflow-wrap:anywhere;}
-.dashboard-ping-form{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;
+.dashboard-ping-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;
   align-items:end;padding:10px;background:var(--panel2);border-radius:6px;margin-bottom:10px;}
+.dashboard-ping-form button{grid-column:1 / -1;}
 .dashboard-ping-form label{display:flex;flex-direction:column;gap:4px;color:var(--text2);font-size:10px;}
 .dashboard-ping-form select{background:var(--bg);color:var(--text);border:1px solid var(--panel3);
    border-radius:3px;padding:6px;font:inherit;min-width:0;max-width:100%;}
@@ -627,11 +658,21 @@ body{background:var(--bg);color:var(--text);
         <button type="button" class="btn btn-n" onclick="cancelPingSelection()">Cancelar</button>
       </div>
       <div class="ping-select-status" id="ping-select-status"></div>
-      <div class="ping-trace-card" id="ping-trace-card" aria-live="polite">
+      <section class="ping-trace-card" id="ping-trace-card" aria-label="Resultado Ping / Trace del mapa">
         <div class="ping-trace-title"><span>📡 ICMP</span><strong id="ping-trace-state">Listo</strong></div>
         <div class="ping-trace-route" id="ping-trace-route">Selecciona origen y destino para iniciar una prueba</div>
-        <div class="ping-trace-hop" id="ping-trace-hop">Sin salto activo</div>
-      </div>
+        <div class="ping-trace-hop" id="ping-trace-hop" role="status" aria-live="polite">Sin salto activo</div>
+        <p id="ping-trace-policy" class="ping-note"></p>
+        <details class="ping-trace-details" id="ping-trace-details"><summary>Ver recorrido paso a paso</summary><ol class="ping-trace-steps" id="ping-trace-steps"></ol></details>
+        <div class="ping-trace-actions">
+          <button type="button" class="btn btn-b" id="map-ping-pause" onclick="pauseMapPing()">Pausar</button>
+          <button type="button" class="btn btn-b" id="map-ping-step" onclick="stepMapPing()">Siguiente paso</button>
+          <button type="button" class="btn btn-b" onclick="replayMapPing()">Repetir</button>
+          <button type="button" class="btn btn-b" onclick="clearPacketSimulation()">Ocultar</button>
+        </div>
+        <div class="ping-trace-actions" id="map-ping-policy-actions"></div>
+        <p class="ping-note">Recorrido educativo capturado al enviar. Respuesta por la misma ruta modelada. Los pasos internos del operador son ilustrativos; no es un traceroute IP real.</p>
+      </section>
     </div>
     <div class="map-legend">
       <div class="leg"><div class="leg-dot" style="background:var(--green)"></div>Activo</div>
@@ -704,6 +745,7 @@ body{background:var(--bg);color:var(--text);
     <div class="sg-lbl">Herramientas</div>
     <div class="sbtns">
       <button type="button" class="btn btn-acc" onclick="startPingSelection()">🖱 Seleccionar origen → destino</button>
+      <button type="button" class="btn btn-n" onclick="openDashboardPing()">📡 Ping / Trace entre sedes</button>
       <button class="btn btn-n" onclick="showModal()">📊 Ver Métricas</button>
     </div>
   </div>
@@ -2514,31 +2556,57 @@ function selectPingSede(id){
   return true;
 }
 
-function runMapPing(srcId, destId, sourceIp, targetIp){
-  const src = SEDES.find(s => s.id === srcId);
-  const dest = SEDES.find(s => s.id === destId);
-  if(!src || !dest) return;
-  const localOnly=src.id===dest.id;
-  const srcPc=sourceIp?getPCs(src).find(p=>p.ip===sourceIp):findAvailableSimulationPC(src,localOnly);
-  const destPc=targetIp?getPCs(dest).find(p=>p.ip===targetIp):findAvailableSimulationPC(dest,localOnly);
-  const detailedRoute = srcPc && destPc
-    ? buildPacketRoute(src,dest,false,srcPc,destPc)
-    : [];
-  const route = collapsePacketRoute(detailedRoute,src,dest);
-  const endpoint = getPacketRouteEndpoint(src,detailedRoute);
-  const routeOk = detailedRoute.length >= 2;
-  animatePacket(src.id, dest.id, endpoint.type, routeOk, route, detailedRoute);
-  if(!routeOk){
-    addLog(`ICMP DROP ${src.code} → ${dest.code} — sin ruta activa`, 'warn');
-    return;
+function evaluateMapPing(srcId,destId,sourceIp,targetIp){
+  const src=SEDES.find(s=>s.id===srcId),dest=SEDES.find(s=>s.id===destId);
+  if(!src||!dest)return null;
+  const srcPc=sourceIp?getPCs(src).find(p=>p.ip===sourceIp):findAvailableSimulationPC(src,false);
+  const destPc=targetIp?getPCs(dest).find(p=>p.ip===targetIp):findAvailableSimulationPC(dest,false);
+  const policy=srcPc&&destPc?packetPolicyDecision(src,dest,srcPc,destPc):{action:'deny',rule:'host-no-disponible'};
+  const route=srcPc&&destPc?buildPacketRoute(src,dest,false,srcPc,destPc):[];
+  const ok=route.length>=2;
+  let reason='',blockedRoute=[];
+  if(!srcPc||!destPc)reason='Sin un PC disponible en origen o destino. Revisa los puertos, VLAN y gateway.';
+  else if(!isPCNetworkAvailable(src.id,srcPc))reason='El PC origen no alcanza su gateway. Revisa su puerto, VLAN, StackWise y Palo Alto.';
+  else if(policy.action!=='allow'){
+    reason='BLOQUEADO por firewall: '+policy.rule+'. No se transmite por la WAN.';
+    const graph=buildSimulationGraph();
+    const prefix=shortestSimulationPath(graph,'site:'+src.id+':pc:'+srcPc.idx,'site:'+src.id+':firewall',src.id)||[];
+    blockedRoute=prefix.map(id=>graph.nodes.get(id)).filter(Boolean);
   }
-  const routeLabels = route.map((hop, index) => `${index + 1}. ${hop.label}`).join(' → ');
-  addLog(`ICMP directo ${src.code} → ${dest.code} · ${route.length} saltos · vía ${endpoint.label}`, 'ok');
-  addLog(`Ruta ICMP: ${routeLabels}`, 'ok');
-  setTimeout(() => {
-    if(!routeOk) return;
-    addLog(`ICMP reply ${src.code} → ${dest.code} · respuesta recibida`, 'ok');
-  }, 1200);
+  else if(!ok)reason='Sin ruta activa de extremo a extremo. Revisa puertos, VLAN, StackWise, WAN y el hub de Casa Matriz.';
+  const endpoint=getPacketRouteEndpoint(src,route);
+  return {src,dest,srcPc,destPc,policy,route,blockedRoute,ok,reason,endpoint,
+    rtt:ok?estimatePingRtt(src,dest,route):0};
+}
+function estimatePingRtt(src,dest,route){
+  if(src.id===dest.id)return 2;
+  const source=getPacketRouteEndpoint(src,route),target=getWanEndpoint(dest,false);
+  return Math.round(getLinkLatency(src,source.type)+getLinkLatency(dest,target.type)+4);
+}
+function runMapPing(srcId,destId,sourceIp,targetIp){
+  const result=evaluateMapPing(srcId,destId,sourceIp,targetIp);
+  if(!result)return;
+  MAP_PING_LAST=result;
+  animatePacket(srcId,destId,result.endpoint.type,result.ok,collapsePacketRoute(result.route,result.src,result.dest),result.route,result);
+  addLog('ICMP mapa '+result.src.code+' → '+result.dest.code+' · '+
+    (result.ok?'solicitud por '+result.endpoint.label:result.reason),result.ok?'ok':'warn');
+  document.getElementById('map-container').scrollIntoView({block:'start',behavior:'instant'});
+  return result;
+}
+function replayMapPing(){
+  const r=MAP_PING_LAST;
+  if(r)runMapPing(r.src.id,r.dest.id,r.srcPc?.ip,r.destPc?.ip);
+}
+function setPingDiagnosticRule(srcId,destId,source,target){
+  PING_DIAGNOSTIC_RULE=srcId?{src:srcId,dst:destId,source,target}:null;
+  clearPacketSimulation('La política ICMP cambió. Repite la prueba para aplicar la política actual.');
+  cancelPendingSitePing('La política ICMP cambió. Envía otro ping para aplicar la política actual.');
+  addLog(srcId?'Política temporal LAB-ICMP-HOST-PAIR: '+source+' → '+target:'Excepción ICMP temporal eliminada','warn');
+}
+function toggleMapPingDiagnostic(allow){
+  const r=MAP_PING_LAST;if(!r?.srcPc||!r.destPc)return;
+  setPingDiagnosticRule(allow?r.src.id:null,r.dest.id,r.srcPc.ip,r.destPc.ip);
+  replayMapPing();
 }
 
 function renderDetail(id){
@@ -2800,8 +2868,10 @@ function initZoom(){
   const mapEl = document.getElementById('map-container');
   const svgEl = document.getElementById('chile-map');
   if(!mapEl || !svgEl) return;
+  document.getElementById('ping-trace-card').addEventListener('click',e=>e.stopPropagation());
   window.addEventListener('resize',fitMapZoomHeight);
   mapEl.addEventListener('wheel', (e) => {
+    if(e.target.closest('.ping-trace-card,.ping-select-bar,.map-zoom-controls'))return;
     e.preventDefault();
     const rect = svgEl.getBoundingClientRect();
     if(!rect.width || !rect.height) return;
@@ -2821,7 +2891,7 @@ function initZoom(){
     aplicarZoom();
   }, { passive: false });
   mapEl.addEventListener('pointerdown',e=>{
-    if(e.button!==0 || e.target.closest('.map-zoom-controls,.map-expand-btn')) return;
+    if(e.button!==0 || !svgEl.contains(e.target)) return;
     if(e.target.closest('#antenna-layer,#sat-layer,#sedes-layer')) return;
     DRAG.active=true;
     DRAG.moved=false;
@@ -2874,6 +2944,7 @@ function initZoom(){
     }
   });
   mapEl.addEventListener('dblclick', (e) => {
+    if(!svgEl.contains(e.target))return;
     if(e.target.closest('circle') || e.target.closest('g')) return;
     e.preventDefault();
     zoomReset();
@@ -2882,7 +2953,7 @@ function initZoom(){
 }
 
 document.getElementById('map-container').addEventListener('click',(e)=>{
-  if(e.target.closest('.map-expand-btn,.map-zoom-controls')) return;
+  if(e.target.closest('.map-expand-btn,.map-zoom-controls,.ping-trace-card,.ping-select-bar')) return;
   if(e.target.closest('circle') || e.target.closest('g') || e.target.closest('#chile-path')) return;
   const nearest=nearestMapSede(e);
   if(nearest){
@@ -3092,7 +3163,7 @@ function sc_reset(){
 }
 function _refresh(){
   cancelPendingSitePing('El estado de la red cambió. Envía otro ping para evaluar la ruta actual.');
-  clearPacketSimulation();
+  clearPacketSimulation('El estado de la red cambió. Repite el ping para evaluar la ruta actual.');
   renderMap(); renderAntenas(); updateMetrics();
   if(ST.selId) renderDetail(ST.selId);
   if(SM_TAB==='ping'&&document.getElementById('ping-source-host')){
@@ -3906,12 +3977,11 @@ function updatePingHosts(srcId,keepTarget=false){
 }
 function togglePingDiagnostic(srcId){
   invalidatePingSelection();
-  PING_DIAGNOSTIC_RULE=srcId?{src:srcId,dst:document.getElementById('ping-dest').value,
-    source:document.getElementById('ping-source-host').value,target:document.getElementById('ping-target-host').value}:null;
+  setPingDiagnosticRule(srcId,document.getElementById('ping-dest').value,
+    document.getElementById('ping-source-host').value,document.getElementById('ping-target-host').value);
   const rule=PING_DIAGNOSTIC_RULE;
   document.getElementById('ping-rule-status').textContent=rule?
     'Excepción activa: '+rule.source+' → '+rule.target+' · solo ICMP, VLAN 10 · ambos firewalls.':'Sin excepción temporal.';
-  addLog(rule?'Política temporal LAB-ICMP-HOST-PAIR: '+rule.source+' → '+rule.target:'Excepción ICMP temporal eliminada','warn');
 }
 function renderLocalPingTopology(s,source,target){
   const point=pc=>{
@@ -6377,6 +6447,7 @@ ${new Date().toISOString()} info  dataplane  link state changed to up<br>${new D
 }
 
 let PACKET_ANIMATION = { raf: 0, cleanup: 0 };
+let MAP_PING_LAST=null;
 let SITE_PING_TIMER=0;
 // Session-only, exact host pair; never exported as a deployed PAN-OS configuration.
 let PING_DIAGNOSTIC_RULE=null;
@@ -6387,14 +6458,21 @@ function cancelPendingSitePing(message){
   if(message&&result)result.textContent=message;
 }
 
-function clearPacketSimulation(){
+function clearPacketSimulation(reason){
   if(PACKET_ANIMATION.raf) cancelAnimationFrame(PACKET_ANIMATION.raf);
   if(PACKET_ANIMATION.cleanup) clearTimeout(PACKET_ANIMATION.cleanup);
   const layer = document.getElementById('packet-layer');
   if(layer) layer.innerHTML = '';
   const card = document.getElementById('ping-trace-card');
-  if(card) card.classList.remove('vis');
   PACKET_ANIMATION = { raf: 0, cleanup: 0 };
+  if(reason&&card?.classList.contains('vis')){
+    updatePingTrace('Interrumpido',document.getElementById('ping-trace-route').textContent,reason);
+    document.getElementById('map-ping-pause').disabled=true;
+    document.getElementById('map-ping-step').disabled=true;
+    document.getElementById('map-ping-policy-actions').replaceChildren();
+    document.getElementById('ping-trace-policy').textContent='Resultado anterior invalidado; la siguiente prueba evaluará las políticas y enlaces actuales.';
+    document.querySelectorAll('#ping-trace-steps li').forEach(li=>{li.classList.remove('passed');li.removeAttribute('aria-current');});
+  }else if(card)card.classList.remove('vis');
 }
 
 function updatePingTrace(state, routeText, hopText){
@@ -6538,7 +6616,8 @@ function buildSimulationGraph(){
   if(ST.mode !== 'antes') calcularIluminacion();
   const graph = { nodes: new Map(), edges: new Map() };
   const cm = SEDES.find(s => s.isCM);
-  const core = simulationNode('core', 'RTR-CM / PA-CM / Core', sedePos(cm), 'core');
+  const coreLabel=window.ActiveProfile?.enabled()?'Casa Matriz · RTR-CM / PA-CM · WAN '+(LK_NAME[window.ActiveProfile.selectedWan('cm')]||'sin servicio'):'RTR-CM / PA-CM / Core';
+  const core = simulationNode('core', coreLabel, sedePos(cm), 'core');
   graph.nodes.set(core.id, core);
 
   SEDES.forEach(s => {
@@ -6813,104 +6892,110 @@ function buildPacketRoute(src, dest, collapseCloud = true, srcPc = getPCs(src)[0
   return collapseCloud ? collapsePacketRoute(route,src,dest) : route;
 }
 
-function animatePacket(srcId, destId, linkType, ok, route, detailedRoute){
-  const layer = document.getElementById('packet-layer');
-  if(!layer) return;
-  const src = SEDES.find(x => x.id === srcId);
-  const dest = SEDES.find(x => x.id === destId);
-  const cm = SEDES.find(x => x.isCM);
-  if(!src || !dest || !cm) return;
-
+function fitPingRoute(hops){
+  if(!hops.length)return;
+  const xs=hops.map(h=>h.point[0]),ys=hops.map(h=>h.point[1]);
+  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+  const aspect=document.getElementById('map-container').getBoundingClientRect();
+  // Reserve the right side for the trace card, instead of hiding the route behind it.
+  const reserve=aspect.width>700?0.55:0.85;
+  const width=Math.max(36,(maxX-minX+12)/reserve,(maxY-minY+12)*aspect.width/Math.max(aspect.height,1));
+  ZOOM.w=Math.min(ZOOM.maxW,width);ZOOM.h=mapZoomHeight(ZOOM.w);
+  ZOOM.x=(minX+maxX)/2-ZOOM.w*(aspect.width>700?0.3:0.5);
+  ZOOM.y=(minY+maxY)/2-ZOOM.h*(aspect.width>700?0.5:0.24);
+  aplicarZoom();
+}
+function renderMapPingPolicyActions(result){
+  const actions=document.getElementById('map-ping-policy-actions');actions.replaceChildren();
+  if(!window.ActiveProfile?.enabled()||!result.srcPc||!result.destPc)return;
+  const allowed=result.policy.rule.startsWith('LAB-ICMP-HOST-PAIR');
+  const button=document.createElement('button');button.type='button';button.className='btn btn-b';
+  button.textContent=allowed?'Quitar excepción ICMP y repetir':'Permitir solo este par ICMP y repetir';
+  button.onclick=()=>toggleMapPingDiagnostic(!allowed);actions.append(button);
+}
+function animatePacket(srcId,destId,linkType,ok,route,detailedRoute,result){
+  const layer=document.getElementById('packet-layer');if(!layer)return;
+  const src=SEDES.find(s=>s.id===srcId),dest=SEDES.find(s=>s.id===destId);if(!src||!dest)return;
   clearPacketSimulation();
-  const NS = 'http://www.w3.org/2000/svg';
-  const hops = detailedRoute || buildPacketRoute(src, dest, false);
-  const logicalHops = route || buildPacketRoute(src, dest);
-  if(logicalHops.length < 2){
-    updatePingTrace('Descartado', `${src.code} → ${dest.code}`, 'Sin ruta activa disponible');
-    const drop = document.createElementNS(NS, 'text');
-    drop.setAttribute('class', 'packet-label');
-    drop.setAttribute('x', sedePos(src)[0].toFixed(1));
-    drop.setAttribute('y', sedePos(src)[1].toFixed(1));
-    drop.setAttribute('fill', '#ff8a8a');
-    drop.textContent = 'ICMP · DROP · SIN RUTA';
-    layer.appendChild(drop);
-    PACKET_ANIMATION.cleanup = setTimeout(clearPacketSimulation, 1800);
+  result=result||evaluateMapPing(srcId,destId);if(!result)return;
+  MAP_PING_LAST=result;
+  const hops=detailedRoute||result.route;
+  const routeText=src.code+' → '+dest.code+(result.srcPc&&result.destPc?
+    ' · '+result.srcPc.ip+' → '+result.destPc.ip:'');
+  const policy=document.getElementById('ping-trace-policy');
+  policy.textContent=result.ok?'Política: '+result.policy.rule+' · RTT estimado '+result.rtt+' ms.':result.reason;
+  const steps=document.getElementById('ping-trace-steps');steps.replaceChildren();
+  document.getElementById('ping-trace-details').open=window.innerWidth>700;
+  renderMapPingPolicyActions(result);
+  const pause=document.getElementById('map-ping-pause'),next=document.getElementById('map-ping-step');
+  pause.textContent='Pausar';pause.disabled=!ok;next.disabled=!ok;
+  const NS='http://www.w3.org/2000/svg';
+  const svg=(tag,attrs)=>{const el=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v);layer.append(el);return el;};
+  const displayHops=hops.length?hops:result.blockedRoute?.length?result.blockedRoute:[simulationNode('drop',result.srcPc?.id||src.code,sedePos(src),'drop')];
+  for(const hop of displayHops){const li=document.createElement('li');li.textContent=hop.label;steps.append(li);}
+  fitPingRoute(displayHops);
+  if(!ok||hops.length<2){
+    updatePingTrace('Descartado',routeText,result.reason||'Sin ruta activa disponible');
+    const point=displayHops.at(-1).point;
+    const li=steps.lastElementChild;if(li)li.setAttribute('aria-current','step');
+    if(displayHops.length>1)svg('path',{d:displayHops.map((h,i)=>(i?'L':'M')+h.point.join(',')).join(' '),class:'packet-route packet-route-fail','vector-effect':'non-scaling-stroke',style:'stroke-width:3'});
+    svg('circle',{cx:point[0],cy:point[1],r:ZOOM.w/90,fill:'none',stroke:'#f36570','stroke-width':2,'vector-effect':'non-scaling-stroke'});
     return;
   }
-  const points = hops.map(hop => hop.point);
-  const routeText = `${src.code} → ${dest.code} · ${logicalHops.length} saltos`;
-  updatePingTrace('En tránsito', routeText, `Preparando salto 1/${logicalHops.length}: ${logicalHops[0].label}`);
-  const path = document.createElementNS(NS, 'path');
-  const pathData = points.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-  path.setAttribute('d', pathData);
-  path.setAttribute('class', `packet-route ${ok ? 'packet-route-ok' : 'packet-route-fail'}`);
-  layer.appendChild(path);
-
-  const packet = document.createElementNS(NS, 'circle');
-  packet.setAttribute('r', '2.6');
-  packet.setAttribute('class', 'packet-dot');
-  packet.setAttribute('fill', ok ? (LK_COLOR[linkType] || '#3cc878') : '#dc4646');
-  layer.appendChild(packet);
-
-  const label = document.createElementNS(NS, 'text');
-  label.setAttribute('class', 'packet-label');
-  label.setAttribute('fill', ok ? '#e6ebf5' : '#ff8a8a');
-  label.textContent = ok ? `ICMP · ${LK_NAME[linkType] || 'WAN'}` : 'ICMP · DROP';
-  layer.appendChild(label);
-
-  hops.forEach((hop, index) => {
-    const marker = document.createElementNS(NS, 'circle');
-    marker.setAttribute('cx', hop.point[0].toFixed(1));
-    marker.setAttribute('cy', hop.point[1].toFixed(1));
-    marker.setAttribute('r', '1.4');
-    marker.setAttribute('fill', ok ? '#e6ebf5' : '#dc4646');
-    marker.setAttribute('opacity', '.85');
-    layer.appendChild(marker);
-    const hopLabel = document.createElementNS(NS, 'text');
-    hopLabel.setAttribute('x', (hop.point[0] + 2).toFixed(1));
-    hopLabel.setAttribute('y', (hop.point[1] - 2).toFixed(1));
-    hopLabel.setAttribute('class', 'packet-label');
-    hopLabel.setAttribute('fill', ok ? '#8a93a6' : '#ff8a8a');
-    hopLabel.textContent = hop.label;
-    layer.appendChild(hopLabel);
-  });
-
-  const total = path.getTotalLength();
-  const segmentLengths = points.slice(1).map((point, index) => {
-    const previous = points[index];
-    return Math.hypot(point[0] - previous[0], point[1] - previous[1]);
-  });
-  const segmentTotal = segmentLengths.reduce((sum, length) => sum + length, 0) || 1;
-  const started = performance.now();
-  const duration = Math.max(1200, Math.min(3000, total * 8));
+  const path=svg('path',{d:hops.map((h,i)=>(i?'L':'M')+h.point.join(',')).join(' '),
+    class:'packet-route packet-route-ok','vector-effect':'non-scaling-stroke',style:'stroke-width:3;stroke-dasharray:7 5;'});
+  const dot=svg('circle',{r:1,fill:'#ffd166',class:'packet-dot','vector-effect':'non-scaling-stroke'});
+  const markers=hops.map(h=>svg('circle',{cx:h.point[0],cy:h.point[1],r:0.5,fill:'#9fb4cc'}));
+  const state={raf:0,cleanup:0,result,hops,elapsed:0,lastTime:performance.now(),paused:false,done:false,lastStep:'',frame:null};
+  PACKET_ANIMATION=state;
+  const segmentMs=650,segments=(hops.length-1)*2,totalMs=segments*segmentMs;
   function frame(now){
-    const progress = Math.min(1, (now - started) / duration);
-    const point = path.getPointAtLength(total * progress);
-    let travelled = segmentTotal * progress;
-    let segment = 0;
-    while(segment < segmentLengths.length - 1 && travelled > segmentLengths[segment]){
-      travelled -= segmentLengths[segment];
-      segment++;
+    if(PACKET_ANIMATION!==state)return;
+    if(!state.paused)state.elapsed=Math.min(totalMs,state.elapsed+Math.max(0,now-state.lastTime));
+    state.lastTime=now;
+    const position=state.elapsed/segmentMs,segment=Math.floor(position),back=position>=hops.length-1;
+    const index=Math.max(0,Math.min(hops.length-1,back?segments-segment:segment));
+    const target=Math.max(0,Math.min(hops.length-1,index+(back?-1:1))),fraction=position-segment;
+    const a=hops[index].point,b=hops[target].point;
+    const scale=ZOOM.w/Math.max(document.getElementById('map-container').clientWidth,1);
+    dot.setAttribute('cx',a[0]+(b[0]-a[0])*fraction);dot.setAttribute('cy',a[1]+(b[1]-a[1])*fraction);
+    dot.setAttribute('r',5*scale);dot.setAttribute('fill',back?'#65c8ff':'#ffd166');
+    markers.forEach((marker,i)=>{marker.setAttribute('r',(i===index?5:2)*scale);marker.setAttribute('fill',i===index?'#ffd166':'#9fb4cc');});
+    const key=(back?'reply:':'request:')+index+':'+state.paused;
+    if(state.lastStep!==key){
+      state.lastStep=key;
+      updatePingTrace(state.paused?'Pausado':back?'Respuesta en tránsito':'En tránsito',routeText,
+        (back?'Respuesta':'Solicitud')+' · paso '+(index+1)+'/'+hops.length+': '+hops[index].label);
+      [...steps.children].forEach((li,i)=>{li.classList.toggle('passed',back||i<index);if(i===index)li.setAttribute('aria-current','step');else li.removeAttribute('aria-current');});
+      const current=steps.children[index];
+      if(current){const top=current.offsetTop-steps.offsetTop;if(top<steps.scrollTop||top>steps.scrollTop+steps.clientHeight-25)steps.scrollTop=top;}
     }
-    const currentHop = Math.min(segment + 1, hops.length - 1);
-    updatePingTrace(
-      progress < 1 ? 'En tránsito' : 'Completado',
-      routeText,
-      progress < 1
-        ? `Salto orbital ${currentHop}/${hops.length - 1}: ${hops[currentHop].label}`
-        : `Llegó a ${dest.code} · respuesta recibida`
-    );
-    packet.setAttribute('cx', point.x.toFixed(1));
-    packet.setAttribute('cy', point.y.toFixed(1));
-    label.setAttribute('x', (point.x + 4).toFixed(1));
-    label.setAttribute('y', (point.y - 4).toFixed(1));
-    if(progress < 1) {
-      PACKET_ANIMATION.raf = requestAnimationFrame(frame);
-    } else {
-      PACKET_ANIMATION.cleanup = setTimeout(clearPacketSimulation, 1800);
+    if(state.elapsed>=totalMs){
+      state.done=true;state.raf=0;pause.disabled=true;next.disabled=true;
+      updatePingTrace('Completado',routeText,'Respuesta ICMP simulada recibida en '+result.srcPc.id+' · RTT estimado '+result.rtt+' ms.');
+      path.style.animation='none';
+      addLog('ICMP reply simulado '+dest.code+' → '+src.code+' · RTT estimado '+result.rtt+' ms','ok');
+      return;
     }
+    if(!state.paused)state.raf=requestAnimationFrame(frame);
   }
-  PACKET_ANIMATION.raf = requestAnimationFrame(frame);
+  state.frame=frame;state.segmentMs=segmentMs;state.totalMs=totalMs;
+  updatePingTrace('En tránsito',routeText,'Solicitud · paso 1/'+hops.length+': '+hops[0].label);
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){state.elapsed=totalMs;frame(state.lastTime);}
+  else state.raf=requestAnimationFrame(frame);
+}
+function pauseMapPing(){
+  const state=PACKET_ANIMATION;if(!state.frame||state.done)return;
+  cancelAnimationFrame(state.raf);state.paused=!state.paused;state.lastTime=performance.now();
+  document.getElementById('map-ping-pause').textContent=state.paused?'Continuar':'Pausar';
+  state.frame(state.lastTime);
+}
+function stepMapPing(){
+  const state=PACKET_ANIMATION;if(!state.frame||state.done)return;
+  cancelAnimationFrame(state.raf);state.paused=true;
+  state.elapsed=Math.min(state.totalMs,(Math.floor(state.elapsed/state.segmentMs)+1)*state.segmentMs);
+  document.getElementById('map-ping-pause').textContent='Continuar';
+  state.frame(performance.now());
 }
 
 function runPing(srcId){
@@ -6941,7 +7026,7 @@ function runPing(srcId){
   const route=collapsePacketRoute(detailedRoute,src,dst);
   const endpoint=srcPc?getPacketRouteEndpoint(src,detailedRoute):{type:'—',label:'Sin ruta'};
   const routeOk=detailedRoute.length>=2;
-  const totalLat=routeOk?(local?2:getLinkLatency(src,endpoint.type)*2+4):0;
+  const totalLat=routeOk?estimatePingRtt(src,dst,detailedRoute):0;
   const routeLabel=routeOk?(local?'LAN local':LK_NAME[endpoint.type]||endpoint.type.toUpperCase()):'sin ruta';
   div.innerHTML='<div class="ping-result">⏳ Simulando ICMP desde '+src.code+' hacia '+(local?'otro equipo de la misma sede':dst.code)+'…</div>';
   addLog('ICMP '+src.code+' → '+(local?'host local':dst.code)+' · '+(routeOk?'ruta '+routeLabel:
@@ -6986,65 +7071,45 @@ function showPingOnMap(srcId,destId){
   runMapPing(srcId,destId,source,target);
 }
 function openDashboardPing(){
-  const options = SEDES.map(s => `<option value="${s.id}">${s.code} — ${s.city}</option>`).join('');
-  document.getElementById('dashboard-ping-body').innerHTML = `
+  const options=SEDES.map(s=>'<option value="'+s.id+'">'+s.code+' — '+s.city+'</option>').join('');
+  document.getElementById('dashboard-ping-body').innerHTML=`
     <div class="dashboard-ping-form">
-      <label>Origen
-        <select id="dashboard-ping-src">${options}</select>
-      </label>
-      <label>Destino
-        <select id="dashboard-ping-dest">${options}</select>
-      </label>
-      <button type="button" class="btn btn-acc" onclick="runDashboardPing()">▶ Ejecutar</button>
+      <label>Sede origen<select id="dashboard-ping-src" onchange="updateDashboardPingHosts()">${options}</select></label>
+      <label>Sede destino<select id="dashboard-ping-dest" onchange="updateDashboardPingHosts()">${options}</select></label>
+      <label>PC origen<select id="dashboard-ping-source-host"></select></label>
+      <label>PC destino<select id="dashboard-ping-target-host"></select></label>
+      <button type="button" class="btn btn-acc" onclick="runDashboardPing()">▶ Enviar ping y ver mapa</button>
     </div>
-    <div style="font-size:11px;color:var(--text2);margin-bottom:8px">
-      El paquete recorrerá los routers, el enlace WAN activo, el satélite o antena disponible,
-      Casa Matriz y el destino.
-    </div>
-    <div id="dashboard-ping-result" style="min-height:80px"></div>`;
+    <p class="ping-note">La prueba usa los mismos enlaces y políticas que Ping / Trace de cada sede. Si el firewall bloquea ICMP, el resultado lo explica; puedes permitir temporalmente solo el par elegido desde la tarjeta del mapa.</p>
+    <div id="dashboard-ping-result" role="status"></div>`;
+  const last=MAP_PING_LAST;
+  document.getElementById('dashboard-ping-src').value=last?.src.id||ST.selId||'s01';
+  document.getElementById('dashboard-ping-dest').value=last?.dest.id||(document.getElementById('dashboard-ping-src').value==='s02'?'s01':'s02');
+  updateDashboardPingHosts();
+  if(last?.srcPc)document.getElementById('dashboard-ping-source-host').value=last.srcPc.ip;
+  if(last?.destPc)document.getElementById('dashboard-ping-target-host').value=last.destPc.ip;
   document.getElementById('dashboard-ping-modal').classList.add('vis');
 }
-
+function updateDashboardPingHosts(){
+  for(const [siteId,hostId] of [['dashboard-ping-src','dashboard-ping-source-host'],['dashboard-ping-dest','dashboard-ping-target-host']]){
+    const site=SEDES.find(s=>s.id===document.getElementById(siteId).value),select=document.getElementById(hostId),previous=select.value;
+    select.innerHTML=pingHostOptions(site);
+    if([...select.options].some(o=>o.value===previous))select.value=previous;
+  }
+  document.getElementById('dashboard-ping-result').textContent='El recorrido aparecerá en el mapa al enviar.';
+}
 function closeDashboardPing(){
   document.getElementById('dashboard-ping-modal').classList.remove('vis');
 }
-
 function runDashboardPing(){
-  const result = document.getElementById('dashboard-ping-result');
-  const srcSelect = document.getElementById('dashboard-ping-src');
-  const destSelect = document.getElementById('dashboard-ping-dest');
-  if(!result || !srcSelect || !destSelect){
-    addLog('⚠ No se pudo abrir el formulario Ping / Trace','alert');
-    return;
+  const source=document.getElementById('dashboard-ping-src'),target=document.getElementById('dashboard-ping-dest');
+  if(!source||!target)return;
+  if(source.value===target.value){
+    document.getElementById('dashboard-ping-result').textContent='Selecciona dos sedes distintas.';return;
   }
-  const src = SEDES.find(s => s.id === srcSelect.value);
-  const dest = SEDES.find(s => s.id === destSelect.value);
-  if(!src || !dest) return;
-  if(src.id === dest.id){
-    result.innerHTML = '<div class="ping-result fail">Selecciona dos sedes distintas.</div>';
-    return;
-  }
-  result.innerHTML = '<div class="dashboard-ping-route">⏳ Calculando ruta con los enlaces y satélites activos...</div>';
-  const localOnly=src.id===dest.id;
-  const srcPc=findAvailableSimulationPC(src,localOnly);
-  const destPc=findAvailableSimulationPC(dest,localOnly);
-  const detailedRoute = srcPc && destPc
-    ? buildPacketRoute(src,dest,false,srcPc,destPc)
-    : [];
-  const route = collapsePacketRoute(detailedRoute,src,dest);
-  const endpoint = getPacketRouteEndpoint(src,detailedRoute);
-  const routeOk = detailedRoute.length >= 2;
-  const latency = ({starlink:28, kuiper:44, g5:22, g4:48, mpls:15})[endpoint.type] || 999;
-  animatePacket(src.id, dest.id, endpoint.type, routeOk, route, detailedRoute);
-  addLog(`ICMP global ${src.code} → ${dest.code} · ${routeOk ? `ruta ${endpoint.label}` : 'paquete descartado'}`,
-    routeOk ? 'ok' : 'alert');
-  result.innerHTML = routeOk
-    ? `<div class="dashboard-ping-route"><strong>Ping:</strong> ${srcPc.id} (${srcPc.ip}) → ${destPc.id} (${destPc.ip})<br>
-      <strong>Ruta seleccionada:</strong><br>
-      ${route.map((hop, index) => `${index + 1}. ${hop.label}`).join(' → ')}<br>
-      <span style="color:var(--green)">✓ ${route.length}/${route.length} saltos · RTT estimado ${latency * 2 + 4} ms · Vía ${endpoint.label}</span>
-    </div>`
-    : '<div class="ping-result fail">⚠ Timeout · no existe una ruta de extremo a extremo disponible.</div>';
+  const sourceIp=document.getElementById('dashboard-ping-source-host').value,targetIp=document.getElementById('dashboard-ping-target-host').value;
+  closeDashboardPing();closeModal();
+  runMapPing(source.value,target.value,sourceIp,targetIp);
 }
 
 document.addEventListener('keydown',e=>{
