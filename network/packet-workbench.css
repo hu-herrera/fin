@@ -65,3 +65,23 @@
  .stage-panel h2{font-size:clamp(24px,7vw,38px)}
  .stage-fact{padding:12px;font-size:13px}
 }
+
+/* Progress-review speaker UI. Notes are opt-in and never part of the projected
+ * scenes by default; no PowerPoint, and no overflow on a classroom projector. */
+.stage-panel{overflow-y:auto}
+.stage-content{min-height:0}
+.stage-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:24px;align-items:center}
+.stage-actions .packetlab-btn{text-decoration:none;display:inline-flex;align-items:center}
+.stage-speaker-notes{border:1px solid #4b657f;background:#14283e;color:#d5e8f5;
+ border-radius:12px;padding:14px 18px;max-height:150px;overflow-y:auto;
+ flex-shrink:0;font-size:12px;line-height:1.55}
+.stage-speaker-notes strong{display:block;margin-bottom:7px;color:#91ddf5}
+.stage-speaker-notes[hidden],#stage-ci[hidden]{display:none!important}
+#stage-notes-toggle[aria-pressed="true"]{background:#36698a;border-color:#81cceb}
+@media(max-width:700px){
+ .stage-content{grid-template-columns:1fr;overflow-y:auto;align-items:start}
+ .stage-actions{margin-top:12px}
+ .stage-facts{grid-template-columns:repeat(2,1fr)}
+ .stage-speaker-notes{max-height:125px;padding:10px;font-size:11px}
+ .stage-actions .packetlab-btn{font-size:11px;padding:8px}
+}
