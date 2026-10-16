@@ -505,3 +505,29 @@ test('AAA/TACACS y Syslog TLS: acceso limitado a fuentes de red desde las 23 sed
  });
  expect(failures).toEqual([]);
 });
+
+test('Cierre fase 1: aplicaciones financieras y SNMPv3 no abren permisos en topología activa',async({page})=>{
+ await page.goto(url);
+ const problems=await page.evaluate(()=>{
+  const errors=[],api=window.RedundantLab;
+  for(let n=1;n<=22;n++){
+   const pc='10.70.'+n+'.10',route='10.70.100.'+(n+10),stack='10.70.'+n+'.162';
+   const flow=api.evaluateSitePanPolicy(n,'USERS','TRANSIT','ssl','10.70.0.90',pc);
+   if(flow.action!=='deny')errors.push('Unauthorized finance branch app: '+n);
+   const cm=api.evaluateSitePanPolicy(0,'TRANSIT','USERS','ssl','10.70.0.90',pc);
+   if(cm.action!=='deny')errors.push('Unauthorized finance CM app: '+n);
+   for(const dest of [route,stack]){
+    const monitoring=api.evaluateSitePanPolicy(0,'USERS','TRANSIT',
+      'snmp',''+dest,'10.70.0.101');
+    if(monitoring.action!=='deny')errors.push('SNMP poll exposed before approved config: '+n+' -> '+dest);
+   }
+   if(api.evaluateSitePanPolicy(n,'TRANSIT','MGMT-DATA','snmp',stack,'10.70.0.101').action!=='deny')
+    errors.push('Branch management SNMP accidentally available: '+n);
+  }
+  if(api.evaluateSitePanPolicy(0,'USERS','MGMT-DATA','snmp',
+    '10.70.0.162','10.70.0.101').action!=='deny')
+   errors.push('CM management exposed via SNMP without explicit approval');
+  return errors;
+ });
+ expect(problems).toEqual([]);
+});
