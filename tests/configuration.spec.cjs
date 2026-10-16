@@ -3,6 +3,8 @@ const path=require('node:path');
 const {pathToFileURL}=require('node:url');
 const url=pathToFileURL(path.resolve(__dirname,'../index.html')).href;
 
+// Regression suite for the historical network; live site defaults to StackWise/L3.
+test.beforeEach(async ({page})=>{await page.addInitScript(()=>{window.__TEST_LEGACY_PROFILE__=true;});});
 async function setOperational(page){
  await page.goto(url);
  await page.evaluate(()=>{
