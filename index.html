@@ -774,6 +774,7 @@ body{background:var(--bg);color:var(--text);
 
 <script src="./map-geography.js"></script>
 <script src="./network/redundant-browser.js"></script>
+<script src="./network/active-profile.js"></script>
 <script>
 const SEDES = [
   { id:'cm',  code:'CM',  name:'Casa Matriz / Datacenter', city:'Santiago Centro',
@@ -4146,6 +4147,8 @@ function genIfBrief(s){
 }
 
 function genRouterVLAN(s){
+  if(window.ActiveProfile?.enabled()) return window.ActiveProfile.routerDetail(s,"show vlan brief");
+
  const n=s.num;
  return 'RTR-'+s.code+'> <span class="ios-cmd">show vlan brief</span><br>'+
  '<span class="ios-hdr">Subinterfaz  VLAN Dirección/máscara Uso</span><br>'+
@@ -4187,6 +4190,8 @@ Extended IP access list ACL-DATOS-IN
 }
 
 function genFWOverview(s){
+  if(window.ActiveProfile?.enabled()) return window.ActiveProfile.firewallCommand(s,"show system info");
+
   return `PA-${s.code}> <span class="ios-cmd">show system info</span>
 
 Hostname:     PA-${s.code}
@@ -4202,6 +4207,8 @@ WildFire:              Estado no validado en hardware`;
 }
 
 function genFWIfaces(s){
+  if(window.ActiveProfile?.enabled()) return window.ActiveProfile.firewallCommand(s,"show interface all");
+
  return 'PA-'+s.code+'> <span class="ios-cmd">show interface all</span><br>'+
  '<span class="ios-hdr">Interfaz Dirección Tipo Conexión</span><br>'+
  'management 10.70.'+s.num+'.164/28 MGMT SW1 Gi1/0/44 (VLAN30)<br>'+
@@ -4210,6 +4217,8 @@ function genFWIfaces(s){
  'Virtual wire no asigna direcciones IPv4 a interfaces de datos';
 }
 function genFWZones(s){
+  if(window.ActiveProfile?.enabled()) return window.ActiveProfile.firewallCommand(s,"show security policy");
+
  return 'PA-'+s.code+'> <span class="ios-cmd">show security policy</span><br>'+
  'PLAN DE SEGMENTACIÓN (políticas PAN-OS aún sin probar en equipo real)<br>'+
  'VLAN 10 Usuarios: acceso sólo a aplicaciones financieras autorizadas<br>'+
@@ -4421,6 +4430,8 @@ function genRouterVersionFull(s){
 }
 
 function genRouterRunningConfig(s, startup=false){
+  if(window.ActiveProfile?.enabled()) return window.ActiveProfile.routerConfig(s,startup);
+
   const n=s.num, id=routerIdentity(s), stamp=startup
     ? '! NVRAM config last updated at 14:23:53 CLT Wed Sep 15 2026 by admin'
     : '! Last configuration change at 14:23:51 CLT Wed Sep 15 2026 by admin';
@@ -4646,6 +4657,8 @@ function appendDeviceTerminalOutput(output, prompt, text, cls = 'term-result', p
 }
 
 function genSwitchRunningConfig(s, swN=1){
+  if(window.ActiveProfile?.enabled()) return window.ActiveProfile.switchConfig(s,false);
+
   const host=`SW-${s.code}-0${swN}`, n=s.num;
   const accessPortConfig=getSwitchPCPorts(s,swN).flatMap(({pc,port})=>[
     `interface GigabitEthernet1/0/${port}`,
@@ -4703,6 +4716,8 @@ function genSwitchVersionFull(s, swN=1){
 }
 
 function genSwitchDetail(s,type,command){
+  if(window.ActiveProfile?.enabled()) {const output=window.ActiveProfile.switchCommand(s,type==="sw2"?2:1,command);if(output!==null)return output;}
+
   const p=devicePrompt(s,type), h=`${p} <span class="ios-cmd">${command}</span><br><br>`;
   const swN=type==='sw1'?1:2;
   const pcPorts=getSwitchPCPorts(s,swN);
@@ -4744,6 +4759,8 @@ function genSwitchDetail(s,type,command){
 }
 
 function genFWCommand(s,command){
+  if(window.ActiveProfile?.enabled()) {const output=window.ActiveProfile.firewallCommand(s,command);if(output!==null)return output;}
+
   const n=s.num, p=`PA-${s.code}>`, h=`${p} <span class="ios-cmd">${command}</span><br><br>`;
   if(command==='show running-config'||command==='show startup-config'){
     const lines=[`set deviceconfig system hostname PA-${s.code}`,`set deviceconfig system ip-address 10.70.${n}.164`,`set deviceconfig system netmask 255.255.255.240`,`set deviceconfig system default-gateway 10.70.${n}.161`,'set deviceconfig system dns-setting servers primary '+CENTRAL_SERVICES.dns1,'set deviceconfig system ntp-servers primary-ntp-server '+CENTRAL_SERVICES.ntp1,'set deviceconfig system timezone America/Santiago','! VPN IKEv2/IPsec termina en Cisco C8300, no en este PA-1410 (modo virtual wire)'];
@@ -4769,6 +4786,8 @@ function genFWCommand(s,command){
 }
 
 function genRouterDetail(s,command){
+  if(window.ActiveProfile?.enabled()) {const output=window.ActiveProfile.routerDetail(s,command);if(output!==null)return output;}
+
   const n=s.num, prefix='RTR-'+s.code+'> <span class="ios-cmd">'+escapeCLI(command)+'</span><br><br>';
   const identities={starlink:['Tunnel100',2,'203.0.113.10'],kuiper:['Tunnel200',6,'203.0.113.11'],g5:['Tunnel300',10,'203.0.113.12'],g4:['Tunnel400',14,'203.0.113.13']};
   const available=key=>!['caido','inactivo','recuperando'].includes(ST.links[s.id]?.[key]) && !isWanInterfaceAdminDown(s.id,key);
@@ -4968,6 +4987,8 @@ function isDeviceInterfaceAdminDown(sedeId, type, name){
 }
 
 function routerWanInterface(type){
+  if(window.ActiveProfile?.enabled()) return window.ActiveProfile.wanPort[type];
+
   return {
     starlink: 'GigabitEthernet0/0/1',
     kuiper: 'GigabitEthernet0/0/2',
@@ -4982,6 +5003,8 @@ function isWanInterfaceAdminDown(sedeId, linkType){
 }
 
 function isRouterLanAvailable(sedeId){
+  if(window.ActiveProfile?.enabled()) return window.ActiveProfile.status(sedeId).transitUp;
+
   return ![
     'GigabitEthernet0/0/0',
     'GigabitEthernet0/0/0.10',
@@ -4989,6 +5012,7 @@ function isRouterLanAvailable(sedeId){
 }
 
 function isSwitchPCPortAvailable(sedeId, pc){
+  if(window.ActiveProfile?.enabled() && !window.ActiveProfile.l2Local(sedeId,pc.sw))return false;
   const type = `sw${pc.sw}`;
   const port = getSwitchPCPorts(SEDES.find(site => site.id === sedeId), pc.sw)
     .find(entry => entry.pc.idx === pc.idx)?.port;
@@ -5040,12 +5064,15 @@ function getSwitchDefaultVlanPorts(s,swN){
 }
 
 function isSwitchUplinkAvailable(sedeId, swN){
+  if(window.ActiveProfile?.enabled()) return window.ActiveProfile.directLink(sedeId,swN);
+
   // Una sola conexión física router -> NGFW virtual-wire -> SW1.
   // SW2 llega por el enlace Ethernet Gi1/0/45; no hay stack ni segundo uplink al router.
   return swN === 1 && !isDeviceInterfaceAdminDown(sedeId,'sw1','Gi1/0/1');
 }
 
 function getInterSwitchMemberStates(sedeId){
+  if(window.ActiveProfile?.enabled())return window.ActiveProfile.linkMembers(sedeId).map((link,i)=>({port:i+1,up:link.up,id:link.id}));
   // Po1 LACP entre dos switches INDEPENDIENTES; cada cable conecta el mismo puerto en ambos equipos.
   // El enlace deja de transportar tráfico cuando cualquiera de sus extremos está apagado.
   return [45,46].map(port=>({
@@ -5057,11 +5084,15 @@ function getInterSwitchMemberStates(sedeId){
   }));
 }
 function isSwitchStackLinkAvailable(sedeId){
+  if(window.ActiveProfile?.enabled()) return window.ActiveProfile.l2Stack(sedeId);
+
   // Nombre legado usado por el grafo de simulación: transporte lógico Po1, NO StackWise.
   return getInterSwitchMemberStates(sedeId).some(link=>link.up);
 }
 
 function isSwitchPathAvailable(sedeId, swN){
+  if(window.ActiveProfile?.enabled()) return window.ActiveProfile.path(sedeId,swN);
+
   return isSwitchUplinkAvailable(sedeId,1) &&
     (swN === 1 || isSwitchStackLinkAvailable(sedeId));
 }
@@ -5077,6 +5108,8 @@ function findAvailableSimulationPC(sede){
 }
 
 function isSiteLanAvailable(sedeId){
+  if(window.ActiveProfile?.enabled()) return window.ActiveProfile.siteReady(sedeId);
+
   return isRouterLanAvailable(sedeId) &&
     (isSwitchUplinkAvailable(sedeId, 1) || isSwitchUplinkAvailable(sedeId, 2));
 }
@@ -5338,6 +5371,8 @@ function genRouterTrackOutput(s, command){
 }
 
 function genRouterRoutes(s){
+  if(window.ActiveProfile?.enabled()) return window.ActiveProfile.activeRoute(s);
+
   const n = s.num;
   const active = activeLink(s.id);
   const identity = routerIdentity(s);
@@ -5481,6 +5516,10 @@ ${genWANFailover(s)}`;
 }
 
 function genShowBrief(s, type, command){
+  if(window.ActiveProfile?.enabled()){
+    if(type==="router"){const d=window.ActiveProfile.routerDetail(s,command);if(d!==null)return d;}
+    if(type.startsWith("sw")){const d=window.ActiveProfile.switchCommand(s,type==="sw2"?2:1,command);if(d!==null)return d;}
+  }
   const prompt = devicePrompt(s, type);
   const n = s.num;
   const active = activeLink(s.id) || '—';
