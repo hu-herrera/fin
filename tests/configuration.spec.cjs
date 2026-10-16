@@ -184,3 +184,28 @@ test('Tablas de rutas OSPF cambian en todas las sedes ante caída y no inventan 
  });
  expect(issues).toEqual([]);
 });
+
+
+test('Diagnósticos Cisco y PAN-OS no inventan vecinos BGP ni sesiones VPN',async({page})=>{
+ await setOperational(page);
+ const result=await page.evaluate(()=>{
+   const site=SEDES.find(s=>s.id==='s01');
+   const issues=[];
+   const bgp=genShowBrief(site,'router','show ip bgp summary');
+   const sla=genShowBrief(site,'router','show ip sla configuration');
+   const bfd=genShowBrief(site,'router','show bfd neighbors');
+   const sa=genShowBrief(site,'router','show crypto ikev2 sa');
+   const ike=genShowBrief(site,'fw','show vpn ike-sa');
+   const ha=genShowBrief(site,'fw','show high-availability state');
+   const sessions=genShowBrief(site,'fw','show session all filter');
+   if(!bgp.includes('BGP is not configured')||bgp.includes('Established'))issues.push('BGP ficticio');
+   for(const gateway of ['100.64.1.1','100.64.1.5','100.85.1.1','100.92.1.1'])if(!sla.includes(gateway))issues.push('IP SLA incoherente '+gateway);
+   if(!bfd.includes('No BFD sessions'))issues.push('BFD no configurado declarado activo');
+   if(sa.includes('ESTABLISHED'))issues.push('IKEv2 falsamente establecido');
+   if(ike.includes('Active'))issues.push('PAN-OS IKE SA falsa');
+   if(ha.includes('Sync: complete'))issues.push('HA PAN-OS sin par');
+   if(sessions.includes('Session 1'))issues.push('Sesiones inspeccionadas inexistentes');
+   return issues;
+ });
+ expect(result).toEqual([]);
+});
