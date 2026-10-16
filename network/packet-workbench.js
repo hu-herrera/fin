@@ -49,13 +49,10 @@ function element(tag,cls,txt){
 function build(){
  const toolbar=document.getElementById('topbar');
  if(!toolbar)return;
- const b=element('button','', '⌁ Laboratorio de paquetes');
- b.id='packetlab-launch';b.type='button';b.title='Rutas, firewall y caída WAN del simulador';
- b.addEventListener('click',()=>openLab());
  const stageBtn=element('button','', '▣ Presentar');
  stageBtn.id='presentation-launch';stageBtn.type='button';stageBtn.title='Vista proyectable, sin diapositivas';
  stageBtn.addEventListener('click',()=>openStage());
- toolbar.append(b,stageBtn);
+ toolbar.append(stageBtn);
  const overlay=element('div','packetlab-overlay');overlay.id='packetlab-overlay';
  overlay.hidden=true;overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
  overlay.setAttribute('aria-label','Laboratorio de paquetes');
@@ -86,6 +83,7 @@ function build(){
  overlay.addEventListener('click',e=>{if(e.target===overlay)closeLab();});
  document.body.append(overlay);
  $('packetlab-close').addEventListener('click',closeLab);
+ $('packetlab-close').textContent='← Volver a topología';
  const siteSelect=$('pl-site');
  for(const s of SEDES)siteSelect.add(new Option(s.code+' · '+s.city,s.id));
  siteSelect.value='s01';
@@ -129,16 +127,15 @@ function build(){
  $('stage-lab').addEventListener('click',()=>{
   state.returnToStage=true;
   closeStage();
-  openLab();
-  $('packetlab-close').textContent='← Volver a la exposición';
-  // En la escena de evidencias siempre iniciamos una prueba reproducible,
-  // sin dejar enlaces caídos ocultos de ensayos anteriores.
-  $('pl-site').value='s01';refreshPcs();
+  openLab('s01');
+  // La demostración usa la sede real dentro del simulador original,
+  // preservando su topología, consolas y estado de los enlaces.
   preset('dns');
  });
  document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
-   if(!$('packetlab-overlay').hidden)closeLab();
+   if(state.returnToStage&&document.getElementById('sm-overlay')?.classList.contains('vis'))
+     closeLab();
    else if(!$('presentation-overlay').hidden)closeStage();
   }else if(!$('presentation-overlay').hidden&&(e.key==='n'||e.key==='N')&&
      !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))toggleSpeakerNotes();
@@ -229,22 +226,42 @@ function wanAction(up){
  renderMap();updateMetrics();
  return run();
 }
-function openLab(){
- if(!$('packetlab-overlay'))return;
- $('packetlab-close').textContent=state.returnToStage?'← Volver a la exposición':'✕ Cerrar';
- $('packetlab-overlay').hidden=false;
- if($('presentation-overlay'))$('presentation-overlay').hidden=true;
- run();
- $('pl-trace').focus();
+function detach(){
+ const dialog=document.querySelector('.packetlab-dialog');
+ const storage=$('packetlab-overlay');
+ if(dialog&&storage&&dialog.parentElement!==storage)storage.append(dialog);
 }
-function closeLab(){
- if($('packetlab-overlay'))$('packetlab-overlay').hidden=true;
+function mountInTopology(siteId){
+ const host=$('sm-packet-host'),dialog=document.querySelector('.packetlab-dialog');
+ if(!host||!dialog)return;
+ host.append(dialog);
+ $('pl-site').value=siteId;
+ $('pl-site').disabled=true; // Una sola sede: el modal original es la fuente de verdad.
+ $('packetlab-close').textContent=state.returnToStage?
+   '← Volver a la exposición':'← Volver a topología';
+ run();
+}
+function openLab(siteId){
+ const id=siteId||(typeof SM_ID!=='undefined'&&SM_ID)||'s01';
+ if(typeof SM_ID==='undefined'||SM_ID!==id||
+    !document.getElementById('sm-overlay').classList.contains('vis'))
+   openSedeModal(id);
+ smTab('packet',$('sm-tab-packet'));
+ if($('presentation-overlay'))$('presentation-overlay').hidden=true;
+ $('pl-trace')?.focus();
+}
+function onSedeClosed(){
+ detach();
  if(state.returnToStage){
   state.returnToStage=false;
   $('presentation-overlay').hidden=false;
   renderStage();
-  $('stage-next').focus();
+  $('stage-next')?.focus();
  }
+}
+function closeLab(){
+ if(state.returnToStage)closeSedeModal();
+ else smTab('topo',document.querySelector('#sm-tabs .sm-tab'));
 }
 function openStage(){
  state.returnToStage=false;closeLab();$('presentation-overlay').hidden=false;
@@ -272,7 +289,8 @@ function renderStage(){
  const cards=$('stage-facts');cards.replaceChildren();
  for(const fact of item.facts)cards.append(element('div','stage-fact',fact));
 }
-window.PacketWorkbench=Object.freeze({openLab,closeLab,openStage,closeStage,run,preset,wanAction,
+window.PacketWorkbench=Object.freeze({openLab,closeLab,mountInTopology,detach,onSedeClosed,
+ openStage,closeStage,run,preset,wanAction,
  get last(){return state.last;},get stage(){return state.stage;}});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build,{once:true});else build();
 })();
