@@ -4523,7 +4523,7 @@ function genSwitchRunningConfig(s, swN=1){
     'aaa new-model','aaa authentication login default group tacacs+ local','aaa authorization exec default group tacacs+ local',
     'aaa accounting exec default start-stop group tacacs+','clock timezone CLT -4 0','switch 1 provision c9200l-48t-4g',
     '! Switches independientes: Po1 LACP entre SW1 y SW2 (NO StackWise)','ip domain name financierapacifico.cl','ip name-server 10.70.0.10','ip name-server 10.70.0.11',
-    'login on-success log','login on-failure log','spanning-tree mode rapid-pvst','spanning-tree extend system-id','spanning-tree vlan 1-4094 priority 32768',
+    'login on-success log','login on-failure log','spanning-tree mode rapid-pvst','spanning-tree extend system-id',`spanning-tree vlan 10,20,30,40 priority ${swN===1?24576:28672}`,
     'vlan 10',' name DATOS-Usuarios','vlan 20',' name VOIP-Telefonia','vlan 30',' name GESTION-Red','vlan 40',' name INVITADOS-DMZ','vlan 999',' name NATIVE-NONE',
     
     'interface GigabitEthernet1/0/1',
