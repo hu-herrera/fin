@@ -6216,6 +6216,9 @@ function buildPacketRoute(src, dest, collapseCloud = true, srcPc = getPCs(src)[0
     const localRoute = shortestSimulationPath(graph, srcPcId, destPcId, src.id);
     return (localRoute || []).map(id => graph.nodes.get(id)).filter(Boolean);
   }
+  // En WAN hub-and-spoke, el grafo de operadores NO sustituye al concentrador CM.
+  // Los paquetes intersede no pueden cruzar si el hub central no tiene túnel WAN.
+  if(ST.mode !== 'antes' && (!isSiteLanAvailable('cm') || !activeLink('cm'))) return [];
   const srcEndpoint = getWanEndpoint(src, false);
   const destEndpoint = getWanEndpoint(dest, false);
   if(srcEndpoint.type === 'mpls' && destEndpoint.type === 'mpls'){
