@@ -42,7 +42,11 @@ function validateWanSettings(settings){
       if(!Number.isInteger(prefix)||prefix<1||prefix>30)issues.push(type+': prefijo inválido');
       else{
         const mask=(0xffffffff << (32-prefix))>>>0;
-        if((ip&mask)!==(gw&mask)||ip===gw)issues.push(type+': gateway fuera del segmento WAN');
+        const network=(ip&mask)>>>0;
+        const broadcast=(network | (~mask>>>0))>>>0;
+        if((gw&mask)>>>0!==network||ip===gw)issues.push(type+': gateway fuera del segmento WAN');
+        if(ip===network||ip===broadcast)issues.push(type+': dirección WAN es red o broadcast');
+        if(gw===network||gw===broadcast)issues.push(type+': gateway es red o broadcast');
       }
     }catch(e){issues.push(type+': '+e.message)}
     if(!Array.isArray(v.monitors)||v.monitors.length!==2){issues.push(type+': exige dos destinos de monitoreo');continue}
