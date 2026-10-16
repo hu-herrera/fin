@@ -42,7 +42,8 @@ for(let n=0;n<23;n++){
   decision(n,'USERS','TRANSIT','dns',CM_SERVICES.dns[0],srcUsers,dnsRule,'allow');
   decision(n,'USERS','TRANSIT','dns',CM_SERVICES.dns[0],'10.70.0.10',
     'DENY-CORP-RFC1918-TRANSIT','deny');
-  decision(n,'MGMT-DATA','TRANSIT','ntp',CM_SERVICES.ntp[0],'10.70.10.162',
+  decision(n,'MGMT-DATA','TRANSIT','ntp',CM_SERVICES.ntp[0],
+    '10.70.'+(n===10?11:10)+'.162',
     'DENY-CORP-RFC1918-TRANSIT','deny');
   ok(cfg.includes('set address-group BR-LOCAL-DNS-CLIENTS static [ BR-LOCAL-USERS BR-LOCAL-MGMT ]'),
     'Branch DNS source group absent');
