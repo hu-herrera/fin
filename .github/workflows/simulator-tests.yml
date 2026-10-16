@@ -21,6 +21,8 @@ jobs:
         run: node tests/wan.test.cjs
       - name: Validar sincronizacion del motor de redundancia Node/navegador
         run: node network/build-browser-lab.cjs --check
+      - name: Auditar capacidad IPAM VLAN y puertos de acceso para 23 sedes
+        run: node tests/ipam-capacity.test.cjs
       - name: Probar redundancia futura StackWise y LACP en 23 sedes
         run: node tests/redundant-model.test.cjs
       - name: Validar plantillas Cisco y PAN-OS propuestas para 23 sedes
