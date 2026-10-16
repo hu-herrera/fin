@@ -3264,7 +3264,7 @@ function renderRedundantLabTab(s){
     kv('Catalyst SW2 Mgmt-vrf',textState(health.oobManagement.sw2))+
     '</div>';
   return '<div style="max-width:1120px;margin:auto">'+
-    '<div style="border-left:3px solid var(--yellow);padding:10px 13px;background:var(--panel2)"><strong>LABORATORIO AISLADO: arquitectura candidata</strong><p style="margin-top:6px">WAN → Cisco C8300 (Po10, 2×10G) → Palo Alto Layer3 (ae1/ae2) → MEC Po20 sobre StackWise-80 (4×1G). Esto no cambia todavía las consolas ni el diagrama principal. No representa pruebas en hardware.</p></div>'+
+    '<div style="border-left:3px solid var(--yellow);padding:10px 13px;background:var(--panel2)"><strong>PRUEBAS DE REDUNDANCIA DEL PERFIL ACTIVO</strong><p style="margin-top:6px">WAN → Cisco C8300 (Po10, 2×10G) → Palo Alto Layer3 (ae1/ae2) → MEC Po20 sobre StackWise-80 (4×1G). Estos controles afectan al modelo operativo del simulador y sus rutas/diagnósticos; NO modifican equipos físicos.</p></div>'+
     '<div style="margin:14px 0"><button class="btn btn-n" onclick="resetRedundantLab(\''+s.id+'\')">↺ Restaurar todos los enlaces</button></div>'+
     stateSummary+
     '<div class="dsec"><div class="dslbl">1. Simular fallo de equipo</div>'+nodeBtns+'</div>'+
@@ -3993,6 +3993,10 @@ function devTab(tab, btn){
 const UPTIME = `${Math.floor(Math.random()*30)+5} days, ${Math.floor(Math.random()*23)}:${String(Math.floor(Math.random()*59)).padStart(2,'0')}:${String(Math.floor(Math.random()*59)).padStart(2,'0')}`;
 
 function genRouterOverview(s){
+  if(window.ActiveProfile?.enabled()){
+    const state=window.ActiveProfile.status(s.id),wan=window.ActiveProfile.selectedWan(s.id)||'SIN WAN';
+    return 'RTR-'+s.code+'> <span class="ios-cmd">show version</span><br><br>Cisco IOS XE 17.9 · C8300-2N2S-4T2X (modelo)<br>WAN Gi0/0/0..3 (Starlink, Leo, Entel, GTD)<br>Transit 2×10G Te0/0/4–5 → Port-channel10 → PA ae1<br>ISP seleccionado: '+escapeCLI(wan)+'<br>Po10: '+(state.transitUp?'UP':'DOWN')+'<br>IPsec/OSPF: requiere peers y validación real. DNA Center, licencias y módulos no verificados.';
+  }
   const al=activeLink(s.id)||'—';
   const esG5 = al === 'g5';
   const esG4 = al === 'g4';
@@ -4247,6 +4251,7 @@ function genRouterVLAN(s){
 }
 
 function genWANFailover(s){
+  if(window.ActiveProfile?.enabled())return window.ActiveProfile.routerDetail(s,'show track');
  const descriptions=[['starlink','Starlink'],['kuiper','Amazon Leo (futuro)'],['g5','Entel 5G (gateway externo)'],['g4','GTD 4G (gateway externo)']];
  return 'RTR-'+s.code+'> <span class="ios-cmd">show track</span><br><br>'+
  descriptions.map(([key,label],i)=>{
@@ -4317,6 +4322,7 @@ function genFWZones(s){
 }
 
 function genFWThreat(s){
+  if(window.ActiveProfile?.enabled())return 'PA-'+s.code+'> <span class="ios-cmd">show threat-prevention status</span><br>Licencias, perfiles IPS, antivirus, URL Filtering y WildFire: NO verificados en equipo físico. No se inventan suscripciones o detecciones.';
   return `PA-${s.code}> <span class="ios-cmd">show threat-prevention status</span>
 
 Antivirus:            <span class="ios-up">ENABLED</span>
@@ -6783,7 +6789,7 @@ function openComparativa(){
     <div style="background:#0a2010;border:1px solid var(--green);border-radius:6px;padding:14px">
       <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px">✓ DESPUÉS — Rediseño 2026</div>
       <div class="drow"><span class="dkey">Routers</span><span class="dval" style="color:var(--green)">Cisco Catalyst C8300-2N2S-4T2X + gateway 5G externo (modelo por validar)</span></div>
-      <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--green)">C9200L-48T-4G-E x2 (independientes)</span></div>
+      <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--green)">C9200L-48T-4G-E x2 (StackWise-80, 2 cables traseros)</span></div>
       <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--green)">24x PA-1410 (2 CM + 22 sedes)</span></div>
       <div class="drow"><span class="dkey">WAN</span><span class="dval" style="color:var(--green)">4 enlaces inalámbricos</span></div>
       <div class="drow"><span class="dkey">Uptime</span><span class="dval" style="color:var(--green)">99.95% (meta)</span></div>
