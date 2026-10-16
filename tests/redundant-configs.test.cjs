@@ -91,6 +91,16 @@ for(let n=0;n<=22;n++){
   check(fw.includes('ae1 layer3 lacp enable yes'),label+' PA LACP ae1 disabled');
   check(fw.includes('ae2 layer3 lacp enable yes'),label+' PA LACP ae2 disabled');
   check(!fw.includes('set deviceconfig system ip-address 10.70.'+n+'.164'),label+' OOB overlap');
+  check(fw.includes('set network profiles interface-management-profile VLAN30-STACK https yes'),
+    label+' firewall lacks restricted in-band HTTPS management profile');
+  check(fw.includes('set network profiles interface-management-profile VLAN30-STACK ssh yes'),
+    label+' firewall lacks restricted in-band SSH management profile');
+  check(fw.includes('set network profiles interface-management-profile VLAN30-STACK permitted-ip 10.70.'+n+'.162/32'),
+    label+' management profile allows unexpected addresses');
+  check(fw.includes('set network interface aggregate-ethernet ae2 layer3 units ae2.30 interface-management-profile VLAN30-STACK'),
+    label+' VLAN30 interface missing management profile');
+  check(!fw.includes('permitted-ip 0.0.0.0/0'),
+    label+' PAN-OS administration must not allow all addresses');
   check(fw.includes('DEFAULT nexthop ip-address 10.72.'+n+'.1'),label+' default route to router missing');
   check(!c.includes('203.0.113.'),label+' nonroutable test peer incorrectly installed');
   passed++;
