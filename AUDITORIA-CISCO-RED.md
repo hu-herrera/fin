@@ -124,3 +124,18 @@ Esta distinción permite defender el proyecto sin presentar como medidos resulta
 - Los permisos específicos de DNS/NTP preceden la denegación de todo destino corporativo RFC1918 por TRANSIT, evitando que una regla web genérica abra HTTPS a equipos privados.
 - [GitHub Actions verde: 32/32 Playwright, 8 WAN unitarias, 1.274 verificaciones intersede en 23 sedes](https://github.com/hu-herrera/fin/actions/runs/38863116678). Estas comprobaciones son de código/semántica, no una sesión criptográfica o PAN-OS físico.
 - El plan OOB independiente en 23 sedes queda marcado **opcional**: el presupuesto base conserva dos Catalyst C9200L por sede y administración protegida mediante VLAN30, AAA y acceso de consola de recuperación. OOB requeriría un presupuesto/decisión nueva.
+
+## Estado operativo del simulador — migración Layer3/StackWise completada (octubre 2026)
+
+**La vista DESPUÉS ya usa el perfil StackWise/Layer3 como modelo principal.** La vista ANTES conserva el modelo histórico y sus pruebas para comparación.
+
+- Cisco C8300: WAN separadas Gi0/0/0..3; Po10 L3 sobre Te0/0/4 y Te0/0/5 hacia PA. RIB con tránsito conectado `10.72.N.0/30` y VLAN 10/20/30/40 mediante rutas estáticas hacia `10.72.N.2`; ya no hay subinterfaces router-on-a-stick.
+- PA-1410: Layer3 ae1 (2×10G) y ae2 (4×1G), gateways locales VLAN10/20/30/40, zonas y reglas intersede limitadas a servicios centrales. Gestión por VLAN30 y consola; MGT físico/OOB adicional **opcional**, no incluido como compra.
+- C9200L: **un único stack lógico de dos miembros**, StackWise-80 con dos cables traseros, Po20 LACP distribuido sobre Gi1/0/45–46 y Gi2/0/45–46; los 650 PCs permanecen repartidos entre los miembros. La caída de SW1 no implica disponibilidad de PCs físicamente conectados a SW1, mientras SW2 conserva sus propios enlaces.
+- Topología SVG corregida por completo: cuatro WAN, dos enlaces router–PA, cuatro enlaces PA–stack, dos cables StackWise independientes y PCs según inventario.
+- El trazador de paquetes evalúa ahora las reglas PAN-OS **antes** de afirmar rutas intersede, por lo que ICMP entre equipos de sedes distintas no autorizados se bloquea aun cuando los enlaces WAN estén sanos.
+- Datos reales no aportados: IP/gateway/MTU/probes de cada ISP, pares reales IPsec, claves, transceptores, PAN-OS licenciado, AAA, perfiles IPS y pruebas físicas de negociación. El simulador **no certifica** estos elementos ni transforma Amazon Leo en servicio contratado/operativo en Chile.
+
+**Evidencia del código publicado:** [39/39 Playwright + 8/8 WAN unitarias](https://github.com/hu-herrera/fin/actions/runs/38865831814), 185 escenarios de redundancia, 2.029 aserciones, 2.536 validaciones Cisco/PAN/StackWise, 911 comprobaciones de política, 1.274 intersede, 1.162 IP SLA y 784 opcionales de OOB.
+
+La base operativa usa `network/active-profile.js`, el modelo `network/redundant-model.cjs`, las configuraciones `network/redundant-configs.cjs` y las pruebas `tests/active-topology.spec.cjs`. **Los comandos son una representación de laboratorio**: no se ha conectado a routers, switches o firewalls físicos para ejecutar commit.
