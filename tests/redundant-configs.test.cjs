@@ -7,6 +7,7 @@ const countMatch=html.match(/const PC_COUNT\s*=\s*(\{[\s\S]*?\});/);
 assert.ok(countMatch,'Inventario de PCs no existe en index.html');
 const pcCounts=vm.runInNewContext('('+countMatch[1]+')');
 const {siteCandidate}=require('../network/redundant-configs.cjs');
+const {exportCandidate}=require('../network/export-candidate.cjs');
 const {PORTS,VLAN}=require('../network/redundant-model.cjs');
 let passed=0,checks=0;
 function check(ok,message){assert.ok(ok,message);checks++;}
@@ -17,6 +18,12 @@ for(let n=0;n<=22;n++){
   const p=siteCandidate(n,pcCount),c=p.cisco,sw=p.stack,fw=p.palo;
   const label='CM/Sede '+n;
   check(p.deployable===false,label+' candidate must not be marked production ready');
+  for(const device of ['router','stack','palo']){
+    const exported=exportCandidate(siteKey,device);
+    check(exported.includes('NO APTO PARA DESPLIEGUE REAL'),label+' exported without warning');
+    check(exported.includes('PC asignados '+pcCount),label+' exported count omitted');
+    check(exported.includes(device==='router'?c:device==='stack'?sw:fw),label+' exported config incomplete');
+  }
   check(p.blockers.length>=4,label+' blockers undocumented');
   for(const v of VLAN){
     check(c.includes('ip route 10.70.'+n+'.'+v.network+' '+v.mask+' 10.72.'+n+'.2'),label+' missing static '+v.id);
@@ -71,6 +78,8 @@ for(let n=0;n<=22;n++){
   check(!c.includes('203.0.113.'),label+' nonroutable test peer incorrectly installed');
   passed++;
 }
+assert.throws(()=>exportCandidate('s99','router'),/Sede desconocida/);
+assert.throws(()=>exportCandidate('s01','firewall'),/Equipo desconocido/);
 const totalPC=Object.values(pcCounts).reduce((a,b)=>a+b,0);
 assert.equal(totalPC,650,'Inventario global esperado de 650 PCs');
 console.log('TOTAL '+passed+' sitios; '+totalPC+' PCs mapeados; '+checks+' verificaciones de candidato Cisco/PAN/StackWise.');
