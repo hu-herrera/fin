@@ -44,7 +44,9 @@ function makeScenario(siteNum){
   return {
     siteNum, nodes:{router:true,firewall:true,sw1:true,sw2:true},
     links:Object.fromEntries([...PORTS.transit,...PORTS.distribution].map(p=>[p.id,true]).concat(PORTS.stack.map(id=>[id,true]))),
-    wan:Object.fromEntries(WAN_ORDER.map(k=>[k,true]))
+    wan:Object.fromEntries(WAN_ORDER.map(k=>[k,true])),
+    wanGateway:Object.fromEntries(WAN_ORDER.map(k=>[k,true])),
+    wanUpstream:Object.fromEntries(WAN_ORDER.map(k=>[k,true]))
   };
 }
 function setLink(s,id,up){
@@ -58,6 +60,12 @@ function setNode(s,id,up){
 function setWan(s,id,up){
   if(!Object.prototype.hasOwnProperty.call(s.wan,id))throw new RangeError('WAN inexistente: '+id);
   s.wan[id]=Boolean(up);return s;
+}
+function setWanHealth(s,id,health){
+  if(!WAN_ORDER.includes(id))throw new RangeError('WAN inexistente: '+id);
+  if(health.gateway!==undefined)s.wanGateway[id]=Boolean(health.gateway);
+  if(health.upstream!==undefined)s.wanUpstream[id]=Boolean(health.upstream);
+  return s;
 }
 function inspect(s){
   const n=s.nodes;
@@ -81,7 +89,10 @@ function inspect(s){
     1:Boolean(n.sw1&&routerPath),
     2:Boolean(n.sw2&&routerPath)
   };
-  const activeWan=n.router?(WAN_ORDER.find(id=>s.wan[id])||null):null;
+  // El router solo elige un ISP si ultimo salto, gateway y destino remoto
+  // estan sanos. Esto modela el requisito SLA; no implementa el probe IOS-XE.
+  const activeWan=n.router?(WAN_ORDER.find(id=>s.wan[id]&&
+    s.wanGateway[id]&&s.wanUpstream[id])||null):null;
   return {
     transitUp:transit.length>0,
     transitMembers:transit.map(p=>p.id),
@@ -117,4 +128,4 @@ function validatePortPlan(){
   }
   return problems;
 }
-module.exports={PORTS,WAN_ORDER,VLAN,checkSiteNum,candidateAddressing,makeScenario,setLink,setNode,setWan,inspect,validatePortPlan};
+module.exports={PORTS,WAN_ORDER,VLAN,checkSiteNum,candidateAddressing,makeScenario,setLink,setNode,setWan,setWanHealth,inspect,validatePortPlan};
