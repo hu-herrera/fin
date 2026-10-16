@@ -463,3 +463,45 @@ test('Consultas DNS Cisco se limitan a Loopback0 /32 y servidores centrales',asy
  });
  expect(errors).toEqual([]);
 });
+
+test('AAA/TACACS y Syslog TLS: acceso limitado a fuentes de red desde las 23 sedes',async({page})=>{
+ await page.goto(url);
+ const failures=await page.evaluate(()=>{
+  const errors=[],check=(v,msg)=>{if(!v)errors.push(msg);};
+  const engine=window.RedundantLab;
+  for(let n=0;n<=22;n++){
+   const loop='10.70.100.'+(n===0?1:n+10),stack='10.70.'+n+'.162';
+   for(const [app,dests] of [
+     ['aaa-tacacs',['10.70.0.112','10.70.0.113']],
+     ['syslog-tls',['10.70.0.100']]]){
+    for(const destination of dests){
+     const routerRule=engine.evaluateSitePanPolicy(0,'TRANSIT','USERS',app,destination,loop);
+     check(routerRule.action==='allow','C8300 denied '+n+' '+app);
+     const stackRule=engine.evaluateSitePanPolicy(0,n===0?'MGMT-DATA':'TRANSIT',
+       'USERS',app,destination,stack);
+     check(stackRule.action==='allow','CM denied Stack '+n+' '+app);
+     if(n>0){
+      check(engine.evaluateSitePanPolicy(n,'MGMT-DATA','TRANSIT',
+        app,destination,stack).action==='allow','Branch denied stack '+n+' '+app);
+      check(engine.evaluateSitePanPolicy(n,'USERS','TRANSIT',app,
+        destination,'10.70.'+n+'.10').action==='deny',
+        'Ordinary employee allowed '+app+' '+n);
+      check(engine.evaluateSitePanPolicy(n,'GUESTS','TRANSIT',app,
+        destination,'10.70.'+n+'.180').action==='deny',
+        'Guest allowed '+app+' '+n);
+     }
+     check(engine.evaluateSitePanPolicy(0,'TRANSIT','USERS','ssh',
+       destination,loop).action==='deny','Unauthorized router SSH to NetOps '+n);
+    }
+   }
+  }
+  const cm=engine.paloCandidate(0);
+  check(cm.includes('set service SVC-TACACS-TCP49 protocol tcp port 49'),'Missing TACACS service');
+  check(cm.includes('set service SVC-SYSLOG-TLS-TCP6514 protocol tcp port 6514'),
+    'Missing encrypted Syslog service');
+  check(!cm.includes('BRANCH-STACK-SYSLOG service any'),
+    'Unrestricted Syslog service binding');
+  return errors;
+ });
+ expect(failures).toEqual([]);
+});
