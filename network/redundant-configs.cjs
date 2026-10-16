@@ -333,6 +333,15 @@ function paloCandidate(num){
     lines.push('set network interface aggregate-ethernet ae2 layer3 units '+u+' tag '+v.id,
       'set network interface aggregate-ethernet ae2 layer3 units '+u+' ip 10.70.'+num+'.'+v.offset+'/'+v.prefix);
   }
+  // La VLAN30 es gestión en banda, NO una red OOB. Restringir el plano
+  // administrativo al SVI del stack (.162); más orígenes requieren revisión.
+  lines.push(
+    'set network profiles interface-management-profile VLAN30-STACK https yes',
+    'set network profiles interface-management-profile VLAN30-STACK ssh yes',
+    'set network profiles interface-management-profile VLAN30-STACK ping yes',
+    'set network profiles interface-management-profile VLAN30-STACK permitted-ip 10.70.'+num+'.162/32',
+    'set network interface aggregate-ethernet ae2 layer3 units ae2.30 interface-management-profile VLAN30-STACK'
+  );
   // L3 subinterfaces deben pertenecer a zonas diferentes: politicas inter-VLAN
   // quedan por definir (no instalar una regla permisiva generica).
   const zones={10:'USERS',20:'VOICE',30:'MGMT-DATA',40:'GUESTS'};
