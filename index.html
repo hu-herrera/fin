@@ -3276,7 +3276,7 @@ function renderRedundantLabTab(s){
     '<p style="color:var(--text2);font-size:12px;margin-top:12px">Para despliegue real faltan: gestión OOB, validación/aprobación de políticas PAN-OS, IP/SLA del operador, VPN y validación IOS-XE. Un PA único sigue siendo punto único de falla.</p></div>';
 }
 function topoToolbar(s){
-  const active = ST.mode === 'antes' ? 'MPLS Entel' : (LK_NAME[activeLink(s.id)] || 'Sin enlace');
+  const active = ST.mode === 'antes' ? 'MPLS Entel' : (LK_NAME[window.ActiveProfile?.enabled()?window.ActiveProfile.selectedWan(s.id):activeLink(s.id)] || 'Sin enlace');
   return `<div class="topo-toolbar">
     <strong>Topología interna · ${s.code}</strong>
     <span>Haz clic en un router, firewall, switch o PC para abrir su consola.</span>
@@ -3543,7 +3543,94 @@ function renderTopoTabLegacy(s){
 /* =========================================================
    TOPOLOGÍA ACTUAL (DESPUÉS) — AMPLIADA Y CON HOVER EN PCs
 ========================================================= */
+// Topología física objetivo; este SVG es parte del simulador, no foto de instalación.
+function renderActiveTopoTab(s){
+  const profile=window.ActiveProfile,z=profile.status(s.id),raw=profile.rawSite(s.id);
+  const pcs=getPCs(s),pc1=pcs.filter(p=>p.sw===1),pc2=pcs.filter(p=>p.sw===2);
+  const selected=profile.selectedWan(s.id);
+  const color={up:'#35c987',down:'#f36570',idle:'#deb15e',wire:'#647899',label:'#a3b8ca'};
+  const stateColor=on=>on?color.up:color.down;
+  const link=(x1,y1,x2,y2,up,width=3)=>'<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+
+    '" stroke="'+stateColor(up)+'" stroke-width="'+width+'" stroke-linecap="round"'+
+    (up?'':' stroke-dasharray="8 5" opacity=".7"')+'/>';
+  const label=(x,y,txt,fill=color.label,size=12)=>'<text x="'+x+'" y="'+y+'" text-anchor="middle" fill="'+fill+
+    '" font-family="system-ui" font-size="'+size+'">'+escapeCLI(txt)+'</text>';
+  const card=(x,y,w,h,headline,subtitle,up,device)=>'<g'+(device?' onclick="openDevice(\''+device+'\',\''+s.id+'\')" style="cursor:pointer"':'')+'>'+
+    '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="10" fill="#151f2d" stroke="'+stateColor(up)+'" stroke-width="2"/>'+
+    label(x+w/2,y+27,headline,'#e1e9f2',17)+
+    label(x+w/2,y+49,subtitle,color.label,11)+'</g>';
+  const wans=[
+    {old:'starlink',key:'starlink',name:'Starlink Business',port:'Gi0/0/0'},
+    {old:'kuiper',key:'leo',name:'Amazon Leo',port:'Gi0/0/1'},
+    {old:'g5',key:'entel5g',name:'Entel 5G',port:'Gi0/0/2'},
+    {old:'g4',key:'gtd4g',name:'GTD 4G',port:'Gi0/0/3'}
+  ];
+  let wanCards='';
+  wans.forEach((item,i)=>{
+    const x=60+i*316,usable=Boolean(raw.wan[item.key]&&raw.wanGateway[item.key]&&raw.wanUpstream[item.key]),
+      active=item.old===selected;
+    const cx=x+120;
+    wanCards+=link(cx,122,650,190,usable,active?4:2);
+    wanCards+='<rect x="'+x+'" y="38" width="240" height="84" rx="9" fill="#172235" stroke="'+
+      (usable?(active?color.up:color.idle):color.down)+'" stroke-width="'+(active?3:2)+'"/>';
+    wanCards+=label(cx,68,item.name,'#f0f6fa',17)+label(cx,90,item.port+' · '+(active?'ACTIVO':usable?'RESPALDO':'SIN ENLACE'),
+      usable?(active?color.up:color.idle):color.down,12)+
+      label(cx,109,'Estado lógico, ISP sin verificación física',color.label,10);
+  });
+  const router=card(505,192,290,90,'Cisco Catalyst C8300','WAN Gi0/0/0..3 · Port-channel10',raw.nodes.router,'router');
+  const firewall=card(505,376,290,90,'Palo Alto PA-1410 · L3','ae1 / ae2 · gateway VLAN 10/20/30/40',raw.nodes.firewall,'fw');
+  let transit='';
+  for(const [i,id] of ['T1','T2'].entries()){
+    const x=612+i*75;
+    transit+=link(x,282,x,375,z.transitMembers.includes(id),5);
+    transit+=label(x+(-1+2*i)*75,330,id+' · 10G',z.transitMembers.includes(id)?color.up:color.down,12);
+  }
+  const left=[{id:'D1',fx:562,sx:320},{id:'D2',fx:590,sx:365}],
+    right=[{id:'D3',fx:710,sx:940},{id:'D4',fx:738,sx:984}];
+  let dist='';
+  [...left,...right].forEach(v=>{
+    const up=z.paStackMembers.includes(v.id);
+    dist+=link(v.fx,467,v.sx,590,up,4);
+    dist+=label(v.fx+(v.sx-v.fx)*.5,519,v.id+' · 1G',up?color.up:color.down,11);
+  });
+  const sw1=card(188,592,325,88,'Catalyst 9200L · miembro 1',pc1.length+' PCs · Gi1/0/45–46 ↔ PA',raw.nodes.sw1,'sw1');
+  const sw2=card(787,592,325,88,'Catalyst 9200L · miembro 2',pc2.length+' PCs · Gi2/0/45–46 ↔ PA',raw.nodes.sw2,'sw2');
+  const cables=profile.linkMembers(s.id);
+  const stack=link(514,618,786,618,cables[0]?.up,5)+link(514,657,786,657,cables[1]?.up,5)+
+    label(650,608,'StackWise-80 · 2 cables traseros',color.label,12)+
+    label(650,648,z.stackPartitioned?'PARTICIÓN DEL STACK':'UN SOLO SWITCH LÓGICO',
+      z.stackPartitioned?color.down:color.up,11);
+  const pcGrid=(list,member)=>{
+    const origin=member===1?184:783, start=749,gapX=55,gapY=48;
+    let result='';
+    list.forEach((pc,i)=>{
+      const x=origin+(i%6)*55,y=start+Math.floor(i/6)*gapY,
+        online=profile.l2Local(s.id,member),fill=online?'#203c35':'#3b2029';
+      result+='<g class="topo-pc" onclick="openPC(\''+s.id+'\','+(pc.idx-1)+')">'+
+        '<title>'+escapeCLI(pc.id)+' '+escapeCLI(pc.ip)+'</title>'+
+        '<rect class="pc-body" x="'+x+'" y="'+y+'" width="43" height="30" rx="4" fill="'+fill+
+        '" stroke="'+stateColor(online)+'" stroke-width="1.1"/>'+
+        '<rect class="pc-screen" x="'+(x+5)+'" y="'+(y+5)+'" width="33" height="19" rx="2" fill="#121927"/>'+
+        label(x+21,y+43,pc.idx,color.label,10)+'</g>';
+    });
+    return result;
+  };
+  const pcRows=Math.ceil(Math.max(pc1.length,pc2.length)/6),height=840+pcRows*48;
+  const bottom=label(650,height-49,'VLAN 30: gestión por infraestructura existente · sin switch OOB adicional',
+      '#8fb6e2',13)+label(650,height-27,'PA único = punto único de falla; rutas WAN/SA IPsec representan un modelo',
+        color.label,12);
+  return '<div class="topo-wrap">'+topoToolbar(s)+'<div class="topo-viewport">'+
+    '<svg class="topo-svg" xmlns="http://www.w3.org/2000/svg" width="1300" height="'+height+
+    '" viewBox="0 0 1300 '+height+'">'+
+    label(650,24,'TOPOLOGÍA OBJETIVO · '+s.code+' · Layer 3 / StackWise','#e1e9f2',19)+
+    wanCards+router+transit+firewall+dist+stack+sw1+sw2+
+    label(350,720,'PCs conectados a SW1',color.label,15)+
+    label(949,720,'PCs conectados a SW2',color.label,15)+
+    pcGrid(pc1,1)+pcGrid(pc2,2)+bottom+
+    '</svg></div></div>';
+}
 function renderTopoTab(s){
+  if(window.ActiveProfile?.enabled())return renderActiveTopoTab(s);
   if(ST.mode === 'antes') return renderTopoTabLegacy(s);
 
   const pcs = getPCs(s);
