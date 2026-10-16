@@ -5093,8 +5093,13 @@ function persistDeviceCliConfig(sedeId, type, session){
 }
 
 function isDeviceInterfaceAdminDown(sedeId, type, name){
-  const session = DEVICE_CLI_SESSIONS.get(`${sedeId}:${type}`);
   const interfaceName = canonicalDeviceInterface(name, type);
+  if(window.ActiveProfile?.enabled() && type.startsWith('sw')){
+    // En StackWise, una interfaz Gi1/Gi2 pertenece al mismo switch lógico.
+    return ['sw1','sw2'].some(member=>
+      DEVICE_CLI_SESSIONS.get(`${sedeId}:${member}`)?.interfaces[interfaceName]?.shutdown===true);
+  }
+  const session = DEVICE_CLI_SESSIONS.get(`${sedeId}:${type}`);
   return session?.interfaces[interfaceName]?.shutdown === true;
 }
 
@@ -5136,7 +5141,10 @@ function getSwitchPCPortSettings(sedeId, pc){
   if(window.ActiveProfile?.enabled()){
     const site=SEDES.find(s=>s.id===sedeId);
     const port=getSwitchPCPorts(site,pc.sw).find(entry=>entry.pc.idx===pc.idx)?.port;
-    return DEVICE_CLI_SESSIONS.get(`${sedeId}:sw${pc.sw}`)?.interfaces[`Gi${pc.sw}/0/${port}`]||{};
+    const name=`Gi${pc.sw}/0/${port}`;
+    const owner=DEVICE_CLI_SESSIONS.get(`${sedeId}:sw${pc.sw}`)?.interfaces[name]||{};
+    const other=DEVICE_CLI_SESSIONS.get(`${sedeId}:sw${pc.sw===1?2:1}`)?.interfaces[name]||{};
+    return {...other,...owner};
   }
   const type = `sw${pc.sw}`;
   const port = getSwitchPCPorts(SEDES.find(site => site.id === sedeId), pc.sw)
