@@ -310,3 +310,31 @@ test('Po20 y configuracion Gi2 desde cualquiera de las consolas del stack tienen
  });
  expect(issues).toEqual([]);
 });
+
+test('Configuracion de arranque guardada se aplica a la topologia sin abrir consolas',async({page})=>{
+ await page.goto(url);
+ const storage=await page.evaluate(()=>{
+  try{
+   const prefix=DEVICE_CLI_STORAGE_PREFIX+'s06:';
+   const config=interfaces=>JSON.stringify({version:1,config:{
+    hostname:null,interfaces,vlans:{},defaultGateway:null}});
+   localStorage.setItem(prefix+'router',config({'Port-channel10':{shutdown:true}}));
+   localStorage.setItem(prefix+'sw2',config({'Po20':{shutdown:true}}));
+   return true;
+  }catch(error){return false}
+ });
+ if(!storage){test.skip(true,'file:// browser context blocks localStorage; verify on GitHub Pages');return}
+ await page.reload();
+ const status=await page.evaluate(()=>{
+  const s=window.ActiveProfile.status('s06');
+  return {transitUp:s.transitUp,transitCount:s.transitMembers.length,
+   stackUplinks:s.paStackMembers.length,wanReady:isSiteLanAvailable('s06'),
+   unchanged:window.ActiveProfile.status('s07').transitUp};
+ });
+ expect(status).toEqual({transitUp:false,transitCount:0,stackUplinks:0,
+   wanReady:false,unchanged:true});
+ await page.evaluate(()=>{
+  localStorage.removeItem(DEVICE_CLI_STORAGE_PREFIX+'s06:router');
+  localStorage.removeItem(DEVICE_CLI_STORAGE_PREFIX+'s06:sw2');
+ });
+});
