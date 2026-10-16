@@ -58,3 +58,8 @@ La ficha de Cisco para C8300-2N2S-4T2X especifica **4 puertos RJ45 de 1GbE y 2 p
 - Validación LAN/LACP: https://github.com/hu-herrera/fin/actions/runs/38827619121
 - Publicación GitHub Pages: https://github.com/hu-herrera/fin/actions/runs/38827617977
 - Cobertura: verificación de simulación y consistencia, no pruebas sobre hardware físico ni garantía de disponibilidad ante fallos de un equipo completo.
+
+## Auditoría adicional de consolas (2026-10-16)
+- Se eliminaron afirmaciones no respaldadas de sesiones BGP, BFD, IPsec, HA Palo Alto, NTP sincronizado, estados de Threat Prevention/WildFire y MAC/counters inventados. La consola aclara cuándo muestra *modelo lógico de laboratorio* y no telemetría de equipos físicos.
+- Diagnósticos OSPF, CEF, WAN y direccionamiento usan ahora interfaces concordantes con el perfil C8300: Gi0/0/0 LAN con VLAN 10,20,30,40; Gi0/0/1 Starlink, Gi0/0/2 Leo, Gi0/0/3 Entel, Te0/0/4 GTD. Los túneles son Tunnel100/200/300/400, no Tunnel0. Los OSPF vecinos reales, VPN SAs, latencias y contadores siguen **sin medición física**.
+- Suite ampliada a pruebas de regresión sobre consistencia Cisco/PAN-OS. Ejecución 18/18 aprobada (commit `b5b801b1`): https://github.com/hu-herrera/fin/actions/runs/38827959974. En el siguiente commit se agregaron verificaciones OSPF/CEF por sede, pendientes de resultado final de CI en el momento de esta anotación.
