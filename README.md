@@ -1,5 +1,8 @@
 # Financiera Pacífico — Simulador WAN / NOC
 
+**Entrega para revisión de avances (16-10-2026):** [informe docente con los cinco apartados exigidos](docs/informe-avances-docente-2026-10-16.md) · [simulador web](https://hu-herrera.github.io/fin/) · [evidencias de 58 pruebas de navegador](https://github.com/hu-herrera/fin/actions/runs/38968500648).
+
+
 **Estado de la entrega: simulación y pruebas de software. No certificación de hardware.**
 
 Este repositorio modela una red corporativa ficticia con **23 sedes y 650 PCs**, para estudio, auditoría y demostración. La vista **DESPUÉS** usa Cisco C8300 → PA-1410 de capa 3 → un stack lógico de dos C9200L (StackWise-80), con LACP Po10 y Po20. Se conserva la vista **ANTES** para comparación. No se crearon switches OOB adicionales.
