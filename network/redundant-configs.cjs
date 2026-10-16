@@ -11,8 +11,7 @@ function routerNatCandidate(num){
     'ip access-list extended NAT-LOCAL',
     ' permit ip '+prefix+'0 0.0.0.127 any',
     ' permit ip '+prefix+'128 0.0.0.31 any',
-    ' permit ip '+prefix+'176 0.0.0.15 any',
-    ' deny ip any any log'
+    ' permit ip '+prefix+'176 0.0.0.15 any'
   ];
   for(const [type,iface] of Object.entries(PORTS.wan)){
     const rule='NAT-'+type.toUpperCase();
