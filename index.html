@@ -3171,7 +3171,7 @@ function setRedundantLabPolicy(sedeId,key,value){
     from:['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'],
     to:['USERS','VOICE','MGMT-DATA','GUESTS','TRANSIT'],
     application:['ssh','dns','ssl','web-browsing','ntp','sip','bittorrent'],
-    destinationIp:['8.8.8.8','1.1.1.1','10.70.0.20','10.72.1.2','172.16.3.1','192.168.1.1']
+    destinationIp:['8.8.8.8','1.1.1.1','10.70.0.110','10.70.0.111','10.70.0.116','10.70.0.117','10.70.0.20','10.72.1.2','172.16.3.1','192.168.1.1']
   };
   if(!allowed[key]?.includes(value))throw new Error('Opción de política no permitida');
   getRedundantLabPolicy(sedeId)[key]=value;
