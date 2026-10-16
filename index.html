@@ -4764,8 +4764,8 @@ function genRouterDetail(s,command){
   if(command==='show track')return genRouterTrackOutput(s,command);
   if(command==='show ip ospf neighbor'||command==='show ip ospf neighbor detail')
     return prefix+(tunnel&&isSiteLanAvailable(s.id)
-      ? 'Neighbor 172.16.'+n+'.'+tunnel[1]+' State FULL (SIMULADO) via '+tunnel[0]+'<br>Adyacencia didáctica: no se intercambian mensajes OSPF reales.'
-      : 'No OSPF neighbors reachable (WAN sin camino activo o LAN aislada).');
+      ? 'Túnel candidato '+tunnel[0]+' disponible en el modelo.<br>Adyacencia OSPF y estado del vecino NO verificados en IOS-XE físico.'
+      : 'Sin vecino OSPF verificable: WAN sin camino o LAN aislada.');
   if(command==='show ip ospf interface brief')
     return prefix+['Loopback0 Router-ID '+routerIdentity(s).loopback+'/32',
       'Gi0/0/0.10 10.70.'+n+'.1/25 passive',
