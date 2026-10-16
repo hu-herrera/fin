@@ -923,6 +923,14 @@ const COV = {};
 
 function linkPriority(id){ return PRIORITY; }
 
+// Direcciones reservadas, NO servicios levantados. Evita colisiones con los
+// 55 PCs de CM (10.70.0.10–10.70.0.64), gateway .1 y management .161/28.
+const CENTRAL_SERVICES = Object.freeze({
+  dns1:'10.70.0.110',dns2:'10.70.0.111',
+  tacacs1:'10.70.0.112',tacacs2:'10.70.0.113',
+  syslog:'10.70.0.100',monitor:'10.70.0.101',
+  ntp1:'10.70.0.116',ntp2:'10.70.0.117'
+});
 const PC_COUNT = {
   cm:55, s01:30,s02:30,s03:30,s04:30,s05:30,
   s06:28,s07:28,s08:28,s09:28,s10:28,s11:28,s12:28,
@@ -4416,7 +4424,7 @@ function genRouterRunningConfig(s, startup=false){
     'aaa authorization commands 15 default group tacacs+ local',
     'aaa accounting exec default start-stop group tacacs+','aaa accounting commands 15 default start-stop group tacacs+',
     'aaa session-id common','!','clock timezone CLT -4 0','clock summer-time CLST recurring',
-    'no ip domain lookup','ip domain name financierapacifico.cl','ip name-server 10.70.0.10','ip name-server 10.70.0.11',
+    'no ip domain lookup','ip domain name financierapacifico.cl','ip name-server '+CENTRAL_SERVICES.dns1,'ip name-server '+CENTRAL_SERVICES.dns2,
     'login on-success log','login on-failure log','!',
     '! PKI y certificados pendientes de aprovisionar. No se incluyen certificados ficticios.','!',
     'multilink bundle-name authenticated','crypto ikev2 authorization policy IKEV2-AUTHZ',
@@ -4482,8 +4490,8 @@ function genRouterRunningConfig(s, startup=false){
     'snmp-server group MONITOR-GROUP v3 priv',
     'snmp-server view MONITOR iso included','snmp-server user monitor-ro MONITOR-GROUP v3 auth sha LAB-ONLY-SNMP-AUTH priv aes 128 LAB-ONLY-SNMP-PRIV',
     'snmp-server host 10.70.0.101 version 3 priv monitor-ro','snmp-server enable traps snmp authentication linkup linkdown coldstart',
-    'snmp-server enable traps ospf state-change','snmp-server enable traps ip sla','tacacs server ISE-01',' address ipv4 10.70.0.20',' key LAB-ONLY-TACACS-KEY',' timeout 5',
-    'tacacs server ISE-02',' address ipv4 10.70.0.21',' key LAB-ONLY-TACACS-KEY',' timeout 5','ntp source Loopback0','ntp server 10.70.0.1 prefer','ntp server 10.70.0.2',
+    'snmp-server enable traps ospf state-change','snmp-server enable traps ip sla','tacacs server ISE-01',' address ipv4 '+CENTRAL_SERVICES.tacacs1,' key LAB-ONLY-TACACS-KEY',' timeout 5',
+    'tacacs server ISE-02',' address ipv4 '+CENTRAL_SERVICES.tacacs2,' key LAB-ONLY-TACACS-KEY',' timeout 5','ntp source Loopback0','ntp server '+CENTRAL_SERVICES.ntp1+' prefer','ntp server '+CENTRAL_SERVICES.ntp2,
     'line con 0',' exec-timeout 10 0',' logging synchronous',' login authentication default','line aux 0',' transport input none',
     'line vty 0 4',' exec-timeout 10 0',' access-class MGMT-SOURCES in',' transport input ssh',
     'line vty 5 15',' access-class MGMT-SOURCES in',' transport input ssh',
@@ -4640,7 +4648,7 @@ function genSwitchRunningConfig(s, swN=1){
   const lines=['Building configuration...','version 17.9',`hostname ${host}`,
     'aaa new-model','aaa authentication login default group tacacs+ local','aaa authorization exec default group tacacs+ local',
     'aaa accounting exec default start-stop group tacacs+','clock timezone CLT -4 0','switch 1 provision c9200l-48t-4g',
-    '! Switches independientes: Po1 LACP entre SW1 y SW2 (NO StackWise)','ip domain name financierapacifico.cl','ip name-server 10.70.0.10','ip name-server 10.70.0.11',
+    '! Switches independientes: Po1 LACP entre SW1 y SW2 (NO StackWise)','ip domain name financierapacifico.cl','ip name-server '+CENTRAL_SERVICES.dns1,'ip name-server '+CENTRAL_SERVICES.dns2,
     'login on-success log','login on-failure log','spanning-tree mode rapid-pvst','spanning-tree extend system-id',`spanning-tree vlan 10,20,30,40 priority ${swN===1?24576:28672}`,
     'vlan 10',' name DATOS-Usuarios','vlan 20',' name VOIP-Telefonia','vlan 30',' name GESTION-Red','vlan 40',' name INVITADOS-DMZ','vlan 999',' name NATIVE-NONE',
     
@@ -4670,7 +4678,7 @@ function genSwitchRunningConfig(s, swN=1){
     'no ip routing','ip dhcp snooping','ip dhcp snooping vlan 10,20',
     'ip dhcp snooping database flash:dhcp_snoop.db','ip arp inspection vlan 10,20','snmp-server group MONITOR-GROUP v3 priv',
     'snmp-server user monitor-ro MONITOR-GROUP v3 auth sha LAB-ONLY-SNMP-AUTH priv aes 128 LAB-ONLY-SNMP-PRIV','snmp-server host 10.70.0.101 version 3 priv monitor-ro',
-    'tacacs server ISE-01',' address ipv4 10.70.0.20',' key LAB-ONLY-TACACS-KEY',' timeout 5','line con 0',' logging synchronous','line vty 0 4',' transport input ssh','ntp server 10.70.0.1 prefer'];
+    'tacacs server ISE-01',' address ipv4 '+CENTRAL_SERVICES.tacacs1,' key LAB-ONLY-TACACS-KEY',' timeout 5','line con 0',' logging synchronous','line vty 0 4',' transport input ssh','ntp server '+CENTRAL_SERVICES.ntp1+' prefer'];
   lines.push('end');
   return cliText(`${host}>`,'show running-config',lines);
 }
@@ -4724,7 +4732,7 @@ function genSwitchDetail(s,type,command){
 function genFWCommand(s,command){
   const n=s.num, p=`PA-${s.code}>`, h=`${p} <span class="ios-cmd">${command}</span><br><br>`;
   if(command==='show running-config'||command==='show startup-config'){
-    const lines=[`set deviceconfig system hostname PA-${s.code}`,`set deviceconfig system ip-address 10.70.${n}.164`,`set deviceconfig system netmask 255.255.255.240`,`set deviceconfig system default-gateway 10.70.${n}.161`,'set deviceconfig system dns-setting servers primary 10.70.0.10','set deviceconfig system ntp-servers primary-ntp-server 10.70.0.1','set deviceconfig system timezone America/Santiago','! VPN IKEv2/IPsec termina en Cisco C8300, no en este PA-1410 (modo virtual wire)'];
+    const lines=[`set deviceconfig system hostname PA-${s.code}`,`set deviceconfig system ip-address 10.70.${n}.164`,`set deviceconfig system netmask 255.255.255.240`,`set deviceconfig system default-gateway 10.70.${n}.161`,'set deviceconfig system dns-setting servers primary '+CENTRAL_SERVICES.dns1,'set deviceconfig system ntp-servers primary-ntp-server '+CENTRAL_SERVICES.ntp1,'set deviceconfig system timezone America/Santiago','! VPN IKEv2/IPsec termina en Cisco C8300, no en este PA-1410 (modo virtual wire)'];
     lines.push('! ethernet1/1: virtual wire hacia C8300 Gi0/0/0; ethernet1/2: virtual wire hacia SW1 Gi1/0/1');
     lines.push('! VLAN 10,20,30,40 atraviesan el par vwire sin cambiar etiqueta; configurar subinterfaces/zones y reglas PAN-OS reales antes del despliegue.');
     lines.push('! Objetivos: invitados -> redes corporativas DENY; gestión solo desde fuentes autorizadas; demás accesos por App-ID y mínimo privilegio.');
@@ -5511,7 +5519,7 @@ function genShowBrief(s, type, command){
     if(command === 'show ip ssh') return `${prompt} ${header}SSH Enabled - version 2.0<br>Authentication timeout: 60 secs; Authentication retries: 3`;
     if(command === 'show users') return `${prompt} ${header}  Line       User       Host(s)              Idle       Location<br>*  0 con 0    admin      idle                 00:00:00`;
     if(command === 'show line') return `${prompt} ${header}  Tty Typ     Tx/Rx    A Modem  Roty AccO AccI  Uses  Noise  Overruns<br>* 0 CTY             -        -    -    -    -     0       0`;
-    if(command === 'show ntp status') return `${prompt} ${header}NTP servers configured: 10.70.0.1, 10.70.0.2.<br>Sin medición de sincronización ni estrato de un router físico.`;
+    if(command === 'show ntp status') return `${prompt} ${header}NTP servers configured: ${CENTRAL_SERVICES.ntp1}, ${CENTRAL_SERVICES.ntp2}.<br>Sin medición de sincronización ni estrato de un router físico.`;
     if(command === 'show logging') return `${prompt} ${header}%LINK-3-UPDOWN: Interface Gi0/0/0, changed state to up<br>%SYS-5-CONFIG_I: Configured from console by admin`;
   }
   if(type.startsWith('sw')){
