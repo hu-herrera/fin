@@ -356,3 +356,32 @@ test('La seleccion de PCs para ping local no exige gateway, pero WAN si',async({
  });
  expect(faults).toEqual([]);
 });
+
+test('OSPF simulado retira rutas de túneles deshabilitados sin cortar Internet local',async({page})=>{
+ await page.goto(url);
+ const problems=await page.evaluate(()=>{
+  const errors=[],check=(value,message)=>{if(!value)errors.push(message)};
+  const branch=SEDES.find(s=>s.id==='s08'),cm=SEDES.find(s=>s.id==='cm');
+  const branchSession=deviceCliSession(branch.id,'router');
+  const cmSession=deviceCliSession(cm.id,'router');
+  check(window.ActiveProfile.overlayInterfaceUp(branch.id),'Branch overlay initial administratively down');
+  check(genRouterRoutes(branch).includes('O 10.70.0.0/25'),'Initial CM remote route absent');
+  branchSession.interfaces.Tunnel100={shutdown:true};
+  check(!window.ActiveProfile.overlayInterfaceUp(branch.id),'Tunnel100 shutdown ignored');
+  check(isSiteLanAvailable(branch.id),'Tunnel down incorrectly drops branch Internet');
+  check(!genRouterRoutes(branch).includes('O 10.70.0.0/25'),
+    'Branch retains remote OSPF routes across administratively down tunnel');
+  check(genRouterRoutes(branch).includes('S* 0.0.0.0/0'),
+    'Branch default Internet route withdrawn with tunnel');
+  delete branchSession.interfaces.Tunnel100;
+  check(genRouterRoutes(branch).includes('O 10.70.0.0/25'),'Branch OSPF candidate route fails to recover');
+  cmSession.interfaces.Tunnel100={shutdown:true};
+  check(!genRouterRoutes(branch).includes('O 10.70.0.0/25'),
+    'Branch retains remote OSPF routes while CM hub overlay is disabled');
+  check(isSiteLanAvailable(cm.id),'CM overlay shutdown affected direct Internet access');
+  delete cmSession.interfaces.Tunnel100;
+  check(genRouterRoutes(branch).includes('O 10.70.0.0/25'),'Hub overlay recovery not reflected in branch RIB');
+  return errors;
+ });
+ expect(problems).toEqual([]);
+});
