@@ -730,6 +730,7 @@ body{background:var(--bg);color:var(--text);
       <button class="sm-tab active" onclick="smTab('topo',this)">🖧 Topología</button>
       <button class="sm-tab" onclick="smTab('cmd',this)">⌨ Comandos</button>
       <button class="sm-tab" onclick="smTab('ping',this)">📡 Ping / Trace</button>
+      <button class="sm-tab" id="sm-tab-packet" onclick="smTab('packet',this)">📦 Flujo de paquetes</button>
       <button class="sm-tab" onclick="smTab('tables',this)">📋 Tablas</button>
       <button class="sm-tab" onclick="smTab('kpis',this)">📊 KPIs</button>
       <button class="sm-tab" onclick="smTab('lab',this)">🧪 StackWise / LACP</button>
@@ -3144,8 +3145,14 @@ function openSedeModal(id){
   document.getElementById('sm-overlay').classList.add('vis');
   smTab('topo', document.querySelector('.sm-tab'));
 }
-function closeSedeModal(){ document.getElementById('sm-overlay').classList.remove('vis'); SM_ID = null; }
+function closeSedeModal(){
+  document.getElementById('sm-overlay').classList.remove('vis');
+  window.PacketWorkbench?.onSedeClosed();
+  SM_ID = null;
+}
 function smTab(tab, btn){
+  // El trazador forma parte de este mismo modal. Conservar sus eventos al cambiar de pestaña.
+  window.PacketWorkbench?.detach();
   SM_TAB = tab;
   document.querySelectorAll('.sm-tab').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
@@ -3157,6 +3164,10 @@ function smTab(tab, btn){
   if(tab==='tables') body.innerHTML = renderTablesTab(s);
   if(tab==='kpis') body.innerHTML = renderKPIsTab(s);
   if(tab==='lab') body.innerHTML = renderRedundantLabTab(s);
+  if(tab==='packet'){
+    body.innerHTML = '<div id="sm-packet-host"></div>';
+    window.PacketWorkbench?.mountInTopology(s.id);
+  }
   if(tab==='topo'){
     requestAnimationFrame(() => initTopologyWorkspace(s));
   }
@@ -3283,6 +3294,8 @@ function topoToolbar(s){
     <strong>Topología interna · ${s.code}</strong>
     <span>Haz clic en un router, firewall, switch o PC para abrir su consola.</span>
     <span class="topo-state">WAN: ${active}</span>
+    <button type="button" class="btn btn-acc" id="topo-packet-tool"
+      onclick="smTab('packet',document.getElementById('sm-tab-packet'))">📦 Seguir un paquete</button>
     <div class="topo-zoom">
       <button type="button" class="btn btn-n" onclick="topologyZoom(this,-.15)" title="Alejar">−</button>
       <button type="button" class="btn btn-n" onclick="topologyZoom(this,.15)" title="Acercar">+</button>
