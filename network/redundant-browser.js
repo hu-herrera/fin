@@ -242,6 +242,10 @@ function stackCandidate(num,pcCount){
     'switch 2 provision c9200l-48t-4g',
     'spanning-tree mode rapid-pvst',
     'spanning-tree vlan 10,20,30,40 priority 24576',
+    // El trust de Po20 no tiene efecto sin activación global y por VLAN.
+    // El DHCP real sigue condicionado a disponer de PA ae2.x configurado.
+    'ip dhcp snooping',
+    'ip dhcp snooping vlan 10,20,40',
     'vlan 10',' name DATOS-USUARIOS',
     'vlan 20',' name VOZ',
     'vlan 30',' name GESTION',
@@ -351,10 +355,21 @@ function intersiteRulesForSite(num){
     {name:'CM-IN-NTP-FROM-BRANCHES',from:['TRANSIT'],to:['USERS'],
      source:'BRANCH-MGMT-CLIENTS',destination:'CM-NTP-SERVERS',
      apps:['ntp'],action:'allow'},
+    // DNS/NTP centrales están en VLAN10; el PA debe admitir las peticiones
+    // locales de VLAN20 y VLAN30 sin abrir acceso lateral indiscriminado.
+    {name:'CM-LOCAL-VOICE-DNS',from:['VOICE'],to:['USERS'],
+     source:'CM-LOCAL-VOICE',destination:'CM-DNS-SERVERS',
+     apps:['dns'],action:'allow'},
+    {name:'CM-LOCAL-MGMT-DNS',from:['MGMT-DATA'],to:['USERS'],
+     source:'CM-LOCAL-MGMT',destination:'CM-DNS-SERVERS',
+     apps:['dns'],action:'allow'},
+    {name:'CM-LOCAL-MGMT-NTP',from:['MGMT-DATA'],to:['USERS'],
+     source:'CM-LOCAL-MGMT',destination:'CM-NTP-SERVERS',
+     apps:['ntp'],action:'allow'},
     denyPrivate
   ];
   return [
-    {name:'BRANCH-DNS-TO-CM',from:['USERS','MGMT-DATA'],to:['TRANSIT'],
+    {name:'BRANCH-DNS-TO-CM',from:['USERS','VOICE','MGMT-DATA'],to:['TRANSIT'],
      source:'BR-LOCAL-DNS-CLIENTS',destination:'CM-DNS-SERVERS',apps:['dns'],action:'allow'},
     {name:'BRANCH-NTP-TO-CM',from:['MGMT-DATA'],to:['TRANSIT'],
      source:'BR-LOCAL-MGMT',destination:'CM-NTP-SERVERS',apps:['ntp'],action:'allow'},
@@ -383,13 +398,21 @@ function matchSecurityAddress(selector,ip,num){
   if(selector==='CM-DNS-SERVERS')return CM_SERVICES.dns.includes(ip);
   if(selector==='CM-NTP-SERVERS')return CM_SERVICES.ntp.includes(ip);
   if(selector==='BR-LOCAL-DNS-CLIENTS')
-    return inSubnet(ip,'10.70.'+num+'.0',25)||inSubnet(ip,'10.70.'+num+'.160',28);
+    return inSubnet(ip,'10.70.'+num+'.0',25)||
+      inSubnet(ip,'10.70.'+num+'.128',27)||
+      inSubnet(ip,'10.70.'+num+'.160',28);
+  if(selector==='CM-LOCAL-VOICE')
+    return num===0&&inSubnet(ip,'10.70.0.128',27);
+  if(selector==='CM-LOCAL-MGMT')
+    return num===0&&inSubnet(ip,'10.70.0.160',28);
   if(selector==='BR-LOCAL-MGMT')
     return inSubnet(ip,'10.70.'+num+'.160',28);
   if(selector==='BRANCH-DNS-CLIENTS'||selector==='BRANCH-MGMT-CLIENTS'){
     for(let n=1;n<=22;n++){
       if(inSubnet(ip,'10.70.'+n+'.160',28))return true;
-      if(selector==='BRANCH-DNS-CLIENTS'&&inSubnet(ip,'10.70.'+n+'.0',25))return true;
+      if(selector==='BRANCH-DNS-CLIENTS'&&
+        (inSubnet(ip,'10.70.'+n+'.0',25)||inSubnet(ip,'10.70.'+n+'.128',27)))
+        return true;
     }
     return false;
   }
@@ -425,17 +448,21 @@ function intersiteAddressCommands(num){
   }
   if(num!==0){
     lines.push('set address BR-LOCAL-USERS ip-netmask 10.70.'+num+'.0/25',
+      'set address BR-LOCAL-VOICE ip-netmask 10.70.'+num+'.128/27',
       'set address BR-LOCAL-MGMT ip-netmask 10.70.'+num+'.160/28',
-      'set address-group BR-LOCAL-DNS-CLIENTS static [ BR-LOCAL-USERS BR-LOCAL-MGMT ]');
+      'set address-group BR-LOCAL-DNS-CLIENTS static [ BR-LOCAL-USERS BR-LOCAL-MGMT BR-LOCAL-VOICE ]');
   }
   if(num===0){
+    lines.push('set address CM-LOCAL-VOICE ip-netmask 10.70.0.128/27',
+      'set address CM-LOCAL-MGMT ip-netmask 10.70.0.160/28');
     const users=[],mgmt=[];
     for(let n=1;n<=22;n++){
       const id=String(n).padStart(2,'0');
-      const u='BR-'+id+'-USERS',m='BR-'+id+'-MGMT';
+      const u='BR-'+id+'-USERS',m='BR-'+id+'-MGMT',v='BR-'+id+'-VOICE';
       lines.push('set address '+u+' ip-netmask 10.70.'+n+'.0/25',
-        'set address '+m+' ip-netmask 10.70.'+n+'.160/28');
-      users.push(u,m);mgmt.push(m);
+        'set address '+m+' ip-netmask 10.70.'+n+'.160/28',
+        'set address '+v+' ip-netmask 10.70.'+n+'.128/27');
+      users.push(u,m,v);mgmt.push(m);
     }
     lines.push('set address-group BRANCH-DNS-CLIENTS static [ '+users.join(' ')+' ]',
       'set address-group BRANCH-MGMT-CLIENTS static [ '+mgmt.join(' ')+' ]');
