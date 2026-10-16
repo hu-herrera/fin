@@ -7,7 +7,7 @@
 const traceEngine=window.PacketLab;
 if(!traceEngine||!window.ActiveProfile||!window.RedundantLab)return;
 const $=id=>document.getElementById(id);
-const state={last:null,stage:0,returnToStage:false};
+const state={last:null,stage:0,returnToStage:false,execution:0};
 const scenes=[
  {kicker:'01 / Presentación del avance',title:'Financiera Pacífico',
   description:'Proyecto de Título · Simulador interactivo de redes empresariales con infraestructura Cisco y Palo Alto. Revisión de avances del 16 de octubre de 2026.',
@@ -75,9 +75,15 @@ function build(){
  <button class="packetlab-btn danger" id="pl-fail" type="button">↯ Cortar Starlink</button>
  <button class="packetlab-btn" id="pl-restore" type="button">↺ Recuperar Starlink</button>
  </nav>
- <section class="packetlab-result" id="pl-result" aria-live="polite">
- <div class="packetlab-result-title"><span id="pl-verdict">Selecciona una prueba</span><span id="pl-state">LAB</span></div>
- <p id="pl-reason" class="packetlab-muted"></p><div id="pl-hops" class="packetlab-trace"></div></section>
+ <section class="packetlab-result" id="pl-result" aria-live="polite" aria-atomic="true">
+ <div class="packetlab-result-title">
+   <span id="pl-verdict">Selecciona una prueba</span>
+   <span id="pl-state" class="packetlab-code">LAB</span>
+ </div>
+ <div class="packetlab-execution" id="pl-execution">Preparado para simular</div>
+ <p id="pl-reason" class="packetlab-muted"></p>
+ <div id="pl-hops" class="packetlab-trace"></div>
+ </section>
  <p class="packetlab-footnote">Simulación educativa del plano de datos y políticas. PERMITIDO significa que el modelo reenvía el flujo; no afirma que los servidores, contratos WAN o sesiones IPsec estén operativos físicamente. Los cambios de enlace afectan al escenario mostrado.</p>
  </section>`;
  overlay.addEventListener('click',e=>{if(e.target===overlay)closeLab();});
@@ -92,7 +98,7 @@ function build(){
  $('pl-pc').addEventListener('change',run);
  $('pl-dest').addEventListener('change',run);
  $('pl-app').addEventListener('change',run);
- $('pl-trace').addEventListener('click',run);
+ $('pl-trace').addEventListener('click',()=>run({scroll:true}));
  $('pl-dns').addEventListener('click',()=>preset('dns'));
  $('pl-ssh').addEventListener('click',()=>preset('ssh'));
  $('pl-fail').addEventListener('click',()=>wanAction(false));
@@ -181,7 +187,7 @@ function environment(){
   }
  };
 }
-function run(){
+function run(options={}){
  if(!$('pl-site'))return null;
  const site=SEDES.find(s=>s.id===$('pl-site').value);
  if(!site)return null;
@@ -198,10 +204,16 @@ function run(){
   destinationIp:$('pl-dest').value.trim(),application:$('pl-app').value
  },environment());
  state.last=result;
+ state.execution++;
  const card=$('pl-result');
  card.className='packetlab-result '+(result.allowed?'allowed':'denied');
+ // Cada clic ahora produce una ejecución NUEVA, aunque el flujo sea idéntico.
+ // Mostrar origen, destino, contador y política además del veredicto.
  $('pl-verdict').textContent=(result.allowed?'✓ ':'⊘ ')+result.status;
  $('pl-state').textContent=result.code||'SIMULACIÓN';
+ $('pl-execution').textContent='EJECUCIÓN #'+state.execution+
+   ' · '+(source||'sin origen')+' → '+($('pl-dest').value.trim()||'sin destino')+
+   ' · '+$('pl-app').value.toUpperCase()+' · '+(result.hops?.length||0)+' saltos evaluados';
  $('pl-reason').textContent=result.reason;
  const steps=$('pl-hops');steps.replaceChildren();
  for(const h of result.hops){
@@ -210,6 +222,12 @@ function run(){
     element('div','packetlab-hop-detail',h.detail));
   steps.append(box);
  }
+ // Reiniciar animación incluso si la ruta/política no cambió.
+ card.classList.remove('packetlab-updated');
+ void card.offsetWidth;
+ card.classList.add('packetlab-updated');
+ if(options?.scroll===true)
+   card.scrollIntoView({block:'nearest',behavior:'smooth'});
  return result;
 }
 function preset(kind){
@@ -238,8 +256,10 @@ function mountInTopology(siteId){
  const host=$('sm-packet-host'),dialog=document.querySelector('.packetlab-dialog');
  if(!host||!dialog)return;
  host.append(dialog);
+ const switched=$('pl-site').value!==siteId;
  $('pl-site').value=siteId;
  $('pl-site').disabled=true; // Una sola sede: el modal original es la fuente de verdad.
+ if(switched)refreshPcs(); // No mantener un PC/IP de la sede anterior.
  $('packetlab-close').textContent=state.returnToStage?
    '← Volver a la exposición':'← Volver a topología';
  run();
