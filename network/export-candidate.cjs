@@ -4,6 +4,7 @@
 // node network/export-candidate.cjs s01 wan-sla ./monitores-s01.json
 // node network/export-candidate.cjs s01 guest-dhcp ./invitados-s01.json
 // node network/export-candidate.cjs s01 client-dhcp ./clientes-s01.json
+// node network/export-candidate.cjs s01 wan-readiness ./evidencia-wan-s01.json
 const fs=require('node:fs');
 const vm=require('node:vm');
 const {siteCandidate}=require('./redundant-configs.cjs');
@@ -11,6 +12,7 @@ const {renderWanSlaCandidate}=require('./wan-sla-candidate.cjs');
 const {oobCandidate}=require('./oob-management.cjs');
 const {renderGuestDhcpCandidate}=require('./guest-dhcp-candidate.cjs');
 const {renderClientDhcpCandidate}=require('./client-dhcp-candidate.cjs');
+const {assessWanIpsecReadiness}=require('./wan-ipsec-readiness.cjs');
 function pcInventory(){
   const html=fs.readFileSync(require('node:path').join(__dirname,'..','index.html'),'utf8');
   const match=html.match(/const PC_COUNT\s*=\s*(\{[\s\S]*?\});/);
@@ -22,11 +24,15 @@ function exportCandidate(site,device,wanSettings){
   if(!/^(cm|s(?:0[1-9]|1[0-9]|2[0-2]))$/.test(key)){
     throw new Error('Sede desconocida; usar cm o s01..s22');
   }
-  if(!['router','stack','palo','wan-sla','oob','guest-dhcp','client-dhcp'].includes(device)){
-    throw new Error('Equipo desconocido; usar router, stack, palo, wan-sla, guest-dhcp, client-dhcp u oob');
+  if(!['router','stack','palo','wan-sla','wan-readiness','oob','guest-dhcp','client-dhcp'].includes(device)){
+    throw new Error('Equipo desconocido; usar router, stack, palo, wan-sla, wan-readiness, guest-dhcp, client-dhcp u oob');
   }
   const num=key==='cm'?0:Number(key.slice(1)),counts=pcInventory();
   if(!Number.isInteger(counts[key]))throw new Error('Sin inventario de PCs para '+key);
+  if(device==='wan-readiness'){
+    return '# INFORME DE PRERREQUISITOS WAN/IPsec — NO CERTIFICA VPN REAL\n'+
+      JSON.stringify(assessWanIpsecReadiness(num,wanSettings),null,2);
+  }
   if(device==='wan-sla'){
     // Sin parámetros de contrato no se emite configuración potencialmente inservible.
     return '# LABORATORIO, VALIDAR CON OPERADOR ANTES DE APLICAR\n'+
@@ -62,7 +68,7 @@ function exportCandidate(site,device,wanSettings){
 }
 if(require.main===module){
   try{
-    const needsConfig=['wan-sla','guest-dhcp','client-dhcp'].includes(process.argv[3]);
+    const needsConfig=['wan-sla','wan-readiness','guest-dhcp','client-dhcp'].includes(process.argv[3]);
     if(needsConfig&&!process.argv[4])throw new Error('Especifica un JSON de parámetros aprobados para '+process.argv[3]);
     const config=needsConfig?JSON.parse(fs.readFileSync(process.argv[4],'utf8')):undefined;
     process.stdout.write(exportCandidate(process.argv[2],process.argv[3],config)+'\n');
