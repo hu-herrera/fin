@@ -1,0 +1,5 @@
+# Capturas reales de infraestructura: nunca publicarlas por accidente
+evidencia-local/
+lab-evidence/
+*.pcap
+*.pcapng
