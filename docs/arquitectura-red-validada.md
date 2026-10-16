@@ -63,3 +63,8 @@ La ficha de Cisco para C8300-2N2S-4T2X especifica **4 puertos RJ45 de 1GbE y 2 p
 - Se eliminaron afirmaciones no respaldadas de sesiones BGP, BFD, IPsec, HA Palo Alto, NTP sincronizado, estados de Threat Prevention/WildFire y MAC/counters inventados. La consola aclara cuándo muestra *modelo lógico de laboratorio* y no telemetría de equipos físicos.
 - Diagnósticos OSPF, CEF, WAN y direccionamiento usan ahora interfaces concordantes con el perfil C8300: Gi0/0/0 LAN con VLAN 10,20,30,40; Gi0/0/1 Starlink, Gi0/0/2 Leo, Gi0/0/3 Entel, Te0/0/4 GTD. Los túneles son Tunnel100/200/300/400, no Tunnel0. Los OSPF vecinos reales, VPN SAs, latencias y contadores siguen **sin medición física**.
 - Suite ampliada a pruebas de regresión sobre consistencia Cisco/PAN-OS. Ejecución 18/18 aprobada (commit `b5b801b1`): https://github.com/hu-herrera/fin/actions/runs/38827959974. Las nuevas verificaciones OSPF/CEF por sede se ejecutaron con éxito: **19/19 pruebas** en https://github.com/hu-herrera/fin/actions/runs/38828262310 (commit `8020272c`).
+
+## Estado de la última validación (2026-10-16)
+- Suite principal: **22/22 pruebas Playwright** y **8/8 WAN unitarias** aprobadas: https://github.com/hu-herrera/fin/actions/runs/38830771341
+- Correcciones de STP, puertos administrativamente apagados, RIB WAN, distancias de backup, concentración CM, IKEv2 y estado IP SLA incluidas.
+- Plan de redundancia *de equipos* compatible con modelos Cisco y Palo Alto: [docs/plan-puertos-redundancia-propuesto.md](plan-puertos-redundancia-propuesto.md). Es candidato pendiente de migración, no activo todavía. No confundir Po1 inter-switch vigente con el anillo físico StackWise.
