@@ -46,6 +46,18 @@ function policyReview(num){
    evaluateSitePanPolicy(n,from,to,app,dest,source).action===expected;
  test(routerCandidate(num).includes(' ip address '+loop+' 255.255.255.255'),
    'Cisco Loopback0 /32 does not match NTP source');
+ for(const address of CM_SERVICES.dns){
+   test(matches(0,'TRANSIT','USERS','dns',address,loop,'allow'),
+     'CM firewall blocks router Loopback0 DNS '+address);
+   test(matches(0,'TRANSIT','USERS','ssh',address,loop,'deny'),
+     'CM firewall improperly permits router SSH to DNS '+address);
+   const swSource='10.70.'+num+'.162';
+   test(matches(num,'MGMT-DATA',num===0?'USERS':'TRANSIT',
+     'dns',address,swSource,'allow'),
+     'Local site firewall blocks StackWise management DNS '+address);
+   if(num!==0)test(matches(0,'TRANSIT','USERS','dns',address,swSource,'allow'),
+     'CM firewall blocks branch StackWise DNS '+address);
+ }
  for(const address of ntp){
    test(matches(0,'TRANSIT','USERS','ntp',address,loop,'allow'),
      'CM firewall blocks router Loopback0 NTP '+address);
@@ -102,12 +114,14 @@ function renderManagementServicesCandidate(num,settings){
    '! C8300 RTR sede '+assessment.site+' — origen 10.70.100.x, OSPF debe transportar su /32',
    'ip name-server '+d1,
    'ip name-server '+d2,
+   'ip domain lookup source-interface Loopback0',
    'ntp server '+n1+' source Loopback0 prefer',
    'ntp server '+n2+' source Loopback0',
-   '! VERIFICAR C8300: show ip route '+n1+'; show ntp associations; show ntp status',
+   '! VERIFICAR C8300: DNS desde Loopback0, ruta, show ntp associations; show ntp status',
    '! INICIO DE BLOQUE SEPARADO EN C9200L STACK — NO PEGAR TODO EN UN SOLO DISPOSITIVO',
    'ip name-server '+d1,
    'ip name-server '+d2,
+   'ip domain lookup source-interface Vlan30',
    'ntp server '+n1+' source Vlan30 prefer',
    'ntp server '+n2+' source Vlan30',
    '! VERIFICAR STACK: show ip route '+n1+'; show ntp associations; show ntp status',
