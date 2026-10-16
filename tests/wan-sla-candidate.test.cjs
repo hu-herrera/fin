@@ -2,6 +2,7 @@
 const assert=require('node:assert/strict');
 const {WAN_KEYS,DISTANCE,validateWanSettings,renderWanSlaCandidate}=require('../network/wan-sla-candidate.cjs');
 const {PORTS}=require('../network/redundant-model.cjs');
+const {exportCandidate}=require('../network/export-candidate.cjs');
 let checks=0;
 const verify=(x,label)=>{assert.ok(x,label);checks++};
 const pair={
@@ -22,11 +23,16 @@ function labSite(n){
   return result;
 }
 assert.throws(()=>renderWanSlaCandidate(),/NO GENERADO/);
+assert.throws(()=>exportCandidate('s01','wan-sla'),/NO GENERADO/);
 assert.throws(()=>renderWanSlaCandidate({}),/NO GENERADO/);
 for(let n=0;n<23;n++){
   const settings=labSite(n);
   assert.deepEqual(validateWanSettings(settings),[]);
   const text=renderWanSlaCandidate(settings);
+  const id=n===0?'cm':'s'+String(n).padStart(2,'0');
+  const exported=exportCandidate(id,'wan-sla',settings);
+  verify(exported.includes('Sede '+id.toUpperCase()),id+' wrong exported site');
+  verify(exported.includes(text),id+' differs from validated SLA generator');
   verify(!text.includes('TEST-NET'), 'incorrect sample IP');
   for(const [i,type] of WAN_KEYS.entries()){
     const w=settings[type];
