@@ -13,6 +13,11 @@ function ipv4(value){
   return oct;
 }
 function ipNum(ip){return ipv4(ip).reduce((a,n)=>(a*256+n)>>>0,0)>>>0}
+function prefixMask(prefix){
+  if(!Number.isInteger(prefix)||prefix<1||prefix>30)throw new RangeError('Prefijo WAN estático no soportado');
+  const mask=(0xffffffff << (32-prefix))>>>0;
+  return [24,16,8,0].map(shift=>(mask>>>shift)&255).join('.');
+}
 function isReservedTarget(ip){
   const [a,b,c,d]=ipv4(ip);
   return a===0||a===10||a===127||a>=224||a===169&&b===254||
@@ -63,6 +68,11 @@ function renderWanSlaCandidate(settings){
   ];
   for(const [index,type] of WAN_KEYS.entries()){
     const w=settings[type],port=PORTS.wan[type],track=index+1;
+    lines.push('interface '+port,
+      ' description WAN '+type.toUpperCase()+' - direccionamiento contractual VERIFICADO SOLO POR USUARIO',
+      ' ip address '+w.address+' '+prefixMask(w.prefix),
+      ' ip nat outside',
+      ' no shutdown');
     for(const [j,destination] of w.monitors.entries()){
       const sla=101+index*10+j;
       lines.push('ip route '+destination+' 255.255.255.255 '+w.gateway+' name SLA-'+type.toUpperCase()+'-'+(j+1),
@@ -84,4 +94,4 @@ function renderWanSlaCandidate(settings){
     '! ICMP puede estar filtrado por proveedor; obtener destinos aceptados antes de usar.');
   return lines.join('\n');
 }
-module.exports={WAN_KEYS,DISTANCE,ipv4,isReservedTarget,validateWanSettings,renderWanSlaCandidate};
+module.exports={WAN_KEYS,DISTANCE,ipv4,isReservedTarget,prefixMask,validateWanSettings,renderWanSlaCandidate};
