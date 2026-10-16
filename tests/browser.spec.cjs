@@ -268,6 +268,10 @@ test('LACP: cada miembro soporta fallo individual; ambos caídos aíslan SW2', a
       two.interfaces['Gi1/0/46']={shutdown:true};
       if(!isSwitchStackLinkAvailable(site.id))issues.push(site.id+': fallo remoto derriba indebidamente Po1');
       delete two.interfaces['Gi1/0/46'];
+      one.interfaces.Po1={shutdown:true};
+      if(isSwitchStackLinkAvailable(site.id)||isSwitchPathAvailable(site.id,2))issues.push(site.id+': shutdown Port-channel1 no derriba el bundle');
+      delete one.interfaces.Po1;
+      if(!isSwitchStackLinkAvailable(site.id))issues.push(site.id+': no shutdown Port-channel1 no restaura el bundle');
     }
     return {sites:SEDES.length,issues};
   });
