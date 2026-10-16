@@ -134,6 +134,9 @@ function build(){
  });
  document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
+   // El modal de sede original maneja Esc primero (y marca defaultPrevented).
+   // No cerrar la escena restaurada por el MISMO evento.
+   if(e.defaultPrevented)return;
    if(state.returnToStage&&document.getElementById('sm-overlay')?.classList.contains('vis'))
      closeLab();
    else if(!$('presentation-overlay').hidden)closeStage();
