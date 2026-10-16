@@ -4308,7 +4308,7 @@ function genRouterRunningConfig(s, startup=false){
     '! PKI y certificados pendientes de aprovisionar. No se incluyen certificados ficticios.','!',
     'multilink bundle-name authenticated','crypto ikev2 authorization policy IKEV2-AUTHZ',
     ' route set interface','crypto ikev2 proposal IKEV2-PROP',
-    ' encryption aes-gcm-256',' integrity sha256',' group 14','crypto ikev2 policy IKEV2-POLICY',
+    ' encryption aes-gcm-256',' prf sha256',' group 14','crypto ikev2 policy IKEV2-POLICY',
     ' match fvrf any',' proposal IKEV2-PROP','crypto ikev2 keyring IKEV2-KEYRING',' peer CM-PEER',
     '  address 203.0.113.8 255.255.255.248','  pre-shared-key local LAB-ONLY-IKE-PSK',
     '  pre-shared-key remote LAB-ONLY-IKE-PSK','crypto ikev2 profile IKEV2-PROFILE',
@@ -5370,7 +5370,7 @@ function genShowBrief(s, type, command){
     if(command === 'show ip ospf interface brief') return `${prompt} ${header}<span class="ios-hdr">Interface      PID  Area   IP Address/Mask      State</span><br>${[['Tunnel100',1],['Tunnel200',5],['Tunnel300',9],['Tunnel400',13]].map(([t,host])=>t+' 1 0 172.16.'+n+'.'+host+'/30 P2P (configured)').join('<br>')}<br>Gi0/0/0.10 1 0 10.70.${n}.1/25 Passive<br>Gi0/0/0.20 1 0 10.70.${n}.129/27 Passive<br>Gi0/0/0.30 1 0 10.70.${n}.161/28 Passive`;
     if(command === 'show ip protocols') return `${prompt} ${header}Routing Protocol is "ospf 1"<br>Router ID ${routerIdentity(s).loopback}; area 0; passive-interface default; no passive-interface Tunnel100,200,300,400.`;
     if(command === 'show track') return genWANFailover(s);
-    if(command === 'show ip sla statistics') return `${prompt} ${header}<span class="ios-hdr">ID  Type       Destination    Estado simulado</span><br>${[['starlink',1,'100.64.'],['kuiper',2,'100.64.'],['g5',3,'100.85.'],['g4',4,'100.92.']].map(([key,id,prefix])=>`${id} icmp-echo ${prefix}${n}.${key==='starlink'?1:key==='kuiper'?5:1} ${ST.links[s.id]?.[key]==='caido'?'Timeout':'Reachable (modelo)'}`).join('<br>')}`;
+    if(command === 'show ip sla statistics') return `${prompt} ${header}<span class="ios-hdr">ID  Type       Destination    Estado simulado</span><br>${[['starlink',1,'100.64.'],['kuiper',2,'100.64.'],['g5',3,'100.85.'],['g4',4,'100.92.']].map(([key,id,prefix])=>`${id} icmp-echo ${prefix}${n}.${key==='starlink'?1:key==='kuiper'?5:1} ${(['caido','inactivo','recuperando'].includes(ST.links[s.id]?.[key]) || isWanInterfaceAdminDown(s.id,key))?'Unreachable (modelo)':'Reachable (modelo)'}`).join('<br>')}`;
     if(command === 'show ip ospf database') return `${prompt} ${header}Area 0 · router ID ${routerIdentity(s).loopback}<br>LSDB de laboratorio: no se han calculado LSAs/temporizadores físicos.`;
     if(command === 'show ip bgp summary') return `${prompt} ${header}% BGP is not configured on this router. Routing protocol: OSPF 1.`;
     if(command === 'show arp') return `${prompt} ${header}ARP: tabla dinámica no emulada; no se muestran MAC ni edades inventadas.<br>LAN router: Gi0/0/0.10 10.70.${n}.1/25; Gi0/0/0.30 10.70.${n}.161/28.`;
