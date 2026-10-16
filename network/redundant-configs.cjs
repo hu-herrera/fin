@@ -144,7 +144,7 @@ function stackCandidate(num,pcCount){
     ' no shutdown',
     'ip default-gateway 10.70.'+num+'.161',
     'no ip routing',
-    '! FALTAN: DHCP snooping, inspeccion ARP y politica de STP definitiva',
+    '! DHCP snooping CONFIGURADO EN CANDIDATO: verificar Option 82, servidor DHCP y bindings; DAI/STP aún pendientes',
     '! FALTAN: NTP/AAA y cableado StackWise real; NO configurar Po1 entre switches',
     '! VERIFICAR: show switch; show switch stack-ports; show etherchannel summary');
   return lines.join('\n');
