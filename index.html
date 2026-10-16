@@ -6526,15 +6526,26 @@ function buildPacketRoute(src, dest, collapseCloud = true, srcPc = getPCs(src)[0
   const graph = buildSimulationGraph();
   const srcPrefix = `site:${src.id}`;
   const destPrefix = `site:${dest.id}`;
-  if(!destPc || (srcPc && !isPCNetworkAvailable(src.id,srcPc)) ||
-     !isPCNetworkAvailable(dest.id,destPc)) return [];
   const srcRouterId = `${srcPrefix}:router`;
   const srcPcId = srcPc ? `${srcPrefix}:pc:${srcPc.idx}` : srcRouterId;
-  const destPcId = `${destPrefix}:pc:${destPc.idx}`;
+  const destPcId = destPc ? `${destPrefix}:pc:${destPc.idx}` : null;
   if(src.id===dest.id && window.ActiveProfile?.enabled()){
-    const localRoute=shortestSimulationPath(graph,srcPcId,destPcId,src.id);
-    return (localRoute||[]).map(id=>graph.nodes.get(id)).filter(Boolean);
+    // Dos hosts de la MISMA VLAN hablan por switching L2, aun si falla el
+    // gateway Palo Alto, el router Cisco o los uplinks Po10/Po20.
+    // Nunca atravesar ae2 como un bridge ni inventar forwarding inter-VLAN.
+    if(!srcPc || !destPc || srcPc.vlan!==destPc.vlan ||
+       !isSwitchPCPortAvailable(src.id,srcPc) ||
+       !isSwitchPCPortAvailable(dest.id,destPc) ||
+       !isPCOnConfiguredVlan(src.id,srcPc) ||
+       !isPCOnConfiguredVlan(dest.id,destPc)) return [];
+    if(srcPc.sw!==destPc.sw && !isSwitchStackLinkAvailable(src.id)) return [];
+    const nodes=[srcPcId,`${srcPrefix}:switch:${srcPc.sw}`];
+    if(srcPc.sw!==destPc.sw)nodes.push(`${srcPrefix}:switch:${destPc.sw}`);
+    nodes.push(destPcId);
+    return nodes.map(id=>graph.nodes.get(id)).filter(Boolean);
   }
+  if(!destPc || (srcPc && !isPCNetworkAvailable(src.id,srcPc)) ||
+     !isPCNetworkAvailable(dest.id,destPc)) return [];
   const srcLan = srcPc
     ? shortestSimulationPath(graph, srcPcId, srcRouterId, src.id)
     : [srcRouterId];
