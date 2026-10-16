@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict');
 const {
- PORTS,WAN_ORDER,VLAN,candidateAddressing,makeScenario,setLink,setNode,setWan,inspect,validatePortPlan
+ PORTS,WAN_ORDER,VLAN,candidateAddressing,makeScenario,setLink,setNode,setWan,setWanHealth,inspect,validatePortPlan
 }=require('../network/redundant-model.cjs');
 let cases=0,assertions=0;
 function ok(condition,message){assert.ok(condition,message);assertions++;}
@@ -76,6 +76,24 @@ for(let num=0;num<=22;num++){
   setLink(s,'STACK-B',true);
   eq(inspect(s).stackPartitioned,false);
   eq(inspect(s).switchRouterPath[2],true);
+ });
+ test(label+' gateway del ISP responde pero upstream caído exige failover',()=>{
+  const s=makeScenario(num);
+  eq(inspect(s).activeWan,'starlink');
+  setWanHealth(s,'starlink',{upstream:false});
+  eq(s.wanGateway.starlink,true); // la última milla sigue respondiendo
+  eq(s.wan.starlink,true); // interfaz física permanece UP
+  eq(inspect(s).activeWan,'leo');
+  setWanHealth(s,'leo',{gateway:false});
+  eq(inspect(s).activeWan,'entel5g');
+  setWanHealth(s,'starlink',{upstream:true});
+  eq(inspect(s).activeWan,'starlink');
+  for(const id of WAN_ORDER)setWanHealth(s,id,{upstream:false});
+  eq(inspect(s).activeWan,null);
+  eq(inspect(s).switchGateway[1],true);
+  eq(inspect(s).switchInternet[1],false);
+  setWanHealth(s,'entel5g',{upstream:true});
+  eq(inspect(s).activeWan,'entel5g');
  });
  test(label+' fallos router, firewall y WAN por prioridad',()=>{
   const s=makeScenario(num);
