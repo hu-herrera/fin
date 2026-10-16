@@ -6834,6 +6834,10 @@ function runDashboardPing(){
 
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
+    // Una sola pulsación cierra la ventana original de sede.
+    // Evita que el modo Presentar también procese el MISMO Escape.
+    if(document.getElementById('sm-overlay').classList.contains('vis'))
+      e.preventDefault();
     const mapButton=document.querySelector('.map-expand-btn');
     if(document.getElementById('map-container').classList.contains('expanded') && mapButton){
       toggleMapExpanded(mapButton);
