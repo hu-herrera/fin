@@ -62,6 +62,15 @@ for(let n=0;n<=22;n++){
   }
   check(sw.includes('switch 1 provision c9200l-48t-4g'),label+' stack member 1 not provisioned');
   check(sw.includes('switch 2 provision c9200l-48t-4g'),label+' stack member 2 not provisioned');
+  check(sw.includes('\nip dhcp snooping\nip dhcp snooping vlan 10,20,40\n'),
+    label+' DHCP snooping global and selected VLANs not configured');
+  check(sw.includes('interface Port-channel20\n description MEC-TO-PA1410-AE2')&&
+        sw.includes(' ip dhcp snooping trust\n'),
+    label+' only PA-facing LACP uplink may be DHCP trusted');
+  check(count(sw,'ip dhcp snooping trust')===1,
+    label+' DHCP snooping trust accidentally configured on access or Wi-Fi trunk ports');
+  check(!sw.includes('ip dhcp snooping vlan 30'),
+    label+' management static subnet incorrectly included in DHCP snooping');
   check(count(sw,'channel-group 20 mode active')===4,label+' cross stack MEC must use four ports');
   check(!sw.includes('channel-group 1 mode active'),label+' legacy inter-switch Po1 is invalid after stacking');
   check(count(sw,' description PC-')===pcCount,label+' port map loses PCs');
