@@ -78,7 +78,7 @@ La ficha de Cisco para C8300-2N2S-4T2X especifica **4 puertos RJ45 de 1GbE y 2 p
 - Se pueden simular fallos de C8300/PA/SW1/SW2, de Po10 (2×10G), Po20 (4×1G), de los dos cables StackWise y de ISP con distinción entre interfaz, gateway y salida real aguas arriba. Indicadores separados de conmutación VLAN, L2 local, gateway Palo Alto y conectividad al Cisco/Internet.
 - Pestaña **🧪 Objetivo L3** dentro del dispositivo permite consultar las configuraciones candidatas Cisco/Palo Alto/StackWise junto a la consola histórica; no modifica running-config.
 - CI: [28/28 pruebas Playwright](https://github.com/hu-herrera/fin/actions/runs/38842086249), 8/8 WAN unitarias, 162 escenarios de falla, 1.615 aserciones de redundancia, 23 sedes/650 PCs/2.237 verificaciones del plan.
-- El **laboratorio candidato** está integrado en el sitio web; la **topología de operación principal** continúa siendo la antigua hasta que se completen OOB, políticas PAN-OS, IP SLA real, IPsec/OSPF y la migración de CLI y rutas. El dibujo sigue reservado para el ajuste final.
+- El **laboratorio candidato** está integrado en el sitio web; la **topología de operación principal** continúa siendo la antigua hasta que se completen administración segura VLAN30, políticas PAN-OS, IP SLA real, IPsec/OSPF y la migración de CLI y rutas. OOB físico con hardware adicional es opcional. El dibujo sigue reservado para el ajuste final.
 
 ## Ingeniería adicional sin activar el cambio físico
 - Aislamiento lógico invitados: VLAN40 se excluye del OSPF entre sedes y se bloquea con política PAN-OS hacia redes RFC1918 por tránsito.
@@ -86,3 +86,9 @@ La ficha de Cisco para C8300-2N2S-4T2X especifica **4 puertos RJ45 de 1GbE y 2 p
 - IP SLA candidato: ocho pruebas externas, dos por WAN con rutas estáticas /32 propias y objetos de seguimiento compuestos. **No se instala aún**: faltan gateway/máscara/targets permitidos por proveedor y confirmar conectividad en Chile.
 - IPAM de casa matriz: ocho direcciones reservadas para DNS, TACACS, NTP y NOC sin colisionar con los 55 PCs; su existencia como servidores no está comprobada.
 - Corrección de las salidas OSPF de diagnóstico que declaraban vecino FULL simulado como si fuera una adyacencia real.
+
+## Rutas intersede autorizadas y política de seguridad (octubre 2026)
+- C8300 anuncia por OSPF solo VLAN10/20/30 con prefix-list y ruta estática vía Palo Alto; VLAN40 invitados se mantiene fuera del overlay.
+- PA-1410 en Layer3 conserva la ruta por defecto de cada sede hacia el Cisco `10.72.N.1`. Los flujos iniciados por sucursales hacia DNS y NTP de casa matriz tienen reglas específicas con origen, destino, aplicación y servicio restringidos; las respuestas de sesiones autorizadas siguen el estado del firewall.
+- La casa matriz limita sus permisos de entrada a DNS `10.70.0.110`/`.111` desde las subredes de usuarios/gestión de las 22 sucursales y NTP `.116`/`.117` desde sus redes de gestión. Cualquier otra comunicación intersede queda bloqueada hasta aprobación de una matriz de aplicaciones.
+- La gestión ordinaria usa los dos Catalyst existentes y VLAN30 protegida. El esquema OOB físico `10.73.N.0/28` es una **opción no incluida en equipos base**.
