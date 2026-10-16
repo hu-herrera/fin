@@ -18,6 +18,22 @@
 - Definir telefonía: cantidad, fabricante, PBX/SIP, VLAN de señalización, DHCP options y DSCP/QoS reales. Sin ello no afirmar que VoIP funciona aunque el teléfono reciba IP.
 - Matriz financiera: aplicación, origen, destino, protocolo, puerto, autenticación, logs y perfil de amenazas. Solo después agregar excepciones PAN-OS a la denegación por defecto.
 
+## Etapa 2.1 — AAA, Syslog TLS y monitoreo (candidatos auditables)
+
+Se incorporó un generador de **candidatos Cisco de laboratorio**, con exportación:
+```bash
+node network/export-candidate.cjs s01 netops-services ./netops-s01.json
+node tests/netops-services.test.cjs
+```
+
+- TACACS+ centrales en `10.70.0.112/.113`, TCP 49. Cuenta local *break-glass*, autenticación/autorización/accounting y cambio de líneas VTY **requieren ensayo previo** para no bloquear administradores. Secretos y usuarios no se incluyen en el repositorio ni se inventan.
+- Colector Syslog en `10.70.0.100`, TLS/TCP 6514 con certificado y perfil previamente validados. Source `Loopback0` para C8300 y `Vlan30` para el stack. No se sustituye por UDP 514 abierto.
+- PAN-OS define servicios TCP con puerto exacto, destinos /32 y solamente fuentes /32 de routers y SVI de stacks; no se autorizan usuarios/invitados. El PA tiene su propio **plano de gestión, Service Routes, autenticación y log forwarding** que requieren aceptación separada.
+- `10.70.0.101` sigue siendo una reserva de monitoreo. **No hay sondeo SNMP activo ni puertos de monitoreo abiertos** hasta revisar SNMPv3 authPriv, ACLs, rutas, credenciales y respuesta real.
+- Nuevas pruebas estáticas validan fuentes, servicios, denegación, fallback y generación sin claves. No prueban servidores reales, sesiones AAA ni conexiones TLS.
+
+Procedimiento y riesgos: [AAA, Syslog y observabilidad](aaa-syslog-observabilidad.md). Los estados `LAB_CANDIDATE` / `certified:false` no deben confundirse con aceptación física.
+
 ## Etapa 3 — conectividad WAN e IPsec (bloqueo principal de operación intersede)
 
 Se añadió un **preflight conservador** que no establece VPN ni simula SAs: `network/wan-ipsec-readiness.cjs`. Desde la raíz:
