@@ -23,13 +23,13 @@ Este documento adapta **literalmente los cinco puntos del profesor** al avance d
 
 ## Escena 4 — Evidencias concretas (100 segundos)
 
-> Ahora vamos a demostrarlo en la página. Seleccionamos la sucursal S01, abrimos su topología interna y entramos a Ping / Trace. Elegimos S02 y pulsamos Enviar ping: el resultado se muestra sin cerrar la ventana, con la respuesta del modelo, los saltos lógicos y un RTT estimado. Si queremos, podemos abrir la animación de ese mismo ping sobre el mapa. Después mostramos la pestaña StackWise / LACP y simulamos una caída WAN para observar el proveedor alternativo. Los resultados son reproducibles dentro del modelo; no son mediciones de tráfico físico.
+> Ahora vamos a demostrarlo en la página. Seleccionamos la sucursal S01, abrimos su topología interna y entramos a Ping / Trace. Elegimos “Otro PC de esta sede” y pulsamos Enviar ping: vemos una respuesta local, los saltos por switching y un RTT estimado. Luego elegimos S02: el firewall bloquea ICMP entre sedes según la política actual, y podemos ver la denegación en el mapa. Después mostramos la pestaña StackWise / LACP y simulamos una caída WAN para observar el proveedor alternativo. Los resultados son reproducibles dentro del modelo; no son mediciones de tráfico físico.
 
 **Acción paso a paso (sin salir de la web):**
 1. En la escena de evidencias, pulsar **Probar Ping / Trace de S01**: se abre el simulador original en su pestaña de Ping / Trace.
-2. Seleccionar S02 como destino y pulsar **Enviar ping**. Mostrar el estado, la ruta lógica y el RTT estimado; la ventana debe permanecer abierta.
-3. Pulsar **Ver animación del ping en el mapa** si se quiere mostrar el recorrido visual.
-4. Volver a la sede, abrir **StackWise / LACP** y simular una caída WAN. Explicar que se observa el failover lógico del escenario.
+2. Dejar “Otro PC de esta sede” como destino y pulsar **Enviar ping**. Mostrar respuesta, ruta local y RTT estimado; la ventana debe permanecer abierta.
+3. Elegir S02 como destino y enviar otro ping. Mostrar que el firewall bloquea ICMP intersede y cuál es la regla.
+4. Desde esa denegación, pulsar **Ver el bloqueo sobre el mapa**. Después volver a la sede, abrir **StackWise / LACP** y simular una caída WAN. Explicar que se observa el failover lógico del escenario.
 5. Pulsar **Volver a la exposición** (o Esc). Regresa desde la misma ventana original de sede a la escena de evidencias; avanzar con flecha derecha.
 
 **Evidencia externa:** [última CI aprobada antes de preparar esta presentación](https://github.com/hu-herrera/fin/actions/runs/38964467044), con 55 pruebas de Chromium y 126 comprobaciones de forwarding, además de pruebas de red anteriores. Consultar la ejecución más reciente en GitHub Actions para cifras actualizadas; nunca inventar pruebas de hardware.
