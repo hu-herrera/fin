@@ -41,8 +41,9 @@ function routerCandidate(num){
     '! FALTAN: NAT ACL, ruta por defecto rastreada, QoS, AAA/OOB y rollback');
   return lines.join('\n');
 }
-function stackCandidate(num){
+function stackCandidate(num,pcCount=0){
   checkSiteNum(num);
+  if(!Number.isInteger(pcCount)||pcCount<0||pcCount>60)throw new RangeError('Se excede la capacidad de 30 accesos de usuario por miembro de stack');
   const lines=[
     '! LAB CANDIDATO C9200L STACKWISE-80 - NO PEGAR EN PRODUCCION',
     '! Instalar 2 adaptadores StackWise por miembro y dos cables traseros en anillo',
@@ -71,12 +72,38 @@ function stackCandidate(num){
       ' switchport trunk allowed vlan 10,20,30,40',
       ' channel-group 20 mode active',' no shutdown');
   }
+  // Los puertos 3..32 se mantienen; los de SW2 ahora son Gi2/0/X.
+  const half=Math.ceil(pcCount/2);
+  const code=num===0?'CM':'S'+String(num).padStart(2,'0');
+  for(let index=0;index<pcCount;index++){
+    const member=index<half?1:2;
+    const physical=member===1?index+3:index-half+3;
+    lines.push('interface GigabitEthernet'+member+'/0/'+physical,
+      ' description PC-'+code+'-'+String(index+1).padStart(3,'0'),
+      ' switchport mode access',' switchport access vlan 10',
+      ' switchport voice vlan 20',
+      ' spanning-tree portfast',' spanning-tree bpduguard enable',
+      ' no shutdown');
+  }
+  for(const member of [1,2]){
+    for(const apPort of [33,34]){
+      lines.push('interface GigabitEthernet'+member+'/0/'+apPort,
+        ' description AP-WIFI-'+member+'-'+(apPort-32)+'-ALIMENTACION-EXTERNA',
+        ' switchport mode trunk',' switchport trunk native vlan 999',
+        ' switchport trunk allowed vlan 10,40',
+        ' spanning-tree portfast trunk',' no shutdown');
+    }
+    for(const reserved of [1,2]){
+      lines.push('interface GigabitEthernet'+member+'/0/'+reserved,
+        ' description RESERVADO-SIN-ENLACE',' shutdown');
+    }
+  }
   lines.push('interface Vlan30',
     ' ip address 10.70.'+num+'.162 255.255.255.240',
     ' no shutdown',
     'ip default-gateway 10.70.'+num+'.161',
     'no ip routing',
-    '! FALTAN: puertos de PCs/AP y su asignacion Gi1/Gi2, DHCP snooping y STP',
+    '! FALTAN: DHCP snooping, inspeccion ARP y politica de STP definitiva',
     '! FALTAN: NTP/AAA y cableado StackWise real; NO configurar Po1 entre switches',
     '! VERIFICAR: show switch; show switch stack-ports; show etherchannel summary');
   return lines.join('\n');
@@ -111,12 +138,12 @@ function paloCandidate(num){
     '# FALTAN: commit validate y rollback desde consola fuera de banda');
   return lines.join('\n');
 }
-function siteCandidate(num){
- return {siteNum:num,addressing:candidateAddressing(num),
-   cisco:routerCandidate(num),stack:stackCandidate(num),palo:paloCandidate(num),
+function siteCandidate(num,pcCount=0){
+ return {siteNum:num,pcCount,addressing:candidateAddressing(num),
+   cisco:routerCandidate(num),stack:stackCandidate(num,pcCount),palo:paloCandidate(num),
    deployable:false,
    blockers:['politicas PAN-OS no instaladas','management OOB sin gateway',
-   'WAN/VPN no parametrizados','configuracion de puertos de usuarios pendiente',
+   'WAN/VPN no parametrizados','asignacion de puertos de usuarios requiere validacion en terreno',
    'sin laboratorio de hardware']};
 }
 module.exports={routerCandidate,stackCandidate,paloCandidate,siteCandidate};
