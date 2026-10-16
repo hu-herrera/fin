@@ -14,12 +14,12 @@ La página integra tres niveles de comportamiento:
 
 ## Entradas nuevas de la interfaz
 
-- **⌁ Laboratorio de paquetes:** aparece en la barra superior. Seleccionar sede y PC concreto, VLAN de origen, aplicación y dirección destino. Pulsar *Simular flujo* para ver host → switch → gateway PA → regla → C8300 → WAN → túnel lógico → hub CM → firewall de destino.
+- **📦 Flujo de paquetes dentro del simulador original:** seleccionar la sede en el mapa, pulsar el botón amarillo **Ver topología interna completa** y abrir la pestaña **📦 Flujo de paquetes** (o **📦 Seguir un paquete** en la barra de la topología). Seleccionar el PC de esa misma sede, VLAN, aplicación y destino. Pulsar *Simular flujo* para ver host → switch → gateway PA → regla → C8300 → WAN → túnel lógico → hub CM → firewall de destino.
 - **DNS permitido:** usa destino `10.70.0.110` y aplicación DNS. La política modelada debe permitirlo desde una sucursal con conectividad.
 - **SSH bloqueado:** el mismo destino por SSH debe fallar en la primera política restrictiva de Palo Alto.
 - **↯ Cortar Starlink / ↺ Recuperar:** modifica la WAN de la sede en el escenario; la selección pasa a Amazon Leo mientras el resto de enlaces estén sanos. No significa que Amazon Leo esté contratado o disponible comercialmente.
 - **Puertos de PC:** si el puerto de acceso de un PC es deshabilitado desde la CLI Cisco simulada, el trazador debe señalar `ACCESS_DOWN`, hasta restaurarlo.
-- **▣ Presentar:** ventana proyectable sobre **la misma web**. Seis escenas navegables con flechas de teclado; la escena de seguridad lleva a SSH denegado y la de resiliencia a una caída de Starlink. Incluye notas por escena (**N**), enlace a evidencia CI y retorno a la escena correspondiente tras una demostración. El guion de avance está en [Presentación 16 de octubre](presentacion-avances-16-octubre-2026.md).
+- **▣ Presentar:** ventana proyectable sobre **la misma web**. El botón de demostración abre el mismo modal de sede S01, no un segundo simulador. Seis escenas navegables con flechas de teclado; la escena de seguridad lleva a SSH denegado y la de resiliencia a una caída de Starlink. Incluye notas por escena (**N**), enlace a evidencia CI y retorno a la escena correspondiente tras una demostración. El guion de avance está en [Presentación 16 de octubre](presentacion-avances-16-octubre-2026.md).
 
 No es necesario PowerPoint. El [guion de seis escenas](presentacion-avances-16-octubre-2026.md) incluye los cinco puntos exigidos por el profesor, tiempos, secuencia de clics y preguntas probables. El guion se puede revisar después de recibir retroalimentación.
 
