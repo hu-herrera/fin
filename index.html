@@ -4147,8 +4147,8 @@ function getSwitchPortRecords(s,swN){
     const pc=assigned.get(port);
     const settings=pc ? getSwitchPCPortSettings(s.id,pc) : null;
     const infrastructure={
-      1:swN===1?{name:'Uplink-to-FW',vlan:'trunk'}:null,
-      2:null,
+      1:swN===1?{name:'Uplink-to-FW',vlan:'trunk'}:{name:'RESERVADO-SIN-UPLINK',vlan:1},
+      2:{name:'RESERVADO-SIN-STACK',vlan:1},
       33:{name:'AP-WiFi-1',vlan:'trunk'},
       34:{name:'AP-WiFi-2',vlan:'trunk'},
       44:swN===1?{name:'Management-PA',vlan:30}:null,
@@ -4156,11 +4156,13 @@ function getSwitchPortRecords(s,swN){
       46:{name:'LACP-to-peer-2',vlan:'trunk'},
     }[port];
     const name=settings?.description || pc?.id || infrastructure?.name || '';
+    const cliSetting=DEVICE_CLI_SESSIONS.get(`${s.id}:sw${swN}`)?.interfaces[`Gi1/0/${port}`];
+    const reservedShut=port===2 || (port===1 && swN===2);
+    const adminDown=cliSetting?.shutdown===true || (reservedShut && cliSetting?.noShutdown!==true);
     const status=pc
       ? isSwitchPCPortAvailable(s.id,pc)?'connected':'disabled'
       : infrastructure
-        ? isDeviceInterfaceAdminDown(s.id,`sw${swN}`,`Gi1/0/${port}`)
-          ? 'disabled'
+        ? adminDown ? 'disabled' : reservedShut ? 'notconnect'
           : [45,46].includes(port) && !getInterSwitchMemberStates(s.id).find(link=>link.port===port)?.up
             ? 'notconnect' : 'connected'
         : 'notconnect';
@@ -4590,7 +4592,7 @@ function genSwitchDetail(s,type,command){
   }
   const rows={ 'show vlan brief':['VLAN Name Status Ports','1 default active Gi1/0/35-44,Gi1/0/47,Gi1/0/48','10 DATOS-Usuarios active Gi1/0/3-30','20 VOIP-Telefonia active','30 GESTION-Red active Gi1/0/31,Gi1/0/32','40 INVITADOS-DMZ active','1002 fddi-default act/unsup','1003 token-ring-default act/unsup','1004 fddinet-default act/unsup','1005 trnet-default act/unsup'],
     'show mac address-table':['Vlan Mac Address Type Ports','10 001a.2b3c.4d5e DYNAMIC Gi1/0/5','10 3c97.0e8a.2b11 DYNAMIC Gi1/0/8','10 001b.21a4.c8d2 DYNAMIC Gi1/0/12','10 3c97.0e8a.2b45 DYNAMIC Gi1/0/15','20 001a.2b3c.4d61 DYNAMIC Gi1/0/5','20 001a.2b3c.4d62 DYNAMIC Gi1/0/7','20 001a.2b3c.4d63 DYNAMIC Gi1/0/9','30 f4cf.e28a.2b10 DYNAMIC Gi1/0/1','40 f018.9812.34ab DYNAMIC Gi1/0/33','Total Mac Addresses for this criterion: 9'],
-    'show spanning-tree':['VLAN0010','Spanning tree enabled protocol rstp','Root: SW-'+s.code+'-01',...(isSwitchStackLinkAvailable(s.id)?['Po1 Desg FWD 3 128.65 P2p']:[]),...(swN===1?['Gi1/0/1 Root FWD 4 128.1 P2p']:[]),'Gi1/0/33 Desg FWD 4 128.33 P2p Edge','Gi1/0/34 Desg FWD 4 128.34 P2p Edge'],
+    'show spanning-tree':['VLAN0010','Spanning tree enabled protocol rstp','Root: SW-'+s.code+'-01',...(isSwitchStackLinkAvailable(s.id)?[swN===1?'Po1 Desg FWD 3 128.65 P2p':'Po1 Root FWD 3 128.65 P2p']:[]),...(swN===1?['Gi1/0/1 Desg FWD 4 128.1 P2p']:[]),'Gi1/0/33 Desg FWD 4 128.33 P2p Edge','Gi1/0/34 Desg FWD 4 128.34 P2p Edge'],
     'show power inline':['Available:0.0(w) Used:0.0(w) Remaining:0.0(w)','Interface Admin Oper Power Device Class','C9200L-48T-4G-E no suministra PoE: alimentación externa requerida'],
     'show etherchannel summary':['Group Port-channel Protocol Ports',
       `1 Po1(${isSwitchStackLinkAvailable(s.id)?'SU':'SD'}) LACP ${getInterSwitchMemberStates(s.id).map(link=>`Gi1/0/${link.port}(${link.up?'P':'D'})`).join(' ')}`],
@@ -5392,7 +5394,11 @@ function genShowBrief(s, type, command){
     }).join('<br>')}`;
     if(command === 'show interfaces counters errors') return `${base}<span class="ios-hdr">Port        Align-Err  FCS-Err  Xmit-Err  Rcv-Err</span><br>${portRows.map(({port})=>`Gi1/0/${port}  0          0        0         0`).join('<br>')}`;
     if(command === 'show interfaces trunk') return genSwitchDetail(s,type,command);
-    if(command === 'show ip interface brief') return `${base}Vlan30 10.70.${n}.${swN===1?162:163} YES manual up up<br>GigabitEthernet1/0/1 unassigned YES unset up up`;
+    if(command === 'show ip interface brief') {
+      const status=port=>portRows.find(item=>item.port===port)?.status;
+      const state=port=>status(port)==='disabled'?'administratively down down':status(port)==='connected'?'up up':'down down';
+      return `${base}Vlan30 10.70.${n}.${swN===1?162:163} YES manual up up<br>${[1,2,45,46].map(port=>`GigabitEthernet1/0/${port} unassigned YES unset ${state(port)}`).join('<br>')}<br>Port-channel1 unassigned YES unset ${isSwitchStackLinkAvailable(s.id)?'up up':'down down'}`;
+    }
     if(command === 'show ip route') return `${base}C 10.70.${n}.160/28 is directly connected, Vlan30<br>Default gateway: 10.70.${n}.161 (switch L2, ip routing deshabilitado)`;
     if(command.includes('mac address-table')) return genSwitchDetail(s,type,'show mac address-table');
     if(command === 'show spanning-tree' || command === 'show spanning-tree brief' || command === 'show spanning-tree root') return genSwitchDetail(s,type,'show spanning-tree');
