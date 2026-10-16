@@ -69,12 +69,19 @@ const changes=[
   [s=>{s.starlink.address='100.64.0.3'},'dirección WAN es broadcast'],
   [s=>{s.starlink.monitors[1]='555.1.1.1'},'Octeto'],
   [s=>{s.starlink.prefix=0},'prefijo'],
+  // Solapamiento exacto de las WAN Starlink y Leo.
+  [s=>{s.leo.address=s.starlink.address;s.leo.gateway=s.starlink.gateway},'subred WAN solapada'],
+  // Prefijo más ancho en Starlink que invade la /30 de Leo.
+  [s=>{s.starlink.prefix=29},'subred WAN solapada'],
+  // Otro par de operadores también debe ser rechazado.
+  [s=>{s.gtd4g.address=s.entel5g.address;s.gtd4g.gateway=s.entel5g.gateway},'subred WAN solapada'],
 ];
 for(const [mutate,part] of changes){
   const settings=labSite(0);
   mutate(settings);
   const issues=validateWanSettings(settings).join(';');
   verify(issues.length>0,'config invalid not detected '+part);
+  if(part==='subred WAN solapada')verify(issues.includes(part),'WAN overlap not diagnosed');
   assert.throws(()=>renderWanSlaCandidate(settings),/NO GENERADO/);
 }
 console.log('TOTAL WAN IP SLA: 23 sedes, '+checks+' verificaciones; 2 pruebas remotas/ISP; configuraciones inválidas rechazadas.');
