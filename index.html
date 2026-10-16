@@ -4131,6 +4131,7 @@ Gi1/0/6   PC-004            <span class="ios-up">connected </span> 10`;
 }
 
 function genIfBrief(s){
+  if(window.ActiveProfile?.enabled())return window.ActiveProfile.routerDetail(s,'show ip interface brief');
  const n=s.num,id=routerIdentity(s);
  const rows=[['GigabitEthernet0/0/0','unassigned',!isDeviceInterfaceAdminDown(s.id,'router','GigabitEthernet0/0/0'),'Troncal LAN']];
  for(const [vlan,host] of [[10,1],[20,129],[30,161],[40,177]]){
@@ -4271,6 +4272,7 @@ DNA Center: <span class="ios-up">ACTIVO</span>`;
 }
 
 function genSWVLAN(s,swN=1){
+  if(window.ActiveProfile?.enabled())return window.ActiveProfile.switchCommand(s,swN,'show vlan brief');
   const dataPorts=formatSwitchPCPortRange(getSwitchPCPortsForVlan(s,swN,10));
   const voicePorts=formatSwitchPCPortRange(getSwitchPCPortsForVlan(s,swN,20));
   const defaultPorts=getSwitchDefaultVlanPorts(s,swN);
@@ -4285,6 +4287,17 @@ function genSWVLAN(s,swN=1){
 }
 
 function getSwitchPortRecords(s,swN){
+  if(window.ActiveProfile?.enabled())return Array.from({length:48},(_,i)=>{
+    const port=i+1,assigned=getSwitchPCPorts(s,swN).find(row=>row.port===port),
+    link=window.RedundantLab.PORTS.distribution.find(p=>p.member===swN&&Number(p.switch.split('/').at(-1))===port),
+    status=window.ActiveProfile.status(s.id),
+    isAp=port===33||port===34,isSpare=port===1||port===2||port===44;
+    return {port,name:assigned?.pc.id||link?.id||(isAp?'AP-WIFI-'+(port-32):isSpare?'RESERVADO':''),
+      status:assigned?(isSwitchPCPortAvailable(s.id,assigned.pc)?'connected':'disabled'):
+        link?(status.paStackMembers.includes(link.id)?'connected':'notconnect'):
+        isAp?(window.ActiveProfile.l2Local(s.id,swN)?'connected':'notconnect'):'notconnect',
+      vlan:assigned?getSwitchPCVlan(s.id,assigned.pc):link||isAp?'trunk':1};
+  });
   const assigned=new Map(getSwitchPCPorts(s,swN).map(entry=>[entry.port,entry.pc]));
   return Array.from({length:48},(_,index)=>{
     const port=index+1;
@@ -5016,11 +5029,16 @@ function isSwitchPCPortAvailable(sedeId, pc){
   const type = `sw${pc.sw}`;
   const port = getSwitchPCPorts(SEDES.find(site => site.id === sedeId), pc.sw)
     .find(entry => entry.pc.idx === pc.idx)?.port;
-  if(!port || isDeviceInterfaceAdminDown(sedeId, type, `Gi1/0/${port}`)) return false;
+  if(!port || isDeviceInterfaceAdminDown(sedeId, type, `Gi${window.ActiveProfile?.enabled()?pc.sw:1}/0/${port}`)) return false;
   return true;
 }
 
 function getSwitchPCPortSettings(sedeId, pc){
+  if(window.ActiveProfile?.enabled()){
+    const site=SEDES.find(s=>s.id===sedeId);
+    const port=getSwitchPCPorts(site,pc.sw).find(entry=>entry.pc.idx===pc.idx)?.port;
+    return DEVICE_CLI_SESSIONS.get(`${sedeId}:sw${pc.sw}`)?.interfaces[`Gi${pc.sw}/0/${port}`]||{};
+  }
   const type = `sw${pc.sw}`;
   const port = getSwitchPCPorts(SEDES.find(site => site.id === sedeId), pc.sw)
     .find(entry => entry.pc.idx === pc.idx)?.port;
@@ -5098,6 +5116,7 @@ function isSwitchPathAvailable(sedeId, swN){
 }
 
 function isPCNetworkAvailable(sedeId, pc){
+  if(window.ActiveProfile?.enabled())return Boolean(pc && isSwitchPCPortAvailable(sedeId,pc) && isPCOnConfiguredVlan(sedeId,pc) && window.ActiveProfile.path(sedeId,pc.sw));
   return Boolean(pc && isRouterLanAvailable(sedeId) &&
     isSwitchPCPortAvailable(sedeId, pc) && isPCOnConfiguredVlan(sedeId, pc) &&
     isSwitchPathAvailable(sedeId, pc.sw));
@@ -5135,6 +5154,7 @@ function canonicalDeviceInterface(name, type){
 function isSupportedDeviceInterface(name, type){
   const normalized = canonicalDeviceInterface(name, type);
   if(type === 'router'){
+    if(window.ActiveProfile?.enabled())return ['Port-channel10','GigabitEthernet0/0/0','GigabitEthernet0/0/1','GigabitEthernet0/0/2','GigabitEthernet0/0/3','TenGigabitEthernet0/0/4','TenGigabitEthernet0/0/5','Loopback0','Tunnel100','Tunnel200','Tunnel300','Tunnel400'].includes(normalized);
     return [
       'GigabitEthernet0/0/0',
       'GigabitEthernet0/0/0.10',
@@ -5153,7 +5173,7 @@ function isSupportedDeviceInterface(name, type){
     ].includes(normalized);
   }
   if(type.startsWith('sw')){
-    return normalized === 'Po1' || /^Gi[12]\/0\/(?:[1-9]|[1-3]\d|4[0-8])$/.test(normalized);
+    return normalized === (window.ActiveProfile?.enabled()?'Po20':'Po1') || /^Gi[12]\/0\/(?:[1-9]|[1-3]\d|4[0-8])$/.test(normalized);
   }
   return false;
 }
@@ -6078,9 +6098,11 @@ function updatePingTrace(state, routeText, hopText){
 }
 
 function getWanEndpoint(s, refresh = true){
+  const newWan=window.ActiveProfile?.enabled()?window.ActiveProfile.selectedWan(s.id):null;
+  if(window.ActiveProfile?.enabled() && !newWan)return {type:'—',label:'WAN desconectada en el modelo',point:sedePos(s)};
   if(refresh && ST.mode !== 'antes') calcularIluminacion();
   const illumination = ST.mode !== 'antes' ? ILUMINACION[s.id] : null;
-  const selectedLink = ST.mode !== 'antes' ? activeLink(s.id) : null;
+  const selectedLink = window.ActiveProfile?.enabled()?newWan:(ST.mode !== 'antes' ? activeLink(s.id) : null);
   const linkType = ST.mode === 'antes'
     ? 'mpls'
     : (selectedLink || illumination?.tipo || '—');
@@ -6237,10 +6259,10 @@ function buildSimulationGraph(){
       }
     });
     if(isSwitchStackLinkAvailable(s.id)){
-      addSimulationEdge(graph, switchIds[0], switchIds[1], 0.5, 'INTER-SWITCH');
+      addSimulationEdge(graph, switchIds[0], switchIds[1], 0.5, window.ActiveProfile?.enabled()?'STACKWISE':'INTER-SWITCH');
     }
     [1, 2].forEach(swN => {
-      if(isSwitchUplinkAvailable(s.id, swN) && isRouterLanAvailable(s.id)){
+      if(isSwitchUplinkAvailable(s.id, swN) && (window.ActiveProfile?.enabled() || isRouterLanAvailable(s.id))){
         addSimulationEdge(graph, switchIds[swN - 1], `${prefix}:firewall`, 0.5, 'LAN');
       }
     });
@@ -6312,8 +6334,9 @@ function buildSimulationGraph(){
     const available = ST.mode === 'antes'
       ? [{ type: 'mpls', weight: 3 }]
       : PRIORITY
-        .filter(type => ST.links[s.id]?.[type] !== 'caido' &&
-          ST.links[s.id]?.[type] !== 'inactivo' && !isWanInterfaceAdminDown(s.id, type))
+        .filter(type => window.ActiveProfile?.enabled()
+           ? Boolean(window.ActiveProfile.rawSite(s.id).wan[({starlink:'starlink',kuiper:'leo',g5:'entel5g',g4:'gtd4g'})[type]] && window.ActiveProfile.rawSite(s.id).wanUpstream[({starlink:'starlink',kuiper:'leo',g5:'entel5g',g4:'gtd4g'})[type]] && window.ActiveProfile.rawSite(s.id).wanGateway[({starlink:'starlink',kuiper:'leo',g5:'entel5g',g4:'gtd4g'})[type]])
+           : (ST.links[s.id]?.[type] !== 'caido' && ST.links[s.id]?.[type] !== 'inactivo' && !isWanInterfaceAdminDown(s.id, type)))
         .map(type => ({ type, weight: type === active.type ? 2 : 8 }));
 
     available.forEach(({ type, weight }) => {
@@ -6387,6 +6410,10 @@ function buildPacketRoute(src, dest, collapseCloud = true, srcPc = getPCs(src)[0
   const srcRouterId = `${srcPrefix}:router`;
   const srcPcId = srcPc ? `${srcPrefix}:pc:${srcPc.idx}` : srcRouterId;
   const destPcId = `${destPrefix}:pc:${destPc.idx}`;
+  if(src.id===dest.id && window.ActiveProfile?.enabled()){
+    const localRoute=shortestSimulationPath(graph,srcPcId,destPcId,src.id);
+    return (localRoute||[]).map(id=>graph.nodes.get(id)).filter(Boolean);
+  }
   const srcLan = srcPc
     ? shortestSimulationPath(graph, srcPcId, srcRouterId, src.id)
     : [srcRouterId];
@@ -6398,7 +6425,7 @@ function buildPacketRoute(src, dest, collapseCloud = true, srcPc = getPCs(src)[0
   }
   // En WAN hub-and-spoke, el grafo de operadores NO sustituye al concentrador CM.
   // Los paquetes intersede no pueden cruzar si el hub central no tiene túnel WAN.
-  if(ST.mode !== 'antes' && (!isSiteLanAvailable('cm') || !activeLink('cm'))) return [];
+  if(ST.mode !== 'antes' && (!isSiteLanAvailable('cm') || !(window.ActiveProfile?.enabled()?window.ActiveProfile.selectedWan('cm'):activeLink('cm')))) return [];
   const srcEndpoint = getWanEndpoint(src, false);
   const destEndpoint = getWanEndpoint(dest, false);
   if(srcEndpoint.type === 'mpls' && destEndpoint.type === 'mpls'){
