@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict');
 const {
- PORTS,WAN_ORDER,VLAN,candidateAddressing,makeScenario,setLink,setNode,setWan,setWanHealth,inspect,validatePortPlan
+ PORTS,WAN_ORDER,VLAN,candidateAddressing,makeScenario,setLink,setNode,setWan,setWanHealth,setOob,inspect,validatePortPlan
 }=require('../network/redundant-model.cjs');
 let cases=0,assertions=0;
 function ok(condition,message){assert.ok(condition,message);assertions++;}
@@ -94,6 +94,39 @@ for(let num=0;num<=22;num++){
   eq(inspect(s).switchInternet[1],false);
   setWanHealth(s,'entel5g',{upstream:true});
   eq(inspect(s).activeWan,'entel5g');
+ });
+ test(label+' gestión OOB independiente de caída de dataplane, pero no de su gateway',()=>{
+  const s=makeScenario(num);
+  let x=inspect(s);
+  eq(x.oobHardwareProvisioned,false); // solo prueba del diseño, no compra real
+  eq(x.oobManagement.firewall,true);
+  eq(x.oobManagement.sw1,true);
+  eq(x.oobManagement.sw2,true);
+  setNode(s,'router',false);
+  eq(inspect(s).oobManagement.firewall,true); // no depende de WAN/router
+  setNode(s,'firewall',false);
+  eq(inspect(s).oobManagement.firewall,false);
+  eq(inspect(s).oobManagement.sw1,true);
+  setNode(s,'firewall',true);
+  setNode(s,'sw1',false);
+  eq(inspect(s).oobManagement.sw1,false);
+  eq(inspect(s).oobManagement.sw2,true);
+  setNode(s,'sw1',true);
+  setOob(s,'sw1Mgt',false);
+  eq(inspect(s).oobManagement.sw1,false);
+  eq(inspect(s).oobManagement.sw2,true);
+  setOob(s,'sw1Mgt',true);
+  setOob(s,'gateway',false);
+  eq(inspect(s).oobPath,false);
+  eq(inspect(s).oobManagement.sw1,false);
+  eq(inspect(s).oobManagement.sw2,false);
+  eq(inspect(s).oobManagement.firewall,false);
+  setOob(s,'gateway',true);
+  eq(inspect(s).oobManagement.sw1,true);
+  setOob(s,'nocPath',false);
+  eq(inspect(s).oobManagement.firewall,false);
+  setOob(s,'nocPath',true);
+  eq(inspect(s).oobManagement.firewall,true);
  });
  test(label+' fallos router, firewall y WAN por prioridad',()=>{
   const s=makeScenario(num);
