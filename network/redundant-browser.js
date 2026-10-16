@@ -2,8 +2,8 @@
 (function(root){
 'use strict';
 'use strict';
-// Modelo aislado de la arquitectura FUTURA: C8300 -> PA-1410 L3 -> StackWise-80.
-// No reemplaza la topologia actualmente publicada hasta migracion integral.
+// Modelo lógico de la vista DESPUÉS activa: C8300 -> PA-1410 L3 -> StackWise-80.
+// Simulación operativa, NO prueba ni configuración desplegada en hardware físico.
 const PORTS=Object.freeze({
   wan: Object.freeze({
     starlink:'GigabitEthernet0/0/0', leo:'GigabitEthernet0/0/1',
@@ -297,7 +297,7 @@ function stackCandidate(num,pcCount){
     ' no shutdown',
     'ip default-gateway 10.70.'+num+'.161',
     'no ip routing',
-    '! FALTAN: DHCP snooping, inspeccion ARP y politica de STP definitiva',
+    '! DHCP snooping CONFIGURADO EN CANDIDATO: verificar Option 82, servidor DHCP y bindings; DAI/STP aún pendientes',
     '! FALTAN: NTP/AAA y cableado StackWise real; NO configurar Po1 entre switches',
     '! VERIFICAR: show switch; show switch stack-ports; show etherchannel summary');
   return lines.join('\n');
@@ -363,6 +363,9 @@ function intersiteRulesForSite(num){
     {name:'CM-IN-NTP-FROM-ROUTERS',from:['TRANSIT'],to:['USERS'],
      source:'ROUTER-NTP-SOURCES',destination:'CM-NTP-SERVERS',
      apps:['ntp'],action:'allow'},
+    {name:'CM-IN-DNS-FROM-ROUTERS',from:['TRANSIT'],to:['USERS'],
+     source:'ROUTER-DNS-SOURCES',destination:'CM-DNS-SERVERS',
+     apps:['dns'],action:'allow'},
     // DNS/NTP centrales están en VLAN10; el PA debe admitir las peticiones
     // locales de VLAN20 y VLAN30 sin abrir acceso lateral indiscriminado.
     {name:'CM-LOCAL-VOICE-DNS',from:['VOICE'],to:['USERS'],
@@ -405,7 +408,8 @@ function matchSecurityAddress(selector,ip,num){
   if(selector==='RFC1918-NETWORKS')return isPrivateRfc1918(ip);
   if(selector==='CM-DNS-SERVERS')return CM_SERVICES.dns.includes(ip);
   if(selector==='CM-NTP-SERVERS')return CM_SERVICES.ntp.includes(ip);
-  if(selector==='ROUTER-NTP-SOURCES')return num===0&&ROUTER_NTP_SOURCES.includes(ip);
+  if(selector==='ROUTER-NTP-SOURCES'||selector==='ROUTER-DNS-SOURCES')
+    return num===0&&ROUTER_NTP_SOURCES.includes(ip);
   if(selector==='BR-LOCAL-DNS-CLIENTS')
     return inSubnet(ip,'10.70.'+num+'.0',25)||
       inSubnet(ip,'10.70.'+num+'.128',27)||
@@ -467,9 +471,10 @@ function intersiteAddressCommands(num){
     for(const [i,ip] of ROUTER_NTP_SOURCES.entries())
       lines.push('set address ROUTER-LOOP-'+String(i).padStart(2,'0')+
         ' ip-netmask '+ip+'/32');
-    lines.push('set address-group ROUTER-NTP-SOURCES static [ '+
-      ROUTER_NTP_SOURCES.map((_,i)=>'ROUTER-LOOP-'+String(i).padStart(2,'0')).join(' ')+
-      ' ]');
+    const sourceMembers=ROUTER_NTP_SOURCES
+      .map((_,i)=>'ROUTER-LOOP-'+String(i).padStart(2,'0')).join(' ');
+    lines.push('set address-group ROUTER-NTP-SOURCES static [ '+sourceMembers+' ]',
+      'set address-group ROUTER-DNS-SOURCES static [ '+sourceMembers+' ]');
     const users=[],mgmt=[];
     for(let n=1;n<=22;n++){
       const id=String(n).padStart(2,'0');
