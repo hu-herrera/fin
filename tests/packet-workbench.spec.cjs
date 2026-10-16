@@ -126,3 +126,64 @@ test('El selector Ping y su resultado caben en una pantalla estrecha',async({pag
  const overflow=await page.locator('#sm-body').evaluate(el=>el.scrollWidth-el.clientWidth);
  expect(overflow).toBeLessThanOrEqual(2);
 });
+
+test('Los PCs elegidos cruzan StackWise en la topología original y un puerto caído no se sustituye',async({page})=>{
+ await openOriginalSite(page);await openPingTab(page);
+ const hosts=await page.evaluate(()=>getPCs(SEDES.find(s=>s.id==='s01')));
+ const source=hosts.find(p=>p.sw===1),target=hosts.find(p=>p.sw===2);
+ await page.locator('#ping-source-host').selectOption(source.ip);
+ await page.locator('#ping-target-host').selectOption(target.ip);
+ await page.getByRole('button',{name:'Enviar ping'}).click();
+ await expect(page.locator('#ping-result')).toContainText('4 pasos lógicos');
+ await expect(page.locator('.ping-local-topology svg')).toBeVisible();
+ await expect(page.locator('.ping-local-topology animateMotion')).toHaveAttribute('keyPoints','0;1;0');
+ await expect(page.locator('#ping-result .ping-table tbody tr').last()).toContainText(target.ip);
+ await page.evaluate(()=>toggleRedundantLab('s01','node','sw2'));
+ await expect(page.locator('#ping-result')).toContainText('El estado de la red cambió');
+ await page.getByRole('button',{name:'Enviar ping'}).click();
+ await expect(page.locator('#ping-result')).toContainText('Tiempo agotado');
+ await expect(page.locator('#ping-target-host')).toHaveValue(target.ip);
+});
+
+test('La excepción ICMP solo permite el par exacto, respeta las fallas y se puede revocar',async({page})=>{
+ await openOriginalSite(page);await openPingTab(page);
+ await page.locator('#ping-dest').selectOption('s02');
+ await page.getByRole('button',{name:'Permitir solo este par ICMP',exact:true}).click();
+ await page.getByRole('button',{name:'Enviar ping'}).click();
+ await expect(page.locator('#ping-result')).toContainText('RESPUESTA SIMULADA');
+ await expect(page.locator('#ping-result')).toContainText('LAB-ICMP-HOST-PAIR');
+ const decisions=await page.evaluate(()=>{
+  const src=SEDES.find(s=>s.id==='s01'),dst=SEDES.find(s=>s.id==='s02');
+  const a=getPCs(src)[0],b=getPCs(dst)[0];
+  return [packetPolicyDecision(src,dst,a,b,'ssl').action,
+   packetPolicyDecision(src,dst,a,getPCs(dst)[1]).action,
+   packetPolicyDecision(dst,src,b,a).action];
+ });
+ expect(decisions).toEqual(['deny','deny','deny']);
+ await page.evaluate(()=>toggleRedundantLab('cm','node','router'));
+ await page.getByRole('button',{name:'Enviar ping'}).click();
+ await expect(page.locator('#ping-result')).toContainText('Tiempo agotado');
+ await page.evaluate(()=>toggleRedundantLab('cm','node','router'));
+ await page.getByRole('button',{name:'Quitar excepción ICMP',exact:true}).click();
+ await page.getByRole('button',{name:'Enviar ping'}).click();
+ await expect(page.locator('#ping-result')).toContainText('BLOQUEADO');
+ await page.getByRole('button',{name:'Permitir solo este par ICMP',exact:true}).click();
+ await page.evaluate(()=>sc_reset());
+ expect(await page.evaluate(()=>PING_DIAGNOSTIC_RULE)).toBeNull();
+ await page.getByRole('button',{name:'Enviar ping'}).click();
+ await expect(page.locator('#ping-result')).toContainText('BLOQUEADO');
+});
+
+test('El mapa conserva los hosts elegidos y la excepción no persiste al recargar',async({page})=>{
+ await openOriginalSite(page);await openPingTab(page);
+ await page.locator('#ping-dest').selectOption('s02');
+ await page.locator('#ping-source-host').selectOption('10.70.1.11');
+ await page.locator('#ping-target-host').selectOption('10.70.2.12');
+ await page.getByRole('button',{name:'Permitir solo este par ICMP',exact:true}).click();
+ await page.getByRole('button',{name:'Enviar ping'}).click();
+ await expect(page.locator('#ping-result')).toContainText('RESPUESTA SIMULADA');
+ await page.locator('#ping-result button').click();
+ await expect(page.locator('#ping-trace-state')).toContainText('En tránsito');
+ await page.reload();
+ expect(await page.evaluate(()=>PING_DIAGNOSTIC_RULE)).toBeNull();
+});
