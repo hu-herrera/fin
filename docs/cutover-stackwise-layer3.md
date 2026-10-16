@@ -11,8 +11,8 @@
 
 ## Artefactos ejecutables que ahora existen
 
-- `network/redundant-model.cjs`: topología candidata con 2×10G Cisco–PA, 4×1G PA–MEC del stack, dos cables traseros de StackWise y 4 WAN independientes. Los estados separan **L2 local**, **gateway PA**, **ruta al Cisco** e **Internet**.
-- `network/redundant-configs.cjs`: plantillas ilustrativas IOS-XE/PAN-OS, **bloqueadas para implementación productiva**, con direcciones por las 23 sedes. Usan `ae1`/`Po10` y `ae2`/`Po20`; la VLAN 30 tendrá un solo SVI de gestión en el stack.
+- `network/redundant-model.cjs`: topología candidata con 2×10G Cisco–PA, 4×1G PA–MEC del stack, dos cables traseros de StackWise y 4 WAN independientes. Los estados separan **L2 local**, **gateway PA**, **ruta al Cisco** e **Internet**. Distingue además fallo de salida a Internet aguas arriba con el gateway ISP todavía alcanzable.
+- `network/redundant-configs.cjs`: plantillas ilustrativas IOS-XE/PAN-OS, **bloqueadas para implementación productiva**, con direcciones por las 23 sedes. Usan `ae1`/`Po10` y `ae2`/`Po20`; la VLAN 30 tendrá un solo SVI de gestión en el stack. El generador también transforma los **650 accesos PC** de `Gi1/0/X` y `Gi2/0/X`, mantiene las troncales de AP e identifica zonas de seguridad PAN-OS por VLAN (sin políticas permisivas).
 - `tests/redundant-model.test.cjs`: fallas de cables LACP, stack, equipos y WAN, por sede.
 - `tests/redundant-configs.test.cjs`: incompatibilidades de puertos, redes, protocolos y plantillas por sede.
 - `.github/workflows/simulator-tests.yml`: ejecuta el candidato además de las pruebas del simulador vigente.
@@ -26,7 +26,7 @@
 1. **PAN-OS:** finalizar zonas, VR, reglas específicas de permiso/denegación, perfiles de seguridad y rutas intersede. El firewall debe filtrar inter-VLAN; una política permisiva genérica invalida el objetivo.
 2. **Gestión del PA:** cambiar la administración fuera de banda del actual `10.70.N.164/28` por una red física OOB dedicada, con gateway, puerto y mecanismo de acceso definido. No asignar la misma VLAN/subred al plano de gestión fuera de banda y a la interfaz de datos como solución improvisada.
 3. **C8300:** redes e interfaces WAN configuradas según contrato. El diseño usa Gi0/0/0..3 para los 4 ISP (incluyendo gateway Ethernet de GTD), y Te0/0/4..5 para el PA; verificar conectores ópticos/DAC/SFP+; mapeo de fuentes IPsec; NAT/retorno; SSH/AAA.
-4. **Switches:** validar cable StackWise/kit para cada C9200L y los troncales de 4 enlaces MEC a PA. Cada PC conserva su puerto en el miembro correcto (`Gi1/0/X` o `Gi2/0/X`); sus MAC/VLAN no deben cambiar por artefactos de la migración.
+4. **Switches:** validar cable StackWise/kit para cada C9200L y los troncales de 4 enlaces MEC a PA. La distribución de los 650 PCs ya está mapeada y probada en el generador (`Gi1/0/X` o `Gi2/0/X`), pero debe comprobarse físicamente en cada sede antes de desplegarla.
 5. **VPN WAN:** peer central real accesible (los `203.0.113.x` son documentación), IKEv2/IPsec y OSPF verificados sobre IOS-XE con cuatro proveedores (CGNAT posible), sin afirmar rutas FULL ni túneles cifrados no probados.
 6. **Alta disponibilidad equipos:** un PA único sigue siendo SPOF y no puede sobrevivir a caída del PA. La sede central con par de firewalls requerirá HA1/HA2, sincronización y pruebas de conmutación independientes.
 
@@ -51,3 +51,8 @@ npx playwright test tests/browser.spec.cjs tests/configuration.spec.cjs --browse
 ```
 
 **Interpretación:** pruebas verdes verifican propiedades del *modelo candidato* y consistencia de strings y estados en el simulador, no negociación real de LACP, enlaces StackWise físicos, comandos aceptados por PAN-OS ni conectividad real entre 23 sitios. Para esas evidencias hace falta hardware, CML/EVE-NG/GNS3 con imágenes licenciadas, o laboratorio autorizado equivalente.
+
+## Estado del candidato (octubre 2026)
+- 23 sedes modeladas, 650 puertos PC mapeados a los miembros del stack, VLAN/AP y zonas PAN-OS preparadas.
+- Pruebas Node integradas en GitHub Actions; **el simulador publicado sigue con el diseño viejo**. Pasar un test de configuración en cadena no demuestra que PAN-OS acepte un commit ni que IOS-XE negocie un LAG físico.
+- La configuración Palo Alto propuesta no está lista para despliegue: sin gestión OOB, políticas de seguridad cerradas, ACL de aplicaciones y rutas WAN/VPN reales. Las pruebas de salud upstream son estados lógicos, no IP SLA desplegado en interfaces reales.
