@@ -1,4 +1,4 @@
-# Guía del simulador web — demostración y próximo speech
+# Guía del simulador web — demostración y presentación de avances
 
 **Objetivo del trabajo:** construir un simulador educativo de topologías empresariales Cisco + Palo Alto para **23 sedes y 650 PCs**, interactivo y visual, que pueda demostrarse en una página web. **No exige comprar routers ni certificar una instalación real.**
 
@@ -19,9 +19,9 @@ La página integra tres niveles de comportamiento:
 - **SSH bloqueado:** el mismo destino por SSH debe fallar en la primera política restrictiva de Palo Alto.
 - **↯ Cortar Starlink / ↺ Recuperar:** modifica la WAN de la sede en el escenario; la selección pasa a Amazon Leo mientras el resto de enlaces estén sanos. No significa que Amazon Leo esté contratado o disponible comercialmente.
 - **Puertos de PC:** si el puerto de acceso de un PC es deshabilitado desde la CLI Cisco simulada, el trazador debe señalar `ACCESS_DOWN`, hasta restaurarlo.
-- **▣ Presentar:** ventana proyectable sobre **la misma web**. Seis escenas navegables con flechas de teclado; la escena de seguridad lleva a SSH denegado y la de resiliencia a una caída de Starlink. **Este modo es una estructura visual, no el speech definitivo.**
+- **▣ Presentar:** ventana proyectable sobre **la misma web**. Seis escenas navegables con flechas de teclado; la escena de seguridad lleva a SSH denegado y la de resiliencia a una caída de Starlink. Incluye notas por escena (**N**), enlace a evidencia CI y retorno a la escena correspondiente tras una demostración. El guion de avance está en [Presentación 16 de octubre](presentacion-avances-16-octubre-2026.md).
 
-No es necesario PowerPoint. Para la siguiente tarea de presentación, desarrollaremos el discurso, las transiciones, los tiempos, qué clicks mostrar y qué preguntas del profesor contestar.
+No es necesario PowerPoint. El [guion de seis escenas](presentacion-avances-16-octubre-2026.md) incluye los cinco puntos exigidos por el profesor, tiempos, secuencia de clics y preguntas probables. El guion se puede revisar después de recibir retroalimentación.
 
 ## Ensayos de demostración recomendados
 
