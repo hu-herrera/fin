@@ -413,3 +413,29 @@ test('DNS corporativo de VLAN20 tiene permiso mínimo y simétrico en las 22 suc
  });
  expect(problems).toEqual([]);
 });
+
+test('NTP de C8300 usa Loopback0 /32 y queda restringido a los dos servidores centrales',async({page})=>{
+ await page.goto(url);
+ const failures=await page.evaluate(()=>{
+  const errors=[],check=(ok,msg)=>{if(!ok)errors.push(msg)};
+  const model=window.RedundantLab;
+  for(let n=0;n<=22;n++){
+   const source='10.70.100.'+(n===0?1:n+10);
+   for(const dest of ['10.70.0.116','10.70.0.117']){
+    const accept=model.evaluateSitePanPolicy(0,'TRANSIT','USERS','ntp',dest,source);
+    check(accept.action==='allow'&&accept.rule==='CM-IN-NTP-FROM-ROUTERS',
+      'Router NTP /32 denied: '+source+' => '+dest);
+    const ssh=model.evaluateSitePanPolicy(0,'TRANSIT','USERS','ssh',dest,source);
+    check(ssh.action==='deny','Router NTP source unexpectedly permitted SSH: '+source);
+   }
+   const wrong=model.evaluateSitePanPolicy(0,'TRANSIT','USERS','ntp','10.70.0.110',source);
+   check(wrong.action==='deny','Router NTP source accesses unrelated DNS host '+source);
+  }
+  for(const source of ['10.70.100.2','10.70.100.10','10.70.100.33']){
+   check(model.evaluateSitePanPolicy(0,'TRANSIT','USERS','ntp','10.70.0.116',source).action==='deny',
+     'Uninventoried router loopback allowed '+source);
+  }
+  return errors;
+ });
+ expect(failures).toEqual([]);
+});
