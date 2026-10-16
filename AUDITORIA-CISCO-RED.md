@@ -11,8 +11,8 @@ Se ejecutó una auditoría local de la lógica JavaScript en un entorno aislado 
 Pruebas del repositorio:
 - `tests/wan.test.cjs`: 8 pruebas unitarias WAN.
 - `tests/browser.spec.cjs`: 12 pruebas de navegador.
-- `tests/configuration.spec.cjs`: 10 pruebas de auditoría técnica de red Cisco/PAN-OS.
-- `.github/workflows/simulator-tests.yml`: ejecuta las 3 suites. **Resultado confirmado:** 22/22 pruebas de navegador y 8/8 unitarias WAN aprobadas en GitHub Actions (commit `862aeba9`, [ejecución](https://github.com/hu-herrera/fin/actions/runs/38830771341)). Las pruebas validan el simulador, no hardware Cisco/PAN-OS.
+- `tests/configuration.spec.cjs`: 12 pruebas de auditoría técnica de red Cisco/PAN-OS.
+- `.github/workflows/simulator-tests.yml`: ejecuta las 3 suites. **Resultado confirmado:** 24/24 pruebas de navegador y 8/8 unitarias WAN aprobadas en GitHub Actions (commit `862aeba9`, [ejecución](https://github.com/hu-herrera/fin/actions/runs/38830771341)). Las pruebas validan el simulador, no hardware Cisco/PAN-OS.
 
 ## 2. Direccionamiento aprobado para el simulador
 
@@ -83,9 +83,15 @@ Esta distinción permite defender el proyecto sin presentar como medidos resulta
 
 ## 7. Actualización de ingeniería (2026-10-16)
 
-- Suite de integración actual: **22/22 PASS**, suite WAN **8/8 PASS**, workflow LAN/LACP aprobado. [Evidencia de CI](https://github.com/hu-herrera/fin/actions/runs/38830771341).
+- Suite de integración actual: **24/24 PASS**, suite WAN **8/8 PASS**, workflow LAN/LACP aprobado. [Evidencia de CI](https://github.com/hu-herrera/fin/actions/runs/38830771341).
 - RIB: muestra redes WAN físicas conectadas y distancias administrativas 1/10/20/30. Si la casa matriz pierde todos los enlaces, se retiran las rutas OSPF de sucursales, manteniendo la ruta local a Internet de cada sucursal.
 - Cisco IKEv2: propuesta AES-GCM con `prf sha256` en lugar de un algoritmo de integridad separado. Diagnóstico IP SLA considera `shutdown` de la interfaz WAN.
 - STP: SW1 raíz, Po1 en rol designado; SW2 Po1 como puerto raíz. Las interfaces reservadas apagadas no se muestran conectadas.
 - **Diseño recomendado para tolerancia a fallo de switch completo, todavía NO migrado**: C8300 de 4×1G WAN + 2×10G a PA Layer3; PA con 4×1G distribuidos entre un stack C9200L StackWise-80 de dos miembros. Consultar [plan de puertos candidato](docs/plan-puertos-redundancia-propuesto.md). StackWise utiliza dos cables traseros dedicados, **no** los mismos Gi45/Gi46 usados en Po1 del diseño provisional.
 - Queda sin resolver la nueva subred de gestión OOB del PA si migra el gateway de VLAN30 desde el Cisco al PA. Un segundo PA para HA de equipo completo y las cotizaciones necesarias siguen pendientes.
+
+## 8. Últimos controles automatizados
+
+- **24/24 Playwright aprobadas**: [GitHub Actions, commit `f09d005a`](https://github.com/hu-herrera/fin/actions/runs/38831383312), además de las 8 pruebas unitarias WAN de la suite general.
+- Nuevos casos: bloqueo de tráfico entre sucursales al perder el hub CM (también en la ruta gráfica), normalización de native VLAN 999 y VLAN permitidas 10/40 de los AP, roles STP/puertos reservados, conectadas WAN y distancias administrativas de backup, propuesta IKEv2 PRF AES-GCM y SLA ante interfaz apagada.
+- Permanecen pendientes: prueba extremo-a-extremo de Internet por proveedor con gateway local arriba, configuración real de pares IPsec, migración física a StackWise/LACP del plan nuevo, modos y políticas PA Layer3, subred de gestión OOB y HA del firewall. No confundir estas pruebas verdes con validación de esos elementos aún no implementados.
