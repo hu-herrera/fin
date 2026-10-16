@@ -41,12 +41,16 @@ function rawSite(siteId){
        session?.interfaces.Po10?.shutdown||session?.interfaces['Port-channel10']?.shutdown)
       copy.links[p.id]=false;
   }
+  // Po20 es UN port-channel del StackWise, no dos bundles independientes.
+  // Apagarlo desde cualquiera de sus consolas desactiva los cuatro miembros.
+  const stackSessions=[1,2].map(sw=>DEVICE_CLI_SESSIONS.get(siteId+':sw'+sw));
+  const po20Down=stackSessions.some(session=>
+    session?.interfaces.Po20?.shutdown||session?.interfaces['Port-channel20']?.shutdown);
   for(const p of m.PORTS.distribution){
-    const sw=p.member;
-    const session=DEVICE_CLI_SESSIONS.get(siteId+':sw'+sw);
     const short=p.switch.replace('GigabitEthernet','Gi');
-    if(session?.interfaces[short]?.shutdown||session?.interfaces[p.switch]?.shutdown||
-       session?.interfaces.Po20?.shutdown)copy.links[p.id]=false;
+    if(po20Down||stackSessions.some(session=>
+      session?.interfaces[short]?.shutdown||session?.interfaces[p.switch]?.shutdown))
+      copy.links[p.id]=false;
   }
   return copy;
 }
