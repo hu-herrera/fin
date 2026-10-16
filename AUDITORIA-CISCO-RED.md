@@ -3,6 +3,10 @@
 **Ámbito:** simulador HTML/JavaScript del repositorio `hu-herrera/fin`.  
 **Clasificación:** modelo didáctico de topología y failover; **no es una configuración homologada para un despliegue real**.
 
+## Aviso: auditoría histórica, reemplazada por la arquitectura Layer3/StackWise
+
+Este documento describe la **fase anterior** (router-on-a-stick, PA virtual-wire y dos switches independientes con Po1). **NO es la configuración activa de la vista DESPUÉS**. La versión actual migró a C8300 Po10 (2×10G), PA-1410 Layer3 ae1/ae2 y C9200L StackWise-80 con Po20 MEC; el diagrama y las consolas actuales se verifican en `tests/active-topology.spec.cjs`. Para presentar, usar [`docs/arquitectura-red-validada.md`](docs/arquitectura-red-validada.md), [`docs/cutover-stackwise-layer3.md`](docs/cutover-stackwise-layer3.md) y el CI de `main`. La aprobación de CI es exclusivamente del simulador; no acredita el despliegue físico.
+
 ## 1. Estado de revisión
 La revisión de funciones JavaScript se realizó contra la [skill comunitaria Cisco IOS Patterns](https://github.com/CiscoDevNet/skills/blob/main/skills/ios/cisco-ios-patterns/SKILL.md) de CiscoDevNet. Su procedimiento requiere comprobar estado inicial, jerarquía de configuración, máscaras wildcard, dirección de ACL, rutas y verificación tras cambios.
 
