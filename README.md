@@ -14,7 +14,7 @@ Este repositorio modela una red corporativa ficticia con **23 sedes y 650 PCs**,
 
 ## Qué probar
 
-Abrir [index.html](index.html) en un navegador compatible. Utiliza **⌁ Laboratorio de paquetes** en la cabecera para simular DNS, SSH, salida WAN y cortes de Starlink; **▣ Presentar** para el esqueleto de exposición sin diapositivas. Son partes de la misma página y están disponibles en GitHub Pages. Consulta la [guía de demostración](docs/guia-demostracion-simulador.md).
+Abrir [index.html](index.html) en un navegador compatible. Selecciona una sede en el mapa, usa el botón amarillo **Ver topología interna completa** y, dentro de ese simulador original, entra a **📦 Flujo de paquetes** o pulsa **📦 Seguir un paquete** en la barra de la topología. Ahí se simulan DNS, SSH, rutas WAN y fallos. **▣ Presentar** abre la exposición y lleva a ese mismo simulador original. Son partes de la misma página y están disponibles en GitHub Pages. Consulta la [guía de demostración](docs/guia-demostracion-simulador.md).
 
 Para comprobaciones reproducibles desde la raíz con Node.js:
 
