@@ -25,54 +25,57 @@ for(let num=0;num<=22;num++){
   eq(z.transitMembers.length,2);
   eq(z.paStackMembers.length,4);
   eq(z.stackFunctional,true);
-  eq(z.switchLan[1],true);
-  eq(z.switchLan[2],true);
+  eq(z.switchRouterPath[1],true);
+  eq(z.switchRouterPath[2],true);
   eq(z.activeWan,'starlink');
  });
  test(label+' LACP router-PA sobrevive a fallo individual y detecta corte doble',()=>{
   const s=makeScenario(num);
   setLink(s,'T1',false);eq(inspect(s).transitUp,true);
   setLink(s,'T2',false);eq(inspect(s).transitUp,false);
-  eq(inspect(s).switchLan[1],false);
-  eq(inspect(s).switchLan[2],false);
-  setLink(s,'T1',true);eq(inspect(s).switchLan[1],true);
+  eq(inspect(s).switchRouterPath[1],false);
+  eq(inspect(s).switchRouterPath[2],false);
+  setLink(s,'T1',true);eq(inspect(s).switchRouterPath[1],true);
  });
  test(label+' MEC PA-Stack sobrevive perdida de un enlace o dos del mismo miembro',()=>{
   const s=makeScenario(num);
   setLink(s,'D1',false);
-  eq(inspect(s).switchLan[1],true);
+  eq(inspect(s).switchRouterPath[1],true);
   setLink(s,'D2',false);
-  eq(inspect(s).switchLan[1],true); // llega via stack SW2
-  eq(inspect(s).switchLan[2],true);
+  eq(inspect(s).switchRouterPath[1],true); // llega via stack SW2
+  eq(inspect(s).switchRouterPath[2],true);
   setLink(s,'D3',false);setLink(s,'D4',false);
-  eq(inspect(s).switchLan[1],false);
-  eq(inspect(s).switchLan[2],false);
+  eq(inspect(s).switchRouterPath[1],false);
+  eq(inspect(s).switchRouterPath[2],false);
   setLink(s,'D4',true);
-  eq(inspect(s).switchLan[1],true);
+  eq(inspect(s).switchRouterPath[1],true);
  });
  test(label+' failover ante switch completo sin fingir recuperacion de sus PCs',()=>{
   const s=makeScenario(num);
   setNode(s,'sw1',false);
-  eq(inspect(s).switchLan[1],false);
-  eq(inspect(s).switchLan[2],true);
-  setNode(s,'sw1',true);eq(inspect(s).switchLan[1],true);
+  eq(inspect(s).switchRouterPath[1],false);
+  eq(inspect(s).switchRouterPath[2],true);
+  setNode(s,'sw1',true);eq(inspect(s).switchRouterPath[1],true);
   setNode(s,'sw2',false);
-  eq(inspect(s).switchLan[1],true);
-  eq(inspect(s).switchLan[2],false);
-  setNode(s,'sw2',true);eq(inspect(s).switchLan[2],true);
+  eq(inspect(s).switchRouterPath[1],true);
+  eq(inspect(s).switchRouterPath[2],false);
+  setNode(s,'sw2',true);eq(inspect(s).switchRouterPath[2],true);
  });
  test(label+' cable StackWise simple degradado, particion doble marcada insegura',()=>{
   const s=makeScenario(num);
   setLink(s,'STACK-A',false);
   eq(inspect(s).stackFunctional,true);
-  eq(inspect(s).switchLan[1],true);
+  eq(inspect(s).switchRouterPath[1],true);
   setLink(s,'STACK-B',false);
   eq(inspect(s).stackPartitioned,true);
-  eq(inspect(s).switchLan[1],false);
-  eq(inspect(s).switchLan[2],false);
+  eq(inspect(s).interMemberL2,false);
+  eq(inspect(s).switchLocalL2[1],true);
+  eq(inspect(s).switchLocalL2[2],true);
+  eq(inspect(s).switchRouterPath[1],false);
+  eq(inspect(s).switchRouterPath[2],false);
   setLink(s,'STACK-B',true);
   eq(inspect(s).stackPartitioned,false);
-  eq(inspect(s).switchLan[2],true);
+  eq(inspect(s).switchRouterPath[2],true);
  });
  test(label+' fallos router, firewall y WAN por prioridad',()=>{
   const s=makeScenario(num);
@@ -84,15 +87,26 @@ for(let num=0;num<=22;num++){
   setWan(s,'gtd4g',false);
   eq(inspect(s).activeWan,null);
   eq(inspect(s).switchInternet[1],false);
+  eq(inspect(s).switchGateway[1],true);
+  eq(inspect(s).switchLocalL2[1],true);
   setWan(s,'entel5g',true);
   eq(inspect(s).activeWan,'entel5g');
   setNode(s,'firewall',false);
-  eq(inspect(s).switchLan[1],false);
-  eq(inspect(s).switchLan[2],false);
+  eq(inspect(s).switchRouterPath[1],false);
+  eq(inspect(s).switchRouterPath[2],false);
+  eq(inspect(s).switchGateway[1],false);
+  eq(inspect(s).switchLocalL2[1],true); // PC en mismo switch todavia conmuta
+  eq(inspect(s).switchLocalL2[2],true);
   setNode(s,'firewall',true);
-  eq(inspect(s).switchLan[2],true);
+  eq(inspect(s).switchRouterPath[2],true);
+  eq(inspect(s).switchGateway[1],true);
   setNode(s,'router',false);
-  eq(inspect(s).switchLan[1],false);
+  eq(inspect(s).switchRouterPath[1],false);
+  eq(inspect(s).switchGateway[1],true); // PA sigue siendo gateway de VLAN
+  eq(inspect(s).switchGateway[2],true);
+  eq(inspect(s).switchLocalL2[1],true);
+  eq(inspect(s).activeWan,null);
+  eq(inspect(s).switchInternet[1],false);
  });
 }
 console.log('TOTAL '+cases+' casos; '+assertions+' aserciones; 23 sedes verificadas.');
