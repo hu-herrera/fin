@@ -3151,6 +3151,73 @@ function smTab(tab, btn){
   }
 }
 
+// Laboratorio interactivo aislado: no modifica las consolas del perfil viejo.
+const REDUNDANT_LAB_STATES = new Map();
+function getRedundantLabState(sedeId){
+  const s=SEDES.find(site=>site.id===sedeId);
+  if(!s)throw new Error('Sede inexistente');
+  if(!window.RedundantLab)throw new Error('Motor StackWise/LACP no disponible');
+  if(!REDUNDANT_LAB_STATES.has(sedeId))REDUNDANT_LAB_STATES.set(sedeId,window.RedundantLab.makeScenario(s.num));
+  return REDUNDANT_LAB_STATES.get(sedeId);
+}
+function toggleRedundantLab(sedeId,kind,key){
+  const model=window.RedundantLab;
+  const state=getRedundantLabState(sedeId);
+  if(kind==='node')model.setNode(state,key,!state.nodes[key]);
+  else if(kind==='link')model.setLink(state,key,!state.links[key]);
+  else if(kind==='wan')model.setWan(state,key,!state.wan[key]);
+  else if(kind==='upstream')model.setWanHealth(state,key,{upstream:!state.wanUpstream[key]});
+  else if(kind==='gateway')model.setWanHealth(state,key,{gateway:!state.wanGateway[key]});
+  else throw new Error('Control de laboratorio desconocido');
+  if(SM_ID===sedeId&&SM_TAB==='lab')document.getElementById('sm-body').innerHTML=renderRedundantLabTab(SEDES.find(s=>s.id===sedeId));
+}
+function resetRedundantLab(sedeId){
+  const s=SEDES.find(site=>site.id===sedeId);
+  if(!s)throw new Error('Sede inexistente');
+  REDUNDANT_LAB_STATES.set(sedeId,window.RedundantLab.makeScenario(s.num));
+  if(SM_ID===sedeId&&SM_TAB==='lab')document.getElementById('sm-body').innerHTML=renderRedundantLabTab(s);
+}
+function renderRedundantLabTab(s){
+  const model=window.RedundantLab;
+  if(!model)return '<p>El motor redundante no cargó. Comprueba el archivo network/redundant-browser.js.</p>';
+  const state=getRedundantLabState(s.id),health=model.inspect(state);
+  const pc1=getPCs(s).filter(pc=>pc.sw===1).length,pc2=PC_COUNT[s.id]-pc1;
+  const textState=(flag,up='OPERATIVO',down='CAÍDO')=>'<span style="font-weight:700;color:'+(flag?'var(--green)':'var(--red)')+'">'+(flag?up:down)+'</span>';
+  const kv=(title,value)=>'<div class="drow"><span class="dkey">'+title+'</span><span class="dval">'+value+'</span></div>';
+  const toggleRow=(kind,key,label,isUp)=>'<button type="button" class="btn btn-n" style="margin:4px;padding:7px 10px;border-color:'+(isUp?'var(--green)':'var(--red)')+'" onclick="toggleRedundantLab(\''+s.id+'\',\''+kind+'\',\''+key+'\')">'+label+' · '+(isUp?'ON':'OFF')+'</button>';
+  const nodeBtns=Object.entries({router:'Router C8300',firewall:'Firewall PA-1410',sw1:'Catalyst SW1',sw2:'Catalyst SW2'}).map(([id,name])=>toggleRow('node',id,name,state.nodes[id])).join('');
+  const bundleBtns=model.PORTS.transit.map(p=>toggleRow('link',p.id,p.id+' · 10G C8300 ↔ PA',state.links[p.id])).join('')+
+    model.PORTS.distribution.map(p=>toggleRow('link',p.id,p.id+' · 1G PA ↔ SW'+p.member,state.links[p.id])).join('')+
+    model.PORTS.stack.map(id=>toggleRow('link',id,id+' · StackWise',state.links[id])).join('');
+  const wanNames={starlink:'Starlink',leo:'Amazon Leo',entel5g:'Entel 5G',gtd4g:'GTD 4G'};
+  const wanBtns=model.WAN_ORDER.map(id=>toggleRow('wan',id,wanNames[id]+' · cable',state.wan[id])+
+    toggleRow('gateway',id,wanNames[id]+' · gateway ISP',state.wanGateway[id])+
+    toggleRow('upstream',id,wanNames[id]+' · salida real',state.wanUpstream[id])).join('');
+  const candidate=model.siteCandidate(s.num,PC_COUNT[s.id]);
+  const configuration=[['router','Cisco C8300 (Po10)'],['palo','Palo Alto Layer3 (ae1/ae2)'],['stack','Catalyst StackWise (Po20)']].map(([key,title])=>
+    '<details style="margin:8px 0"><summary style="cursor:pointer;font-weight:700">'+title+'</summary><pre style="overflow:auto;max-height:330px;padding:12px;background:var(--bg);font-size:11px;white-space:pre">'+escapeCLI(key==='router'?candidate.cisco:candidate[key])+'</pre></details>').join('');
+  const stateSummary='<div class="kpi-grid" style="margin-top:10px">'+
+    kv('Po10 Router ↔ PA',textState(health.transitUp,health.transitMembers.join(' + '),'SIN ENLACE'))+
+    kv('StackWise',textState(health.stackFunctional,health.activeStackMembers.join(' + '),'PARTICIÓN / SIN STACK'))+
+    kv('MEC Po20 a Palo Alto',textState(health.paStackMembers.length>0&&health.stackFunctional,health.paStackMembers.join(' + '),'SIN ENLACE'))+
+    kv('WAN seleccionada',health.activeWan?escapeCLI(wanNames[health.activeWan]):textState(false,'','SIN INTERNET'))+
+    kv('SW1 · '+pc1+' PCs · L2 local',textState(health.switchLocalL2[1]))+
+    kv('SW1 · gateway Palo Alto',textState(health.switchGateway[1]))+
+    kv('SW1 · salida WAN',textState(health.switchInternet[1]))+
+    kv('SW2 · '+pc2+' PCs · L2 local',textState(health.switchLocalL2[2]))+
+    kv('SW2 · gateway Palo Alto',textState(health.switchGateway[2]))+
+    kv('SW2 · salida WAN',textState(health.switchInternet[2]))+
+    '</div>';
+  return '<div style="max-width:1120px;margin:auto">'+
+    '<div style="border-left:3px solid var(--yellow);padding:10px 13px;background:var(--panel2)"><strong>LABORATORIO AISLADO: arquitectura candidata</strong><p style="margin-top:6px">WAN → Cisco C8300 (Po10, 2×10G) → Palo Alto Layer3 (ae1/ae2) → MEC Po20 sobre StackWise-80 (4×1G). Esto no cambia todavía las consolas ni el diagrama principal. No representa pruebas en hardware.</p></div>'+
+    '<div style="margin:14px 0"><button class="btn btn-n" onclick="resetRedundantLab(\''+s.id+'\')">↺ Restaurar todos los enlaces</button></div>'+
+    stateSummary+
+    '<div class="dsec"><div class="dslbl">1. Simular fallo de equipo</div>'+nodeBtns+'</div>'+
+    '<div class="dsec"><div class="dslbl">2. Cortar / recuperar cables LACP y StackWise</div>'+bundleBtns+'</div>'+
+    '<div class="dsec"><div class="dslbl">3. WAN: cable, gateway y salida aguas arriba independientes</div>'+wanBtns+'</div>'+
+    '<div class="dsec"><div class="dslbl">4. Configuración candidata (solo lectura)</div>'+configuration+'</div>'+
+    '<p style="color:var(--text2);font-size:12px;margin-top:12px">Para despliegue real faltan: gestión OOB, políticas de seguridad PAN-OS, IP/SLA del operador, VPN y validación IOS-XE. Un PA único sigue siendo punto único de falla.</p></div>';
+}
 function topoToolbar(s){
   const active = ST.mode === 'antes' ? 'MPLS Entel' : (LK_NAME[activeLink(s.id)] || 'Sin enlace');
   return `<div class="topo-toolbar">
