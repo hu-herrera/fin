@@ -61,7 +61,7 @@ m.setNode(states[1],'sw1',false);
 eq({},'ACCESS_DOWN');
 m.setNode(states[1],'sw1',true);
 m.setNode(states[0],'firewall',false);
-eq({},'DEST_GATEWAY_DOWN');
+eq({},'HUB_DOWN');
 m.setNode(states[0],'firewall',true);
 eq({siteNum:0,sourceIp:'10.70.0.10',destinationIp:'10.70.1.10',application:'ssl'},'POLICY_DENY');
 for(let n=1;n<23;n++){
