@@ -3623,7 +3623,7 @@ function renderActiveTopoTab(s){
     '<svg class="topo-svg" xmlns="http://www.w3.org/2000/svg" width="1300" height="'+height+
     '" viewBox="0 0 1300 '+height+'">'+
     label(650,24,'TOPOLOGÍA OBJETIVO · '+s.code+' · Layer 3 / StackWise','#e1e9f2',19)+
-    wanCards+router+transit+firewall+dist+stack+sw1+sw2+
+    wanCards+router+transit+label(650,365,'Po10 / ae1 · LACP 2×10G',color.label,13)+firewall+dist+stack+sw1+sw2+
     label(350,720,'PCs conectados a SW1',color.label,15)+
     label(949,720,'PCs conectados a SW2',color.label,15)+
     pcGrid(pc1,1)+pcGrid(pc2,2)+bottom+
