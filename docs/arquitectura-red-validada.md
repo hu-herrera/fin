@@ -68,3 +68,7 @@ La ficha de Cisco para C8300-2N2S-4T2X especifica **4 puertos RJ45 de 1GbE y 2 p
 - Suite principal: **22/22 pruebas Playwright** y **8/8 WAN unitarias** aprobadas: https://github.com/hu-herrera/fin/actions/runs/38830771341
 - Correcciones de STP, puertos administrativamente apagados, RIB WAN, distancias de backup, concentración CM, IKEv2 y estado IP SLA incluidas.
 - Plan de redundancia *de equipos* compatible con modelos Cisco y Palo Alto: [docs/plan-puertos-redundancia-propuesto.md](plan-puertos-redundancia-propuesto.md). Es candidato pendiente de migración, no activo todavía. No confundir Po1 inter-switch vigente con el anillo físico StackWise.
+
+## Validación posterior (2026-10-16)
+- [GitHub Actions 24/24 PASS](https://github.com/hu-herrera/fin/actions/runs/38831383312) + WAN unitario: grafo intersede coherente con caída/restauración de casa matriz, AP trunks VLAN nativa y permitidas validadas en 46 switches.
+- **No cambia** que la topología Layer3+StackWise del nuevo documento sea solo diseño candidato pendiente de migración integral.
