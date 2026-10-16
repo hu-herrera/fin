@@ -301,3 +301,31 @@ test('RIB Cisco: subredes WAN físicas, distancias de backup y caída del concen
  });
  expect(issues).toEqual([]);
 });
+
+
+test('Cisco IKEv2 AES-GCM y SLA responden correctamente al shutdown WAN', async ({page})=>{
+ await setOperational(page);
+ const failures=await page.evaluate(()=>{
+   const failures=[];
+   for(const site of SEDES){
+     const config=genRouterRunningConfig(site);
+     const begin=config.indexOf('crypto ikev2 proposal IKEV2-PROP');
+     const end=config.indexOf('crypto ikev2 policy',begin);
+     const proposal=config.slice(begin,end);
+     if(!proposal.includes('encryption aes-gcm-256') || !proposal.includes('prf sha256'))
+       failures.push(site.id+': IKEv2 carece de PRF AES-GCM');
+     if(proposal.includes('integrity sha256'))
+       failures.push(site.id+': no se debe exigir integrity SHA en AES-GCM IKEv2');
+     const session=deviceCliSession(site.id,'router');
+     session.interfaces['GigabitEthernet0/0/1']={shutdown:true};
+     const stats=genShowBrief(site,'router','show ip sla statistics');
+     if(!stats.includes('100.64.'+site.num+'.1 Unreachable'))
+       failures.push(site.id+': IP SLA declara alcanzable una WAN administrativamente apagada');
+     delete session.interfaces['GigabitEthernet0/0/1'];
+     if(!genShowBrief(site,'router','show ip sla statistics').includes('100.64.'+site.num+'.1 Reachable'))
+       failures.push(site.id+': IP SLA no recupera tras no shutdown');
+   }
+   return failures;
+ });
+ expect(failures).toEqual([]);
+});
