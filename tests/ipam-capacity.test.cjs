@@ -24,5 +24,12 @@ const malformed={...inventory,s02:-1};
 assert.ok(capacityAssessment(malformed).errors.length>0);
 assert.equal(report.constraints.aggregatePaStackMbps,4000);
 assert.equal(report.constraints.perFlowStackAccessMbps,1000);
+assert.equal(report.constraints.physicalStackMembers,46);
+assert.equal(report.constraints.physicalStackwiseAdapters,92);
+assert.equal(report.constraints.physicalStackwiseCables,46);
+assert.equal(report.constraints.minimumC9200LStackKits,46);
+assert.equal(report.constraints.stackKitPartNumber,'C9200L-STACK-KIT');
+assert.equal(report.constraints.stackKitProcurementVerified,false);
+assert.equal(report.constraints.clientAddressing,'STATIC_IN_SIMULATOR; DHCP_SERVER_OR_RELAY_NOT_PROVISIONED');
 console.log('IPAM capacity: 23 sites, 650 PCs, '+report.warnings.length+
   ' conditional voice capacity warnings; hard violations rejected.');
