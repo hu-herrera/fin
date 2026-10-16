@@ -197,3 +197,47 @@ test('Los paquetes intersede no eluden las políticas PAN-OS aunque haya WAN ope
  });
  expect(r).toEqual([]);
 });
+
+test('Conmutación local VLAN10 sobrevive a caída PA, Cisco y Po20; StackWise es el único L2 intermiembro',async({page})=>{
+ test.setTimeout(90000);
+ await page.goto(url);
+ const issues=await page.evaluate(()=>{
+   const problems=[],assert=(yes,msg)=>{if(!yes)problems.push(msg)};
+   for(const site of SEDES){
+     const pcs=getPCs(site),same=pcs.filter(pc=>pc.sw===1),
+       other=pcs.find(pc=>pc.sw===2);
+     const lab=getRedundantLabState(site.id);
+     const local=(a,b)=>buildPacketRoute(site,site,false,a,b);
+     const samePath=local(same[0],same[1]);
+     const across=local(same[0],other);
+     assert(samePath.length===3,site.id+': two hosts on same switch lack L2 path');
+     assert(across.length===4,site.id+': stacked switches lack direct L2 path');
+     assert(!across.some(n=>n.kind==='firewall'||n.kind==='router'),site.id+': L2 route crosses L3 gateway');
+     window.RedundantLab.setNode(lab,'firewall',false);
+     assert(!isPCNetworkAvailable(site.id,same[0]),site.id+': lost PA gateway still marked available');
+     assert(local(same[0],same[1]).length===3,site.id+': local L2 incorrectly depends on PA');
+     assert(local(same[0],other).length===4,site.id+': StackWise L2 incorrectly depends on PA');
+     window.RedundantLab.setNode(lab,'firewall',true);
+     window.RedundantLab.setNode(lab,'router',false);
+     assert(local(same[0],other).length===4,site.id+': local L2 incorrectly depends on Cisco');
+     window.RedundantLab.setNode(lab,'router',true);
+     for(const id of ['D1','D2','D3','D4'])window.RedundantLab.setLink(lab,id,false);
+     assert(local(same[0],other).length===4,site.id+': local L2 incorrectly depends on Po20');
+     for(const id of ['D1','D2','D3','D4'])window.RedundantLab.setLink(lab,id,true);
+     window.RedundantLab.setLink(lab,'STACK-A',false);
+     assert(local(same[0],other).length===4,site.id+': one rear StackWise cable failure cut L2');
+     window.RedundantLab.setLink(lab,'STACK-B',false);
+     assert(local(same[0],other).length===0,site.id+': both StackWise cables failed but L2 crosses members');
+     assert(local(same[0],same[1]).length===3,site.id+': local member L2 lost on stack partition');
+     window.RedundantLab.setLink(lab,'STACK-A',true);
+     window.RedundantLab.setLink(lab,'STACK-B',true);
+     window.RedundantLab.setNode(lab,'sw1',false);
+     assert(local(same[0],same[1]).length===0,site.id+': powered-down SW1 still routes L2');
+     assert(local(other,pcs.filter(pc=>pc.sw===2)[1]).length===3,
+       site.id+': SW2 hosts lost same-member L2 when SW1 died');
+     window.RedundantLab.setNode(lab,'sw1',true);
+   }
+   return problems;
+ });
+ expect(issues).toEqual([]);
+});
