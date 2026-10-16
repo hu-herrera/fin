@@ -4,7 +4,7 @@
 // The existing C9200L stack has spare access port Gi1/0/35 or Gi2/0/35.
 const {checkSiteNum}=require('./redundant-model.cjs');
 const {stackCandidate,paloCandidate}=require('./redundant-configs.cjs');
-const {pcInventory}=require('./export-candidate.cjs');
+const {centralReservations}=require('./management-services-candidate.cjs');
 const APPROVED_PORTS=Object.freeze([
  'GigabitEthernet1/0/35','GigabitEthernet2/0/35'
 ]);
@@ -19,9 +19,10 @@ const FLAGS=Object.freeze({
   sshAuthorizationReviewed:'Perfil actual VLAN30-STACK también permite SSH: comprobar autorizaciones',
   accessRollbackTested:'Sin prueba de consola/rollback antes de modificar permitted-ip',
   panosVersionVerified:'Sintaxis y versión PAN-OS del PA-1410 aún no comprobadas',
-  stackConfigConfirmed:'Configuración de los dos miembros del stack no verificada'
+  stackConfigConfirmed:'Configuración de los dos miembros del stack no verificada',
+  existingSshRiskAcknowledged:'El perfil VLAN30-STACK tiene SSH habilitado; debe revisarse su seguridad'
 });
-function evaluateAdminAccess(num,params,inventory=pcInventory()){
+function evaluateAdminAccess(num,params,inventory=centralReservations().pcs){
   checkSiteNum(num);
   const site=num===0?'cm':'s'+String(num).padStart(2,'0');
   const failures=[];
@@ -42,8 +43,6 @@ function evaluateAdminAccess(num,params,inventory=pcInventory()){
   if(typeof params.operatorRef!=='string'||
     !/^[A-Za-z0-9][A-Za-z0-9_-]{2,31}$/.test(params.operatorRef))
     failures.push('Se necesita referencia de aprobación (sin datos personales ni credenciales)');
-  if(params.sshEnabled!==false)
-    failures.push('Perfil VLAN30-STACK ya permite SSH; NO se cambia el protocolo por esta plantilla');
   if(!Number.isInteger(inventory[site])||inventory[site]>60||inventory[site]<0)
     failures.push('Inventario de PCs anormal o incompatible con puertos 3–32');
   else{
