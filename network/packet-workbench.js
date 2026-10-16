@@ -260,8 +260,12 @@ function onSedeClosed(){
  }
 }
 function closeLab(){
- if(state.returnToStage)closeSedeModal();
- else smTab('topo',document.querySelector('#sm-tabs .sm-tab'));
+ if(state.returnToStage){
+  closeSedeModal();
+ }else if(typeof SM_ID!=='undefined'&&SM_ID&&
+   document.getElementById('sm-overlay')?.classList.contains('vis')){
+  smTab('topo',document.querySelector('#sm-tabs .sm-tab'));
+ }
 }
 function openStage(){
  state.returnToStage=false;closeLab();$('presentation-overlay').hidden=false;
