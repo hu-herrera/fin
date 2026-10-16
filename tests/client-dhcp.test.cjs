@@ -62,7 +62,10 @@ rejects({dns:['10.70.0.110','invalid']});
 rejects({dns:['10.70.0.110']});
 rejects({dns:null});
 rejects({voice:{enabled:true,approvedVoiceDhcp:true,vendorOptionsReviewed:true,expectedPhones:30}});
-rejects({voice:{enabled:true,approvedVoiceDhcp:true,vendorOptionsReviewed:true,expectedPhones:55}},0);
+const cmVoice={...params(0,inventory.cm),
+ voice:{enabled:true,approvedVoiceDhcp:true,vendorOptionsReviewed:true,expectedPhones:55}};
+assert.ok(clientDhcpAssessment(0,cmVoice,inventory).issues.some(x=>x.includes('29 teléfonos')));
+assert.throws(()=>renderClientDhcpCandidate(0,cmVoice,inventory),/DHCP CLIENTES NO GENERADO/);
 rejects({voice:{enabled:true,approvedVoiceDhcp:false,vendorOptionsReviewed:true,expectedPhones:7}});
 rejects({voice:{enabled:true,approvedVoiceDhcp:true,vendorOptionsReviewed:false,expectedPhones:7}});
 rejects({voice:{enabled:true,approvedVoiceDhcp:true,vendorOptionsReviewed:true,expectedPhones:0}});
