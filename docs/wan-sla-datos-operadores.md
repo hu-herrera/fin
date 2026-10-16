@@ -1,6 +1,6 @@
 # Datos necesarios para activar IP SLA Cisco por cada ISP
 
-**ESTADO: contrato por verificar — la topología principal sigue usando pruebas simplificadas de gateway.** Este archivo acompaña al generador `network/wan-sla-candidate.cjs`, que **no genera comandos** si falta información o si el destino de monitoreo es inválido.
+**ESTADO: contratos por verificar — la vista DESPUÉS simula por separado interfaz, gateway y salida upstream; no ejecuta sondas IP SLA reales sobre equipos.** Este archivo acompaña al generador `network/wan-sla-candidate.cjs`, que **no genera comandos** si falta información o si el destino de monitoreo es inválido.
 
 ## Qué necesitamos del proveedor
 
@@ -46,7 +46,7 @@ Una vez verificados los campos, la salida de Cisco incluye:
 - `track ... list boolean or`: el enlace se considera operativo cuando al menos uno de sus dos destinos responde. `delay up 300 down 10` es **hipótesis de laboratorio**, a calibrar por pérdidas, handovers y RTT de cada ISP.
 - Pruebas previas a guardar configuración: `show ip sla statistics`, `show track`, `show ip route 0.0.0.0`, simulación de caída upstream con gateway accesible y restauración estable.
 
-Una ruta `/32` dirigida a un objetivo de prueba debe ser única por ISP; repetir el mismo destino en distintos ISP puede ocasionar rutas ambiguas y resultados inválidos. El test del repositorio rechaza duplicados, IP no públicas o de documentación, destinos sin monitor y gateway fuera de subred.
+Una ruta `/32` dirigida a un objetivo de prueba debe ser única por ISP; repetir el mismo destino en distintos ISP puede ocasionar rutas ambiguas y resultados inválidos. El test del repositorio rechaza duplicados, IP no públicas o de documentación, destinos sin monitor, gateway fuera de subred y **solapamientos entre las cuatro subredes WAN** (idénticos o por prefijos de distinto tamaño).
 
 **La salida NO incluye por sí sola VPN, NAT, políticas de Palo Alto ni alta disponibilidad física y requiere validación sobre IOS-XE/operadores.**
 
