@@ -137,6 +137,8 @@ A sigue siendo alternativa válida para oferta comparable: dos C8211 por remota 
 
 **C4 es la preferencia física de esta revisión, no un ganador financiero confirmado.** La simplicidad de operar menos funciones duplicadas debe contrastarse con su prima de precio y el TCO; no justifica por sí sola gastar más. Se deben comparar ambas alternativas con el mismo soporte, seguridad, medios, plazos, pruebas y capacidad bajo falla antes de comprar.
 
+El [cierre complementario de capacidad](cierre-capacidad-y-comparacion.md) incorpora carga exigente, crecimiento simultáneo de sedes existentes y pérdida de grupos UPS. Sus requisitos centrales son superiores a la sensibilidad normal inicial; no se reinterpretan los cuatro planes nominales como contratos capaces de cumplirlos.
+
 ## 8. Qué ya se valida y qué sigue
 
 El módulo C4 genera los 23 planos y comprueba puertos sin repetición, medios 1G/10G, separación WAN/gestión, capacidad de cobre e IPs de gestión. Su inspección de fallas diferencia acceso físico de continuidad del negocio: pérdida de un CPE/distribuidor quita solo su WAN; pérdida de FWA selecciona FWB; ambos firewalls caídos no apagan switching local; perder HA2 y backup degrada sincronización sin fingir que apaga Internet; una UPS no debe quitar todas las WAN.

@@ -1,0 +1,1181 @@
+{
+  "status": "REQUISITOS_DE_INGENIERIA_NO_CONTRATOS_NI_GARANTIA",
+  "planning_max_utilization": 0.7,
+  "baseline_changed": false,
+  "simulator_changed": false,
+  "cases": [
+    {
+      "id": "current_normal",
+      "demand": {
+        "load": "normal",
+        "growth_existing_sites": 0,
+        "future_remotes": 0,
+        "remote_pcs": 595,
+        "central_pcs": 55,
+        "vpn_envelope_mbps": 246.708,
+        "full_envelope_mbps": 282.908,
+        "single_survivor_target_mbps": 405,
+        "single_survivor_vpn_only_target_mbps": 353,
+        "direction": "CADA_SENTIDO_POR_SEPARADO_SUPUESTO_NO_MEDIDO",
+        "transaction_only_requirement_mbps": null
+      },
+      "wan_subsets": [
+        {
+          "survivors": [],
+          "nominal_ideal_sum_mbps": 0,
+          "budget_ideal_mbps": 0,
+          "vpn_deficit_mbps": 246.708,
+          "full_deficit_mbps": 282.908,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink"
+          ],
+          "nominal_ideal_sum_mbps": 180,
+          "budget_ideal_mbps": 126,
+          "vpn_deficit_mbps": 120.708,
+          "full_deficit_mbps": 156.908,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo"
+          ],
+          "nominal_ideal_sum_mbps": 130,
+          "budget_ideal_mbps": 91,
+          "vpn_deficit_mbps": 155.708,
+          "full_deficit_mbps": 191.908,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo"
+          ],
+          "nominal_ideal_sum_mbps": 310,
+          "budget_ideal_mbps": 217,
+          "vpn_deficit_mbps": 29.708,
+          "full_deficit_mbps": 65.908,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 300,
+          "budget_ideal_mbps": 210,
+          "vpn_deficit_mbps": 36.708,
+          "full_deficit_mbps": 72.908,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 480,
+          "budget_ideal_mbps": 336,
+          "vpn_deficit_mbps": 0,
+          "full_deficit_mbps": 0,
+          "vpn_fits_ideal_budget": true,
+          "full_fits_ideal_budget": true,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 430,
+          "budget_ideal_mbps": 301,
+          "vpn_deficit_mbps": 0,
+          "full_deficit_mbps": 0,
+          "vpn_fits_ideal_budget": true,
+          "full_fits_ideal_budget": true,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 610,
+          "budget_ideal_mbps": 427,
+          "vpn_deficit_mbps": 0,
+          "full_deficit_mbps": 0,
+          "vpn_fits_ideal_budget": true,
+          "full_fits_ideal_budget": true,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 60,
+          "budget_ideal_mbps": 42,
+          "vpn_deficit_mbps": 204.708,
+          "full_deficit_mbps": 240.908,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 240,
+          "budget_ideal_mbps": 168,
+          "vpn_deficit_mbps": 78.708,
+          "full_deficit_mbps": 114.908,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 190,
+          "budget_ideal_mbps": 133,
+          "vpn_deficit_mbps": 113.708,
+          "full_deficit_mbps": 149.908,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 370,
+          "budget_ideal_mbps": 259,
+          "vpn_deficit_mbps": 0,
+          "full_deficit_mbps": 23.908,
+          "vpn_fits_ideal_budget": true,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 360,
+          "budget_ideal_mbps": 252,
+          "vpn_deficit_mbps": 0,
+          "full_deficit_mbps": 30.908,
+          "vpn_fits_ideal_budget": true,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 540,
+          "budget_ideal_mbps": 378,
+          "vpn_deficit_mbps": 0,
+          "full_deficit_mbps": 0,
+          "vpn_fits_ideal_budget": true,
+          "full_fits_ideal_budget": true,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo",
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 490,
+          "budget_ideal_mbps": 343,
+          "vpn_deficit_mbps": 0,
+          "full_deficit_mbps": 0,
+          "vpn_fits_ideal_budget": true,
+          "full_fits_ideal_budget": true,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo",
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 670,
+          "budget_ideal_mbps": 469,
+          "vpn_deficit_mbps": 0,
+          "full_deficit_mbps": 0,
+          "vpn_fits_ideal_budget": true,
+          "full_fits_ideal_budget": true,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        }
+      ],
+      "power_group_failures": [
+        {
+          "failed_power_group": "A",
+          "survivors": [
+            "leo",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 190,
+          "budget_ideal_mbps": 133,
+          "vpn_deficit_mbps": 113.708,
+          "full_deficit_mbps": 149.908,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "failed_power_group": "B",
+          "survivors": [
+            "starlink",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 480,
+          "budget_ideal_mbps": 336,
+          "vpn_deficit_mbps": 0,
+          "full_deficit_mbps": 0,
+          "vpn_fits_ideal_budget": true,
+          "full_fits_ideal_budget": true,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        }
+      ]
+    },
+    {
+      "id": "current_stress",
+      "demand": {
+        "load": "stress",
+        "growth_existing_sites": 0,
+        "future_remotes": 0,
+        "remote_pcs": 595,
+        "central_pcs": 55,
+        "vpn_envelope_mbps": 807.576,
+        "full_envelope_mbps": 923.976,
+        "single_survivor_target_mbps": 1320,
+        "single_survivor_vpn_only_target_mbps": 1154,
+        "direction": "CADA_SENTIDO_POR_SEPARADO_SUPUESTO_NO_MEDIDO",
+        "transaction_only_requirement_mbps": null
+      },
+      "wan_subsets": [
+        {
+          "survivors": [],
+          "nominal_ideal_sum_mbps": 0,
+          "budget_ideal_mbps": 0,
+          "vpn_deficit_mbps": 807.576,
+          "full_deficit_mbps": 923.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink"
+          ],
+          "nominal_ideal_sum_mbps": 180,
+          "budget_ideal_mbps": 126,
+          "vpn_deficit_mbps": 681.576,
+          "full_deficit_mbps": 797.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo"
+          ],
+          "nominal_ideal_sum_mbps": 130,
+          "budget_ideal_mbps": 91,
+          "vpn_deficit_mbps": 716.576,
+          "full_deficit_mbps": 832.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo"
+          ],
+          "nominal_ideal_sum_mbps": 310,
+          "budget_ideal_mbps": 217,
+          "vpn_deficit_mbps": 590.576,
+          "full_deficit_mbps": 706.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 300,
+          "budget_ideal_mbps": 210,
+          "vpn_deficit_mbps": 597.576,
+          "full_deficit_mbps": 713.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 480,
+          "budget_ideal_mbps": 336,
+          "vpn_deficit_mbps": 471.576,
+          "full_deficit_mbps": 587.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 430,
+          "budget_ideal_mbps": 301,
+          "vpn_deficit_mbps": 506.576,
+          "full_deficit_mbps": 622.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 610,
+          "budget_ideal_mbps": 427,
+          "vpn_deficit_mbps": 380.576,
+          "full_deficit_mbps": 496.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 60,
+          "budget_ideal_mbps": 42,
+          "vpn_deficit_mbps": 765.576,
+          "full_deficit_mbps": 881.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 240,
+          "budget_ideal_mbps": 168,
+          "vpn_deficit_mbps": 639.576,
+          "full_deficit_mbps": 755.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 190,
+          "budget_ideal_mbps": 133,
+          "vpn_deficit_mbps": 674.576,
+          "full_deficit_mbps": 790.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 370,
+          "budget_ideal_mbps": 259,
+          "vpn_deficit_mbps": 548.576,
+          "full_deficit_mbps": 664.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 360,
+          "budget_ideal_mbps": 252,
+          "vpn_deficit_mbps": 555.576,
+          "full_deficit_mbps": 671.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 540,
+          "budget_ideal_mbps": 378,
+          "vpn_deficit_mbps": 429.576,
+          "full_deficit_mbps": 545.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo",
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 490,
+          "budget_ideal_mbps": 343,
+          "vpn_deficit_mbps": 464.576,
+          "full_deficit_mbps": 580.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo",
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 670,
+          "budget_ideal_mbps": 469,
+          "vpn_deficit_mbps": 338.576,
+          "full_deficit_mbps": 454.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        }
+      ],
+      "power_group_failures": [
+        {
+          "failed_power_group": "A",
+          "survivors": [
+            "leo",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 190,
+          "budget_ideal_mbps": 133,
+          "vpn_deficit_mbps": 674.576,
+          "full_deficit_mbps": 790.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "failed_power_group": "B",
+          "survivors": [
+            "starlink",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 480,
+          "budget_ideal_mbps": 336,
+          "vpn_deficit_mbps": 471.576,
+          "full_deficit_mbps": 587.976,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        }
+      ]
+    },
+    {
+      "id": "expanded_normal",
+      "demand": {
+        "load": "normal",
+        "growth_existing_sites": 0.2,
+        "future_remotes": 6,
+        "remote_pcs": 901,
+        "central_pcs": 66,
+        "vpn_envelope_mbps": 374.748,
+        "full_envelope_mbps": 417.548,
+        "single_survivor_target_mbps": 597,
+        "single_survivor_vpn_only_target_mbps": 536,
+        "direction": "CADA_SENTIDO_POR_SEPARADO_SUPUESTO_NO_MEDIDO",
+        "transaction_only_requirement_mbps": null
+      },
+      "wan_subsets": [
+        {
+          "survivors": [],
+          "nominal_ideal_sum_mbps": 0,
+          "budget_ideal_mbps": 0,
+          "vpn_deficit_mbps": 374.748,
+          "full_deficit_mbps": 417.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink"
+          ],
+          "nominal_ideal_sum_mbps": 180,
+          "budget_ideal_mbps": 126,
+          "vpn_deficit_mbps": 248.748,
+          "full_deficit_mbps": 291.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo"
+          ],
+          "nominal_ideal_sum_mbps": 130,
+          "budget_ideal_mbps": 91,
+          "vpn_deficit_mbps": 283.748,
+          "full_deficit_mbps": 326.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo"
+          ],
+          "nominal_ideal_sum_mbps": 310,
+          "budget_ideal_mbps": 217,
+          "vpn_deficit_mbps": 157.748,
+          "full_deficit_mbps": 200.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 300,
+          "budget_ideal_mbps": 210,
+          "vpn_deficit_mbps": 164.748,
+          "full_deficit_mbps": 207.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 480,
+          "budget_ideal_mbps": 336,
+          "vpn_deficit_mbps": 38.748,
+          "full_deficit_mbps": 81.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 430,
+          "budget_ideal_mbps": 301,
+          "vpn_deficit_mbps": 73.748,
+          "full_deficit_mbps": 116.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 610,
+          "budget_ideal_mbps": 427,
+          "vpn_deficit_mbps": 0,
+          "full_deficit_mbps": 0,
+          "vpn_fits_ideal_budget": true,
+          "full_fits_ideal_budget": true,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 60,
+          "budget_ideal_mbps": 42,
+          "vpn_deficit_mbps": 332.748,
+          "full_deficit_mbps": 375.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 240,
+          "budget_ideal_mbps": 168,
+          "vpn_deficit_mbps": 206.748,
+          "full_deficit_mbps": 249.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 190,
+          "budget_ideal_mbps": 133,
+          "vpn_deficit_mbps": 241.748,
+          "full_deficit_mbps": 284.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 370,
+          "budget_ideal_mbps": 259,
+          "vpn_deficit_mbps": 115.748,
+          "full_deficit_mbps": 158.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 360,
+          "budget_ideal_mbps": 252,
+          "vpn_deficit_mbps": 122.748,
+          "full_deficit_mbps": 165.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 540,
+          "budget_ideal_mbps": 378,
+          "vpn_deficit_mbps": 0,
+          "full_deficit_mbps": 39.548,
+          "vpn_fits_ideal_budget": true,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo",
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 490,
+          "budget_ideal_mbps": 343,
+          "vpn_deficit_mbps": 31.748,
+          "full_deficit_mbps": 74.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo",
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 670,
+          "budget_ideal_mbps": 469,
+          "vpn_deficit_mbps": 0,
+          "full_deficit_mbps": 0,
+          "vpn_fits_ideal_budget": true,
+          "full_fits_ideal_budget": true,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        }
+      ],
+      "power_group_failures": [
+        {
+          "failed_power_group": "A",
+          "survivors": [
+            "leo",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 190,
+          "budget_ideal_mbps": 133,
+          "vpn_deficit_mbps": 241.748,
+          "full_deficit_mbps": 284.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "failed_power_group": "B",
+          "survivors": [
+            "starlink",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 480,
+          "budget_ideal_mbps": 336,
+          "vpn_deficit_mbps": 38.748,
+          "full_deficit_mbps": 81.548,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        }
+      ]
+    },
+    {
+      "id": "expanded_stress",
+      "demand": {
+        "load": "stress",
+        "growth_existing_sites": 0.2,
+        "future_remotes": 6,
+        "remote_pcs": 901,
+        "central_pcs": 66,
+        "vpn_envelope_mbps": 1222.408,
+        "full_envelope_mbps": 1360.808,
+        "single_survivor_target_mbps": 1945,
+        "single_survivor_vpn_only_target_mbps": 1747,
+        "direction": "CADA_SENTIDO_POR_SEPARADO_SUPUESTO_NO_MEDIDO",
+        "transaction_only_requirement_mbps": null
+      },
+      "wan_subsets": [
+        {
+          "survivors": [],
+          "nominal_ideal_sum_mbps": 0,
+          "budget_ideal_mbps": 0,
+          "vpn_deficit_mbps": 1222.408,
+          "full_deficit_mbps": 1360.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink"
+          ],
+          "nominal_ideal_sum_mbps": 180,
+          "budget_ideal_mbps": 126,
+          "vpn_deficit_mbps": 1096.408,
+          "full_deficit_mbps": 1234.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo"
+          ],
+          "nominal_ideal_sum_mbps": 130,
+          "budget_ideal_mbps": 91,
+          "vpn_deficit_mbps": 1131.408,
+          "full_deficit_mbps": 1269.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo"
+          ],
+          "nominal_ideal_sum_mbps": 310,
+          "budget_ideal_mbps": 217,
+          "vpn_deficit_mbps": 1005.408,
+          "full_deficit_mbps": 1143.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 300,
+          "budget_ideal_mbps": 210,
+          "vpn_deficit_mbps": 1012.408,
+          "full_deficit_mbps": 1150.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 480,
+          "budget_ideal_mbps": 336,
+          "vpn_deficit_mbps": 886.408,
+          "full_deficit_mbps": 1024.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 430,
+          "budget_ideal_mbps": 301,
+          "vpn_deficit_mbps": 921.408,
+          "full_deficit_mbps": 1059.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 610,
+          "budget_ideal_mbps": 427,
+          "vpn_deficit_mbps": 795.408,
+          "full_deficit_mbps": 933.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 60,
+          "budget_ideal_mbps": 42,
+          "vpn_deficit_mbps": 1180.408,
+          "full_deficit_mbps": 1318.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 240,
+          "budget_ideal_mbps": 168,
+          "vpn_deficit_mbps": 1054.408,
+          "full_deficit_mbps": 1192.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 190,
+          "budget_ideal_mbps": 133,
+          "vpn_deficit_mbps": 1089.408,
+          "full_deficit_mbps": 1227.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 370,
+          "budget_ideal_mbps": 259,
+          "vpn_deficit_mbps": 963.408,
+          "full_deficit_mbps": 1101.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 360,
+          "budget_ideal_mbps": 252,
+          "vpn_deficit_mbps": 970.408,
+          "full_deficit_mbps": 1108.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 540,
+          "budget_ideal_mbps": 378,
+          "vpn_deficit_mbps": 844.408,
+          "full_deficit_mbps": 982.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "leo",
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 490,
+          "budget_ideal_mbps": 343,
+          "vpn_deficit_mbps": 879.408,
+          "full_deficit_mbps": 1017.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "survivors": [
+            "starlink",
+            "leo",
+            "entel5g",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 670,
+          "budget_ideal_mbps": 469,
+          "vpn_deficit_mbps": 753.408,
+          "full_deficit_mbps": 891.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        }
+      ],
+      "power_group_failures": [
+        {
+          "failed_power_group": "A",
+          "survivors": [
+            "leo",
+            "gtd4g"
+          ],
+          "nominal_ideal_sum_mbps": 190,
+          "budget_ideal_mbps": 133,
+          "vpn_deficit_mbps": 1089.408,
+          "full_deficit_mbps": 1227.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        },
+        {
+          "failed_power_group": "B",
+          "survivors": [
+            "starlink",
+            "entel5g"
+          ],
+          "nominal_ideal_sum_mbps": 480,
+          "budget_ideal_mbps": 336,
+          "vpn_deficit_mbps": 886.408,
+          "full_deficit_mbps": 1024.808,
+          "vpn_fits_ideal_budget": false,
+          "full_fits_ideal_budget": false,
+          "contracted_upstream_mbps": null,
+          "contracted_downstream_mbps": null,
+          "service_certified": false
+        }
+      ]
+    }
+  ],
+  "interpretation": {
+    "zero_survivors_included": true,
+    "ecmp_aggregate_is_upper_bound": true,
+    "equal_cost_does_not_imply_capacity_weighting": true,
+    "nominal_speed_is_not_symmetric_contract": true,
+    "transactions_cannot_be_inferred_from_all_corporate_traffic": true,
+    "future_site_sizes_are_sensitivity_only": true,
+    "backups_replication_updates_extra_traffic_not_included": true
+  }
+}
