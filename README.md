@@ -19,6 +19,8 @@ Este repositorio modela una red corporativa ficticia con **23 sedes y 650 PCs**,
 
 **Escenario original consolidado:** [base, recorridos y auditoría de huecos](docs/escenario-original-consolidado.md). ANTES representa MPLS cableado en las 23 ubicaciones, 100 Mbps remotos como supuesto, corte nacional de 22 sucursales y dependencia de los hosts de su switch de acceso. Caudales centrales, contratos y servicios reales permanecen sin acreditar.
 
+**Cierre de capacidad C4:** [crecimiento, carga exigente, fallas de energía y comparación de ofertas](docs/cierre-capacidad-y-comparacion.md) · [64 escenarios reproducibles](docs/capacidad-wan-resiliencia.json). La suma nominal no cubre carga exigente; CM requiere condiciones propias de caudal por sentido y medios acordes.
+
 **Parámetros originales:** [carga, telefonía, servidores, backup y energía](docs/dimensionamiento-operacion-original.md) · [hipótesis explícitas](docs/hipotesis-carga-base.json) · [resultados reproducibles](docs/dimensionamiento-base-antes.json). Son supuestos académicos; costos completos y recuperación de inversión siguen sin determinar. El plano físico C4 ya detalla cuatro WAN; contratos, capacidad central, licencias y migración funcional siguen pendientes.
 
 ## Qué probar

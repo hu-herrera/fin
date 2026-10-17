@@ -262,3 +262,16 @@ PA-540 hardware y ATP cinco años elevan el parcial referencial a CLP 672.773.65
 Se conserva A como alternativa comercial: el parcial histórico con los mismos teléfonos es CLP 524.360.778, inferior al parcial C4, pero faltan licencias Cisco y adaptación de cuatro WAN y las referencias comerciales no son equivalentes. No se declara ahorro por consolidar ni ganador financiero sin ofertas homologadas.
 
 **Validación:** módulo de candidato con rechazo de puertos repetidos/medios incorrectos/modelo insuficiente, VLAN WAN/gestión mezcladas e IPs duplicadas; pruebas por las 23 ubicaciones de caída de WAN/CPE/distribuidor/firewall/LAN/HA/UPS y límites de capacidad. No altera ANTES ni el motor DESPUÉS anterior; sin compras ni contacto de proveedores.
+
+
+## Entrada 014 — 17 de octubre de 2026
+
+**Tema:** requisitos de capacidad central antes de migrar C4.
+
+Se agrega el [cierre de capacidad y comparación](cierre-capacidad-y-comparacion.md) y un generador de 64 escenarios: normal/exigente actual y ampliado, todas las combinaciones de WAN y cada pérdida de grupo UPS. La ampliación incluye 20% dentro de cada sede existente y seis futuras hipotéticas, con voz redondeada por sede. Se separan requisitos por sentido de velocidades nominales sin subida acreditada.
+
+La carga exigente actual supera el agregado ideal aun sin fallas. Perder UPS A deja solo 133 Mbps de presupuesto y no sostiene la normal actual. Como requisito para cotizar se recomiendan dos caminos centrales independientes de al menos 600 Mbps útiles por sentido para la normal ampliada; la exigente ampliada requiere 1.945 Mbps por único superviviente (alternativa de 2 Gbps). Esta última necesita reasignar puertos multigig y cambiar distribuidores/CPE de 1G; no se aplica ni se valoriza sin validar. Los respaldos menores implican servicio degradado por definir con requisitos de aplicaciones.
+
+Se define matriz de ofertas equivalentes A/C4, sin ganador económico ni precios nuevos inventados. La fase deja criterios y aritmética verificables; contratación, pruebas de rendimiento y migración del simulador pendientes. ANTES y DESPUÉS no cambian.
+
+**Validación:** combinaciones únicas incluyendo cero WAN, pérdida de cada dominio eléctrico, crecimiento por sede, umbral mínimo de admisión, entradas inválidas y contratos desconocidos que permanecen null; generación determinista comprobada en CI.
