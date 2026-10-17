@@ -159,3 +159,13 @@ Dimensionar capacidad central, túneles, licencias, direccionamiento y operació
 - Se identificaron inconsistencias del ANTES actual: puertos insuficientes del switch de 24, ausencia de PoE del modelo mostrado, fechas genéricas de soporte, falta de teléfonos/datacenter y diferencias de WAN y stacking. Se deja listado de cambios funcionales para después de esta definición.
 
 **Resultado:** problema e inventario académico inicial definidos y comprobados documentalmente. Propuesta DESPUÉS y renovación en pausa mientras se consolida la base. No se han editado `index.html`, el motor de red ni el Excel en esta fase.
+
+## Entrada 006 — 17 de octubre de 2026
+
+**Tema:** relacionar la base con seguridad, datos y continuidad en Chile. Se amplió la fase 1 con aplicabilidad normativa y una matriz de ocho áreas de controles, evidencia pendiente y responsables.
+
+Se distingue obsolescencia de incumplimiento legal demostrado. Se revisaron Ley 19.628, preparación para Ley 21.719, servicios esenciales/OIV bajo Ley 21.663 y referencias CMF de continuidad/seguridad condicionadas al tipo de entidad. Se registró la propuesta de postergar la reforma de datos como propuesta, no como ley aprobada. Falta definir la naturaleza jurídica/regulatoria de la financiera ficticia.
+
+Se incorporaron accesos, tratamiento de datos, cifrado/segmentación, recuperación, incidentes, cambios, endpoints/telefonía y dependencias físicas/de terceros. La ausencia de evidencia no se presenta como control inexistente. Se mantiene el alcance del proyecto de redes y se señalan dependencias de las demás áreas.
+
+**Resultado:** diagnóstico ampliado sin afirmar certificación o incumplimiento integral y sin cambios al código del simulador.

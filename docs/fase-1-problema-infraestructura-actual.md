@@ -157,6 +157,40 @@ Esta fase no modifica `index.html` ni la lógica activa. La implementación post
 
 **Criterio para avanzar:** la base por sede, sus supuestos y riesgos quedan definidos aquí. Su representación funcional y las configuraciones todavía deben implementarse y verificarse en una fase posterior. La elección del equipamiento DESPUÉS sigue abierta.
 
+## 9. Brechas organizacionales, protección de datos y marco chileno
+
+**Revisión preliminar al 17-10-2026.** La obsolescencia técnica verificada de los modelos no acredita, por sí sola, infracción de una ley. No se concluye «incumple todas las normas» ni que la compra propuesta certifique cumplimiento. Se requiere contrastar obligaciones aplicables con evidencia del control y su funcionamiento.
+
+### Aplicabilidad antes de afirmar cumplimiento o incumplimiento
+
+- **Ley 19.628:** el escenario trata datos personales de clientes y trabajadores. La ley contempla, entre otros aspectos, confidencialidad y debida diligencia en el cuidado de datos; la infraestructura de red es solo parte de la protección [L1].
+- **Ley 21.719:** incorporar preparación para el nuevo régimen, sin presentar obligaciones futuras como incumplimientos ya consumados a la fecha de diagnóstico. La referencia judicial consultada señala inicio el 01-12-2026 [L2]; existe una propuesta gubernamental de postergación al 01-12-2027 [L3]. Esa propuesta no se trata como ley aprobada. Revalidar texto vigente y calendario al cerrar la entrega o implantar.
+- **Ley 21.663:** banca, servicios financieros y medios de pago figuran entre los servicios esenciales. Deben revisarse prevención, respuesta y reporte de incidentes. La condición de OIV depende de una calificación de ANCI y no se supone para la empresa ficticia [L4]. El encargado de ciberseguridad y el delegado de un OIV tienen alcances distintos [L5].
+- **CMF:** capítulos RAN 20-9 (continuidad) y 20-10 (seguridad/ciberseguridad) como referencias a evaluar. Antes de declarar obligación directa, precisar si la empresa es banco, filial, sociedad de apoyo, emisor/operador u otra entidad y qué norma le corresponde. No basta el nombre comercial «financiera» [L6, L7].
+
+Se mantiene el tipo jurídico/regulatorio de Financiera Pacífico como **pendiente de definición del caso**. Las normas no confirmadas como directamente aplicables se pueden usar como referencias de diseño, identificándolas así. No se afirma una designación real de ANCI, inscripción o fiscalización de esta entidad ficticia.
+
+### Matriz inicial de controles y evidencia pendiente
+
+| Área a revisar | Base conocida o supuesto existente | Evidencia para cerrar la brecha | Responsable funcional |
+|---|---|---|---|
+| Accesos y privilegios | Administración manual; identidades locales como supuesto | Cuentas individuales, roles, altas/bajas, acceso remoto, MFA donde corresponda y acceso de emergencia probado | TI y seguridad |
+| Datos de clientes y trabajadores | Core/base de datos centrales; contenido exacto no inventariado | Categorías de datos, finalidad y fundamento del tratamiento, permisos, retención y ejercicio de derechos | Negocio, privacidad/legal y aplicaciones |
+| Cifrado y separación | Firewall/VPN contemplados por el caso; detalles no verificados | Protocolos y claves, cifrado en tránsito y reposo, segmentación efectiva y controles de acceso a servidores | Redes, sistemas y seguridad |
+| Copias y continuidad | Repositorio supuesto en CM; sin evidencia de copia externa/restauración | Restauración documentada, ubicación independiente, protección de copias, RPO/RTO por servicio y procedimiento manual de contingencia | Sistemas y continuidad/negocio |
+| Incidentes | NMS existente; circuito formal de respuesta no acreditado | Responsables, escalamiento, registro, contención, preservación de evidencia y reporte externo según obligación aplicable | Seguridad y dirección |
+| Cambios y soporte | Equipos de red sin soporte; cambios manuales | Inventario, riesgo aceptado, controles compensatorios, revisión, versiones, rollback y plan de renovación | TI y gestión de riesgos |
+| Puestos y telefonía | 650 pares de dispositivos en el escenario | SO y soporte de PCs, protección de endpoint, provisión de teléfonos y tratamiento de grabaciones si existen | Soporte, seguridad y telefonía |
+| Datacenter y terceros | Dos hosts supuestos y dependencias de WAN/energía | Acceso físico, UPS/climatización, contratos/SLA, proveedor y plan de salida/recuperación si se usa nube | Infraestructura, compras y continuidad |
+
+«No acreditado» significa que falta evidencia en el caso, no que se haya observado ausencia del control. Cualquier nueva carencia incorporada a la historia deberá rotularse como supuesto del escenario.
+
+La propuesta de redes deberá aportar controles y evidencias de su alcance, y señalar las dependencias de aplicaciones, procesos, personas y proveedores. No se amplía el simulador a una aplicación bancaria completa ni se declaran clientes reales o datos personales operativos.
+
+### Redacción consolidada del problema
+
+> La infraestructura actual permite la operación cotidiana de Financiera Pacífico, pero combina equipamiento de red y telefonía fuera de soporte, dependencias únicas en sucursales y administración manual. La falta de evidencia suficiente sobre recuperación, trazabilidad y protección de datos impide acreditar que los controles cubran de forma consistente los requisitos de continuidad y las obligaciones aplicables. Se requiere modernizar y estandarizar la plataforma, documentar los controles y probar su eficacia, preparando además el crecimiento de seis sucursales.
+
 ## Fuentes
 
 - **Caso:** `Capstone_Ingenieria_Conectividad_Redes.xlsx`, Financiera Pacífico, fila 7 de Empresas, Fichas de Casos y Datos Técnicos; leído anteriormente en esta sesión.
@@ -170,5 +204,12 @@ Esta fase no modifica `index.html` ni la lógica activa. La implementación post
 - **R7:** https://www.cisco.com/c/en/us/td/docs/voice_ip_comm/cucm/srnd/8x/uc8x/endpnts.pdf (sección Cisco Unified IP Phone 7942G, página PDF 11).
 - **R8:** https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960/software/release/15-2_2_e/release/notes/OL_32525_01.html
 - **R9:** https://www.cisco.com/c/en/us/products/collateral/switches/catalyst-3560-x-series-switches/data_sheet_c78-584733.html
+- **L1:** Ley 19.628, artículos 7 y 11, versión anterior a la reforma: https://www.bcn.cl/leychile/navegar?idNorma=141599&idParte=8642686&idVersion=2023-05-09
+- **L2:** Academia Judicial, síntesis de Ley 21.719 y vigencia: https://academiajudicial.cl/recursos/actualizaciones-normativas/ley-21-719-que-regula-la-proteccion-y-el-tratamiento-de-los-datos-personales-y-crea-la-agencia-de-proteccion-de-datos-personales/
+- **L3:** Ministerio de Economía, propuesta de ampliación de plazo, 01-09-2026: https://www.economia.gob.cl/2026/09/01/gobierno-propone-ampliar-plazo-para-implementar-nueva-ley-de-proteccion-de-datos-y-institucionalidad.htm
+- **L4:** ANCI, servicios esenciales y OIV: https://anci.gob.cl/noticias/ley-marco-de-ciberseguridad-es-publicada-en-el-diario-oficial/
+- **L5:** ANCI, encargado y delegado, 29-05-2026: https://anci.gob.cl/noticias/el-rol-del-delegado-de-ciberseguridad/
+- **L6:** CMF, alcance de normativa de seguridad: https://cmfchile.cl/portal/prensa/625/w4-article-29314.html
+- **L7:** CMF, RAN 20-9: https://www.cmfchile.cl/portal/normativa/624/articles-28984_doc_pdf.pdf
 
 Inventario estructurado: [base-infraestructura-antes.json](base-infraestructura-antes.json). Registro de decisiones: [bitácora](bitacora-proyecto.md).
