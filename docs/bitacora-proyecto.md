@@ -195,3 +195,16 @@ La revisión de licencias detectó un límite de 250 Mbps de cifrado agregado en
 Se revalidaron precios y se añadieron 650 teléfonos, firewall/ATP de CM y kits completos de stack. El subtotal con referencia es CLP 608.597.528 bajo USD=CLP1.000 y factor tributario ilustrativo; no es total de proyecto y faltan componentes esenciales. El límite de 160 millones no se presenta como cubierto. Se compara consolidación WAN/NGFW y se incorpora SIP-T33G como alternativa de telefonía con ficha oficial y precio local: diferencia de CLP 84.236.750 en 650 terminales frente a la referencia Cisco, con soporte/PBX/firmware pendientes. Se plantean ofertas de proyecto y despliegue por etapas antes de adjudicar.
 
 **Resultado:** dimensionamiento y lista corta revisables, con costos desconocidos en null, no cero. Sin compras, contacto con proveedores, sustitución del perfil DESPUÉS ni cambios al Excel/entregables originales. La metadata del inventario ANTES se alinea con su estado ya modelado; no cambia su conectividad.
+
+
+## Entrada 009 — 17 de octubre de 2026
+
+**Tema:** aplicar la optimización recomendada tras la autorización «haz lo que recomiendas».
+
+Se adopta documentalmente la [variante B](decision-arquitectura-optimizada.md): parejas NGFW con routing/VPN/QoS en sucursales, sin 44 routers remotos adicionales; se mantienen pares Cisco en el borde de CM y switching. SIP-T33G pasa a terminal preferido de diseño, condicionado a soporte escrito 5+1 y piloto PBX. Se conservan los 650 PCs y no se suman servidores por sucursal.
+
+Se fijan dos WAN iniciales verificables por remota, plano de puertos con HA1, HA2, HA2 backup, gestión y heartbeat backup. PA-520 no añade RJ45 frente a PA-510; se corrige la sugerencia anterior. La distribución de cada WAN a ambos firewalls tiene reserva de 44 equipos sin precio, eliminable solo si el CPE ofrece entrega doble validada. Las VPN terminan en los PA de CM; los Cisco centrales transportan IP, por lo que no se presume necesaria la licencia crypto de A. Se diferencian rutas monitorizadas de SD-WAN licenciado y se registra la limitación de sincronización de IKE.
+
+La [BOM derivada](propuesta-optimizada-2026-10-17.json) conserva fuentes y supuestos: CLP 411.158.986 de partidas comparables, reducción referencial de CLP 197.438.542 frente a A. Faltan costos obligatorios y el parcial supera el límite de CLP 160 millones en CLP 251.158.986. No se promete ahorro neto de TCO ni viabilidad con ese presupuesto. Seis remotas futuras: CLP 79.662.120 de red parcial, sin cantidades inventadas de teléfonos.
+
+**Validación:** generador reproducible con comprobación de 650 puestos/23 sedes, sumas por partida, reconciliación A/B y puertos sin duplicados; comprobación incluida en CI. Sin compra/contacto de proveedores ni migración del motor DESPUÉS: se deja una secuencia concreta para actualizar topologías, ping del mapa/interno, estados HA, CLI y exportadores coherentemente.

@@ -15,7 +15,7 @@ Este repositorio modela una red corporativa ficticia con **23 sedes y 650 PCs**,
 
 **Laboratorio físico: opcional, fuera del alcance requerido por el trabajo académico.** No hay obligación de adquirir 23 routers/firewalls ni de contratar operadores. Documentos de hardware y candidatos están disponibles como anexos para explicar cómo se validaría un despliegue real, no como condición para presentar el simulador.
 
-**Propuesta en revisión (17-10-2026):** [dimensionamiento, selección y presupuesto parcial](docs/fase-2-dimensionamiento-y-seleccion.md) · [cálculos por sede](docs/dimensionamiento-propuesta-2026-10-17.json). La nueva arquitectura no está adjudicada ni sustituye todavía el perfil DESPUÉS.
+**Diseño preferido B (17-10-2026):** [decisión WAN/VPN integrada y telefonía SIP](docs/decision-arquitectura-optimizada.md) · [BOM y cálculos optimizados](docs/propuesta-optimizada-2026-10-17.json). Dos NGFW y dos switches PoE de acceso por remota, sin routers remotos adicionales; Cisco en borde CM y switching; 650 SIP-T33G sujetos a soporte/piloto. Subtotal parcial comparable CLP 411.158.986; total completo pendiente y superior al presupuesto original. La [variante A de fase 2](docs/fase-2-dimensionamiento-y-seleccion.md) se conserva como comparación histórica. DESPUÉS todavía ejecuta el perfil anterior; su migración funcional queda identificada en la decisión.
 
 ## Qué probar
 
@@ -24,6 +24,7 @@ Abrir [index.html](index.html) en un navegador compatible. Selecciona una sede e
 Para comprobaciones reproducibles desde la raíz con Node.js:
 
 ```bash
+node scripts/build-optimized-proposal.cjs --check
 node network/build-browser-lab.cjs --check
 node tests/packet-simulator.test.cjs
 node tests/financial-policy.test.cjs

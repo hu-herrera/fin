@@ -18,6 +18,8 @@ jobs:
         run: |
           npm install --no-save @playwright/test
           npx playwright install --with-deps chromium
+      - name: Verificar BOM optimizada y comparación económica reproducible
+        run: node scripts/build-optimized-proposal.cjs --check
       - name: Probar logica WAN
         run: node tests/wan.test.cjs
       - name: Probar simulación de paquetes y políticas sobre enlaces
