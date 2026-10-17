@@ -99,6 +99,8 @@ function centralCapacity(input,baseHyp,baseInventory,futureRemotes=0){
 function build(input,inventory,oldProposal,baseHyp){
  assert.equal(inventory.sites.length,23);assert.equal(inventory.sites.reduce((n,s)=>n+s.pcs,0),650);
  assert.equal(input.prices.usd_tax_factor_illustrative,1.19);
+ assert.equal(input.prices.usd_clp_assumed,oldProposal.assumptions.usd_clp,'Tipo de cambio distinto en referencias heredadas');
+ assert.equal(oldProposal.assumptions.illustrative_tax_factor_for_usd,1.19,'Impuesto distinto en referencias heredadas');
  assert.deepEqual(input.providers.map(p=>p.id).sort(),['entel5g','gtd4g','leo','starlink']);
  assert.equal(input.management.vlan,130);assert.equal(input.management.transit_vlan,131);
  assert.equal(input.management.network_rule,'10.80.N.0/27');assert.equal(input.management.transit_network_rule,'10.80.N.64/29');

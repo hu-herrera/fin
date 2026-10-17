@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const m=require('../network/four-wan-design.cjs');
 const input=require('../docs/entradas-propuesta-cuatro-wan.json'),base=require('../docs/base-infraestructura-antes.json'),old=require('../docs/propuesta-optimizada-2026-10-17.json'),hyp=require('../docs/hipotesis-carga-base.json');
 const design=m.build(input,base,old,hyp);
+const mixedFx=structuredClone(input);mixedFx.prices.usd_clp_assumed=900;assert.throws(()=>m.build(mixedFx,base,old,hyp),/Tipo de cambio/);
 assert.equal(m.usdUnit(4016.25,1000),4779338); // Medio peso debe redondear hacia arriba, no depender de coma flotante.
 assert.equal(design.sites.length,23);assert.equal(design.tunnels.initial_candidate_tunnels,352);assert.equal(design.tunnels.future_candidate_tunnels,448);
 for(const s of design.sites){
