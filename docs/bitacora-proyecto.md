@@ -145,3 +145,27 @@ Dimensionar capacidad central, túneles, licencias, direccionamiento y operació
 - Se mantuvo la propuesta de dos routers, dos firewalls y dos switches como variante principal de estudio; la integración de WAN/VPN en NGFW queda como alternativa comparativa sin migración aplicada.
 
 **Resultado:** informe y cálculos preliminares revisables. Modelos, reutilización y presupuesto definitivo pendientes de requisitos de carga y oferta formal. Sin mensajes enviados a proveedores, sin compras ni cambios al simulador o Excel.
+
+## Entrada 005 — 17 de octubre de 2026
+
+**Tema:** priorizar fase 1, definición de la infraestructura inicial y su problema. El usuario solicita cerrar la base antes de seguir con la propuesta y de editar topologías en `index.html`.
+
+- Se documentó la [fase 1 por sede](fase-1-problema-infraestructura-actual.md) y un [inventario estructurado de la base](base-infraestructura-antes.json).
+- Se fijaron modelos antiguos como supuestos académicos y se verificaron sus últimas fechas de soporte en Cisco: 1921, 2911, 2960-S, 3750-X, ASA 5512-X y CP-7942G. No se los atribuye al Excel ni a una visita de terreno.
+- Se conserva el reparto de 650 PCs en 23 ubicaciones. Se asumen 650 teléfonos, un teléfono por PC, con conexión switch PoE → teléfono → PC. No se confunden con los 780 trabajadores del caso.
+- Se dimensionó la base: un switch PoE de 48 puertos por sucursal continental, uno de 24 en S21/S22 y dos de 48 en CM; 24 routers, 24 switches y un firewall central en total. CM conserva redundancia parcial y un datacenter de referencia; no se eliminan funciones antiguas para exagerar la necesidad de mejora.
+- Se reservó un direccionamiento documental de voz y servidores dentro de 10.70.0.0/16 para preparar la implementación; estas reservas no cambian IPs ni configuraciones activas.
+- Se separa el acceso satelital supuesto de S21/S22 de MPLS continental; doble ISP de CM no se interpreta como dos MPLS. Cobertura y contratos siguen pendientes.
+- Se identificaron inconsistencias del ANTES actual: puertos insuficientes del switch de 24, ausencia de PoE del modelo mostrado, fechas genéricas de soporte, falta de teléfonos/datacenter y diferencias de WAN y stacking. Se deja listado de cambios funcionales para después de esta definición.
+
+**Resultado:** problema e inventario académico inicial definidos y comprobados documentalmente. Propuesta DESPUÉS y renovación en pausa mientras se consolida la base. No se han editado `index.html`, el motor de red ni el Excel en esta fase.
+
+## Entrada 006 — 17 de octubre de 2026
+
+**Tema:** relacionar la base con seguridad, datos y continuidad en Chile. Se amplió la fase 1 con aplicabilidad normativa y una matriz de ocho áreas de controles, evidencia pendiente y responsables.
+
+Se distingue obsolescencia de incumplimiento legal demostrado. Se revisaron Ley 19.628, preparación para Ley 21.719, servicios esenciales/OIV bajo Ley 21.663 y referencias CMF de continuidad/seguridad condicionadas al tipo de entidad. Se registró la propuesta de postergar la reforma de datos como propuesta, no como ley aprobada. Falta definir la naturaleza jurídica/regulatoria de la financiera ficticia.
+
+Se incorporaron accesos, tratamiento de datos, cifrado/segmentación, recuperación, incidentes, cambios, endpoints/telefonía y dependencias físicas/de terceros. La ausencia de evidencia no se presenta como control inexistente. Se mantiene el alcance del proyecto de redes y se señalan dependencias de las demás áreas.
+
+**Resultado:** diagnóstico ampliado sin afirmar certificación o incumplimiento integral y sin cambios al código del simulador.

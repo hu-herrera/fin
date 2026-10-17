@@ -55,6 +55,7 @@ Las plantillas **no contienen secretos reales** ni crean túneles WAN, usuarios 
 
 ## Documentación de referencia
 
+- [Fase 1: problema y base inicial por las 23 sedes](docs/fase-1-problema-infraestructura-actual.md) — definición documental; pendiente de integrar en la vista ANTES.
 - [Bitácora del proyecto y decisiones de alcance](docs/bitacora-proyecto.md)
 - [Investigación preliminar de equipos, soporte y precios (17-10-2026)](docs/investigacion-equipamiento-2026-10-17.md)
 - [Cierre técnico y riesgos de implantación](docs/cierre-tecnico-red-23-sedes.md)
