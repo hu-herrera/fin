@@ -4,6 +4,8 @@
 
 **Actualización posterior:** la [fase 2 de dimensionamiento](fase-2-dimensionamiento-y-seleccion.md) incorpora los 650 teléfonos acordados en fase 1, presupuesto por sede, límites de licencia criptográfica y comparación económica ampliada. Los parciales de este informe conservan su alcance original.
 
+**Decisión vigente:** [WAN/VPN integrada y telefonía SIP, variante B preferida](decision-arquitectura-optimizada.md). La separación de funciones que sigue se conserva como alternativa histórica, no como selección final.
+
 ## Resultado y recomendación
 
 La variante de referencia conserva separación de funciones: **dos routers Cisco, dos firewalls Palo Alto en activo/pasivo y dos switches de acceso PoE por sucursal**. Es una alternativa sólida para estudiar, no una demostración de que seis equipos sean la solución óptima en toda ubicación. La casa matriz también requiere redundancia; su diferencia es capacidad, conectividad y zona de servidores, no prescindir de pares.

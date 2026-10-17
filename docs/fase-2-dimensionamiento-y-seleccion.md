@@ -2,6 +2,8 @@
 
 **Revisión:** 17-10-2026, v0.2. **Resultado:** propuesta técnica y comparación económica para revisión; no orden de compra ni cotización formal. Parte del [inventario ANTES](base-infraestructura-antes.json) y amplía la [investigación preliminar](investigacion-equipamiento-2026-10-17.md). Los [cálculos por sede y partidas](dimensionamiento-propuesta-2026-10-17.json) acompañan este documento.
 
+**Decisión posterior:** la [decisión 009](decision-arquitectura-optimizada.md) adopta B como diseño preferido y selecciona SIP-T33G sujeto a soporte/piloto. Este documento conserva A y sus precios como referencia histórica; la [BOM optimizada](propuesta-optimizada-2026-10-17.json) es la comparación vigente. PA-520 no añade puertos frente a PA-510; ver corrección y plano de la decisión.
+
 ## 1. Recomendación de trabajo
 
 Mantener como **variante A** dos routers Cisco equivalentes, dos firewalls iguales en activo/pasivo y dos switches PoE por ubicación. Comparar dos equipos de gama adecuada frente al esquema de un principal muy grande y un respaldo pequeño: el superviviente debe soportar la carga comprometida, las funciones y las licencias. El modelo más barato solo sirve si cumple ese mismo mínimo bajo falla.
@@ -122,7 +124,7 @@ P4 declara solo cuatro unidades en stock; P5 es pedido especial y P8 muestra dos
 
 Con las partidas ya valorizadas, la variante A excede el presupuesto de CLP 160 millones en $448.597.528 **antes de completar los faltantes**. Sin reemplazar teléfonos, esas mismas partidas de red suman $464.734.328; reutilizarlos no resuelve por sí solo el desfase ni elimina su obsolescencia.
 
-**Alternativa B para comparar:** WAN/VPN en el par NGFW, conservando Cisco en switching y en CM. Quitar los 44 routers remotos reduce esta suma a $495.395.736 antes de nuevas licencias, distribución y trabajo de rediseño. No es ahorro neto garantizado ni autorización para retirar Cisco del alcance. En PA-510, cuatro WAN + dos LAN + dos HA agotan los ocho puertos: sin margen; comparar PA-520 si hacen falta más. La alternativa debe demostrar routing, VPN, QoS, gestión y recuperación equivalentes. No se aplica en la web en esta fase.
+**Alternativa B para comparar:** WAN/VPN en el par NGFW, conservando Cisco en switching y en CM. Quitar los 44 routers remotos reduce esta suma a $495.395.736 antes de nuevas licencias, distribución y trabajo de rediseño. No es ahorro neto garantizado ni autorización para retirar Cisco del alcance. En PA-510, cuatro WAN + dos LAN + dos HA agotan los ocho puertos: sin margen; no atribuir más puertos al PA-520: también tiene ocho RJ45. Ver el plano corregido en la decisión 009. La alternativa debe demostrar routing, VPN, QoS, gestión y recuperación equivalentes. No se aplica en la web en esta fase.
 
 Seis remotas futuras con la misma plantilla A añaden un parcial de red de **$110.535.336**, sin teléfonos, usuarios, CPE/WAN, energía, soporte, implementación o CM adicional. Los 30 puestos por futura solo se usaron para sensibilidad de carga, no para fijar 180 compras.
 
