@@ -15,11 +15,11 @@ Este repositorio modela una red corporativa ficticia con **23 sedes y 650 PCs**,
 
 **Laboratorio físico: opcional, fuera del alcance requerido por el trabajo académico.** No hay obligación de adquirir 23 routers/firewalls ni de contratar operadores. Documentos de hardware y candidatos están disponibles como anexos para explicar cómo se validaría un despliegue real, no como condición para presentar el simulador.
 
-**Diseño preferido B (17-10-2026):** [decisión WAN/VPN integrada y telefonía SIP](docs/decision-arquitectura-optimizada.md) · [BOM y cálculos optimizados](docs/propuesta-optimizada-2026-10-17.json). Dos NGFW y dos switches PoE de acceso por remota, sin routers remotos adicionales; Cisco en borde CM y switching; 650 SIP-T33G sujetos a soporte/piloto. Subtotal parcial comparable CLP 411.158.986; total completo pendiente y superior al presupuesto original. La [variante A de fase 2](docs/fase-2-dimensionamiento-y-seleccion.md) se conserva como comparación histórica. DESPUÉS todavía ejecuta el perfil anterior; su migración funcional queda identificada en la decisión.
+**Propuesta física preferida C4 (17-10-2026):** [cuatro WAN, HA y límites de capacidad central](docs/plano-cuatro-wan-y-ha.md) · [planos por sede y BOM](docs/propuesta-cuatro-wan-2026-10-17.json). Dos PA-540 por remota y dos PA-1410 en CM, con routing/VPN en NGFW y switching Cisco. Internet local remoto; cuatro entregas por ubicación y distribución/gestión aisladas. Subtotal parcial CLP 672.773.658 sin SD-WAN opcional ni faltantes; total completo y continuidad/capacidad central siguen abiertos. El [diseño B de dos WAN](docs/decision-arquitectura-optimizada.md) se conserva como antecedente. DESPUÉS todavía ejecuta el perfil anterior, no C4.
 
 **Escenario original consolidado:** [base, recorridos y auditoría de huecos](docs/escenario-original-consolidado.md). ANTES representa MPLS cableado en las 23 ubicaciones, 100 Mbps remotos como supuesto, corte nacional de 22 sucursales y dependencia de los hosts de su switch de acceso. Caudales centrales, contratos y servicios reales permanecen sin acreditar.
 
-**Parámetros originales:** [carga, telefonía, servidores, backup y energía](docs/dimensionamiento-operacion-original.md) · [hipótesis explícitas](docs/hipotesis-carga-base.json) · [resultados reproducibles](docs/dimensionamiento-base-antes.json). Son supuestos académicos; costos completos y recuperación de inversión siguen sin determinar. La intención vigente de la propuesta es cuatro WAN: el plano anterior de dos WAN necesita rediseño y no es su cierre.
+**Parámetros originales:** [carga, telefonía, servidores, backup y energía](docs/dimensionamiento-operacion-original.md) · [hipótesis explícitas](docs/hipotesis-carga-base.json) · [resultados reproducibles](docs/dimensionamiento-base-antes.json). Son supuestos académicos; costos completos y recuperación de inversión siguen sin determinar. El plano físico C4 ya detalla cuatro WAN; contratos, capacidad central, licencias y migración funcional siguen pendientes.
 
 ## Qué probar
 
@@ -28,6 +28,8 @@ Abrir [index.html](index.html) en un navegador compatible. Selecciona una sede e
 Para comprobaciones reproducibles desde la raíz con Node.js:
 
 ```bash
+node network/four-wan-design.cjs --check
+node tests/four-wan-design.test.cjs
 node network/base-sizing.cjs --check
 node tests/base-sizing.test.cjs
 node scripts/build-optimized-proposal.cjs --check

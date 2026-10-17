@@ -38,7 +38,8 @@ const unpriced = base.unpriced_lines.filter(l => l.sku !== 'LICENCIAS_ROUTING_CR
   {sku: 'OPTIONAL_ADVANCED_SD_WAN', quantity: null, price_clp: null, reason: 'No contratado en la base. Cotizar si se exige selección automática por latencia/jitter/pérdida, no equiparar ICMP con SD-WAN'}
 ]);
 const output = {
-  as_of: base.as_of, status: 'DISENO_B_PREFERIDO_NO_ORDEN_DE_COMPRA',
+  as_of: base.as_of, status: 'ANTECEDENTE_B_DOS_WAN_SUPERADO_POR_C4',
+  successor: 'propuesta-cuatro-wan-2026-10-17.json',
   source_comparison: 'dimensionamiento-propuesta-2026-10-17.json',
   scope: base.scope, counts,
   architecture: {
@@ -87,4 +88,4 @@ const expected = JSON.stringify(output, null, 2) + '\n';
 if (process.argv.includes('--check')) {
   assert.equal(fs.readFileSync(dest, 'utf8'), expected, 'Regenerar propuesta optimizada desde sus referencias');
 } else fs.writeFileSync(dest, expected);
-console.log(`Propuesta B: ${subtotal.toLocaleString('es-CL')} CLP parcial; 650 puestos / 23 sedes; 88 túneles lógicos iniciales; total completo pendiente.`);
+console.log(`Antecedente B (dos WAN): ${subtotal.toLocaleString('es-CL')} CLP parcial; 650 puestos / 23 sedes; 88 túneles lógicos iniciales; total completo pendiente.`);

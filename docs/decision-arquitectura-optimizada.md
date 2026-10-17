@@ -8,6 +8,8 @@ La alternativa A queda conservada como comparación histórica en [fase 2](fase-
 
 **Actualización de alcance posterior:** el usuario mantiene cuatro WAN como objetivo de la propuesta. El plano de dos WAN iniciales de esta revisión queda como antecedente para rediseñar; no representa la solución final a cuatro WAN ni acredita su costo completo. Se priorizó completar el [escenario original](dimensionamiento-operacion-original.md) antes de retomar ese rediseño.
 
+**Revisión vigente:** la [propuesta C4](plano-cuatro-wan-y-ha.md) supera este plano B: cuatro WAN, PA-540 remotos, borde directo en NGFW también en CM y presupuesto separado. Las tablas de dos WAN y cantidades de routers de este documento son históricas; no usarlas como BOM vigente.
+
 ## Arquitectura elegida
 
 | Ámbito | Selección de diseño | Cantidad inicial | Función |

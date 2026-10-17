@@ -1,6 +1,7 @@
 {
   "as_of": "2026-10-17",
-  "status": "DISENO_B_PREFERIDO_NO_ORDEN_DE_COMPRA",
+  "status": "ANTECEDENTE_B_DOS_WAN_SUPERADO_POR_C4",
+  "successor": "propuesta-cuatro-wan-2026-10-17.json",
   "source_comparison": "dimensionamiento-propuesta-2026-10-17.json",
   "scope": {
     "initial_locations": 23,
