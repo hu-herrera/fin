@@ -55,6 +55,8 @@ Las plantillas **no contienen secretos reales** ni crean túneles WAN, usuarios 
 
 ## Documentación de referencia
 
+- [Bitácora del proyecto y decisiones de alcance](docs/bitacora-proyecto.md)
+- [Investigación preliminar de equipos, soporte y precios (17-10-2026)](docs/investigacion-equipamiento-2026-10-17.md)
 - [Cierre técnico y riesgos de implantación](docs/cierre-tecnico-red-23-sedes.md)
 - [Plan de servicios, WAN y próximos hitos](docs/plan-siguientes-etapas-red.md)
 - [DNS y NTP centrales](docs/servicios-centrales-dns-ntp.md)
