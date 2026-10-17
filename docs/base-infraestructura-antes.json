@@ -2,7 +2,7 @@
   "version": 1,
   "as_of": "2026-10-17",
   "phase": "1_PROBLEMA_BASE_ANTES",
-  "status": "ESCENARIO_ACADEMICO_DOCUMENTAL_NO_RUNTIME",
+  "status": "ESCENARIO_ACADEMICO_MODELADO_EN_NAVEGADOR_NO_EQUIPOS_REALES",
   "sources": {
     "case": "Capstone_Ingenieria_Conectividad_Redes.xlsx; Financiera Pacifico fila 7",
     "distribution": "index.html SEDES y network/export-candidate.cjs pcInventory"
@@ -17,7 +17,7 @@
     "Modelos y cantidades de hardware son supuestos del escenario, no inventario entregado por el profesor.",
     "650 telefonos: uno por PC; no equivale a un telefono por cada uno de los 780 trabajadores.",
     "Fechas de soporte consultadas en avisos oficiales Cisco.",
-    "Redes de voz y servidores reservadas para implementar posteriormente; no describen la configuracion activa.",
+    "Direcciones de voz y servidores reservadas del escenario ANTES; telefonos visibles y dependencias de hosts modeladas. No hay DHCP, llamadas ni servicios financieros reales.",
     "CM mantiene redundancia parcial: dos routers HSRP y dos switches en stack; firewall unico.",
     "No se asignan disponibilidad medida, fallas observadas ni contratos de WAN inexistentes."
   ],

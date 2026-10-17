@@ -21,7 +21,7 @@ El problema no es que la red esté permanentemente caída. Se trata de una plata
 
 Los 780 trabajadores del caso no se transforman automáticamente en 780 PCs o teléfonos. Los 650 pares representan puestos informáticos del escenario. No se inventan equipos de colaboradores fuera de ese inventario.
 
-La fecha 2014 que aparece en la interfaz se interpretará como período de referencia de la instalación, un supuesto; las fechas de soporte se evalúan en 2026. La base documental y el ANTES ejecutable todavía difieren: esta fase define lo que se actualizará después.
+La fecha 2014 que aparece en la interfaz se interpretará como período de referencia de la instalación, un supuesto; las fechas de soporte se evalúan en 2026. El inventario JSON alimenta ahora la vista ANTES. Los hosts y teléfonos representan supuestos del escenario, no equipos o aplicaciones reales.
 
 ## 3. Equipos de la base y soporte verificado
 
@@ -81,7 +81,7 @@ Todas las filas representan supuestos de equipamiento, conservando las ciudades 
 
 ### Casa matriz
 
-Se conservan dos routers con HSRP y dos switches de 48 puertos en un stack físico StackWise Plus, como redundancia parcial asumida del escenario. Se cambia el router de referencia 2901 a 2911 para definir un modelo central concreto con tres GE; el perfil exacto de interfaces se cerrará antes de implementar. No se declara StackWise-80 en estos equipos ni se confunde una troncal Ethernet con cables de stack.
+Se conservan dos routers con HSRP y dos switches de 48 puertos en un stack físico StackWise Plus, como redundancia parcial asumida del escenario. Se cambia el router de referencia 2901 a 2911 para definir un modelo central concreto con tres GE; la asignación física definitiva de entregas WAN/tránsito sigue pendiente. No se declara StackWise-80 en estos equipos ni se confunde una troncal Ethernet con cables de stack.
 
 La sede mantiene doble ISP de Internet y terminación de la red privada MPLS. No se reemplaza «doble ISP» por dos MPLS de proveedores inventados, como muestra actualmente el dibujo antiguo. Operadores, velocidades y entregas físicas quedan sin confirmar. HSRP no prueba que ambos routers dispongan de todos los servicios WAN.
 
@@ -143,9 +143,9 @@ No se declaran redes de invitados operativas sin inventario. La asignación de W
 
 No se fabrican porcentajes de disponibilidad, incidentes históricos, pérdida de paquetes, jitter, CVEs explotadas ni costos de interrupción. Que no exista contingencia no demuestra por sí solo un RTO medido superior a cinco minutos; revela que hay escenarios en los que el requisito no está garantizado.
 
-## 8. Cambios al simulador que vendrán después
+## 8. Integración de la base en el simulador
 
-Esta fase no modifica `index.html` ni la lógica activa. La implementación posterior deberá usar la base JSON adjunta para actualizar coherentemente:
+La definición documental se integró después en `index.html` mediante un módulo independiente para ANTES, generado desde el inventario JSON. Cubre:
 
 1. Inventario, tarjetas por sede, comparativa y fechas reales de soporte.
 2. Topologías con teléfono por PC, alimentación PoE, puerto compartido y capacidades por modelo.
@@ -155,7 +155,7 @@ Esta fase no modifica `index.html` ni la lógica activa. La implementación post
 6. Ping/Trace y efectos de fallos reales del modelo: sin forzar caídas por la antigüedad ni respuestas de servicios inexistentes.
 7. Regresiones, guía de demostración y entregables anteriores que describen el escenario previo.
 
-**Criterio para avanzar:** la base por sede, sus supuestos y riesgos quedan definidos aquí. Su representación funcional y las configuraciones todavía deben implementarse y verificarse en una fase posterior. La elección del equipamiento DESPUÉS sigue abierta.
+**Estado:** la representación funcional de ANTES incluye inventario, diagnósticos de consulta, dependencias y Ping/Trace. No se generan configuraciones originales certificadas ni se ejecutan servicios reales. La elección del equipamiento DESPUÉS sigue abierta.
 
 ## 9. Brechas organizacionales, protección de datos y marco chileno
 
@@ -213,3 +213,35 @@ La propuesta de redes deberá aportar controles y evidencias de su alcance, y se
 - **L7:** CMF, RAN 20-9: https://www.cmfchile.cl/portal/normativa/624/articles-28984_doc_pdf.pdf
 
 Inventario estructurado: [base-infraestructura-antes.json](base-infraestructura-antes.json). Registro de decisiones: [bitácora](bitacora-proyecto.md).
+
+
+## 10. Matriz del problema y evidencia para la propuesta
+
+| Problema de la base asumida | Efecto que debe evaluarse | Requisito para la mejora | Evidencia de aceptación pendiente |
+|---|---|---|---|
+| Router y WAN únicos en remotas | Pérdida de acceso central al detenerlos; la LAN local puede seguir comunicando | Recuperación de acceso acorde al negocio y mantenimiento planificado | Prueba extremo a extremo con carga y registro del tiempo de recuperación |
+| Switch único en remotas | Se pierden datos y PoE de todos los puestos del switch | Distribución de puestos y repuestos/recuperación según criticidad | Corte de switch y verificación de puestos afectados; dos switches no hacen redundante un teléfono con una sola conexión |
+| ASA central único | Dependencia compartida del tránsito central en el modelo | Evaluar par HA compatible y capacidad con funciones de seguridad activas | Failover con sesiones, configuración sincronizada y pruebas de rendimiento |
+| DC-01 aloja aplicación y base de datos | Un host detiene ambos servicios | RPO/RTO por servicio y arquitectura de recuperación de sistemas | Restauración y consistencia transaccional verificadas por sistemas/negocio |
+| DC-02 concentra telefonía, DNS/NTP y NMS | Un host afecta varios servicios auxiliares | Separación o recuperación según criticidad; dependencias explícitas | Registro y llamadas, resolución, sincronización y alarmas probadas por sus responsables |
+| BKP-01 en el mismo edificio | No acredita recuperación ante pérdida del edificio | Copia independiente protegida y procedimiento de restauración | Recuperación desde copia externa y medición del RPO/RTO |
+| Equipos de red y teléfonos sin soporte oficial | Mantenimiento y corrección de defectos limitados | Renovación compatible con horizonte de 5–6 años | Oferta formal con licencias, soporte y ciclo de vida verificados |
+| CP-7942G limita PC a 100 Mbps en puerto compartido | Puede limitar aplicaciones y transferencia del puesto | Dimensionar teléfono, puerto y PoE con carga real | Prueba de datos/voz simultáneos y presupuesto PoE por modelo |
+| Gestión/configuración original incompleta | No permite acreditar estandarización ni controles | Inventario, respaldo, acceso administrativo y proceso de cambios | Configuración revisada y prueba de rollback; ausencia de evidencia no equivale a ausencia de control |
+
+### Dependencias y límites del modelo inicial
+
+DC-01 contiene las VMs de aplicación y base de datos; DC-02 contiene las de control de llamadas, DNS/NTP y NMS/logs. BKP-01 es un repositorio separado. Son funciones lógicas: no se inventan marca, recursos, hipervisor, motor de base de datos o plataforma telefónica. La caída de un host cambia sus dependencias, sin apagar artificialmente la red ni producir respuestas ICMP de servidores.
+
+El modelo HA de CM presupone entrega lógica de la red privada a ambos routers. El cableado, CPE y las interfaces/transceptores efectivos deberán verificarse; no demuestra diversidad física ni conmutación real. MPLS central y los ISP de Internet son dominios separados. S21/S22 usan un acceso satelital genérico supuesto y no adquieren redundancia celular/LEO por inferencia.
+
+Para visualizar el recorrido se usan RTT didácticos constantes: 2 ms local; 15 ms por extremo continental o 600 ms por extremo satelital más 4 ms de tránsito central. No son mediciones, predicciones de cobertura ni compromisos del proveedor. No hay llamadas, base de datos ni aplicación financiera en ejecución. Un servicio marcado con dependencias disponibles no queda certificado como sano.
+
+### Recorrido de revisión
+
+1. Cambiar a ANTES y abrir S01: contar 30 pares teléfono/PC; consultar ambas IP y el puerto compartido.
+2. Ejecutar Ping/Trace local y hacia S02; revisar los teléfonos, routers y el ASA central en el recorrido. Repetir desde el ping del mapa sin abrir topología.
+3. Apagar el router remoto: el ping local continúa y el intersede se detiene. Apagar el switch: ambos fallan y el teléfono pierde PoE.
+4. Abrir CM: revisar los 55 pares, dos routers, stack, ASA y tres alojamientos. Apagar DC-01 y comprobar que aplicación/base de datos pierden alojamiento; DC-02 conserva sus dependencias.
+5. Cortar MPLS nacional: las 20 remotas continentales se aíslan; S21/S22 conservan el acceso satelital supuesto. Restaurar el escenario.
+6. Volver a DESPUÉS: las configuraciones candidatas y estados de equipos modernos permanecen independientes del modelo de equipos antiguos. Cambiar de modo reinicia enlaces WAN según el comportamiento existente del simulador.
