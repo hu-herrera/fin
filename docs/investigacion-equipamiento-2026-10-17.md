@@ -2,6 +2,8 @@
 
 **Fecha de consulta:** 17 de octubre de 2026. **Proyecto:** Financiera Pacífico. **Estado:** arquitectura candidata y precios públicos referenciales; no cotización formal, compra ni migración aplicada.
 
+**Actualización posterior:** la [fase 2 de dimensionamiento](fase-2-dimensionamiento-y-seleccion.md) incorpora los 650 teléfonos acordados en fase 1, presupuesto por sede, límites de licencia criptográfica y comparación económica ampliada. Los parciales de este informe conservan su alcance original.
+
 ## Resultado y recomendación
 
 La variante de referencia conserva separación de funciones: **dos routers Cisco, dos firewalls Palo Alto en activo/pasivo y dos switches de acceso PoE por sucursal**. Es una alternativa sólida para estudiar, no una demostración de que seis equipos sean la solución óptima en toda ubicación. La casa matriz también requiere redundancia; su diferencia es capacidad, conectividad y zona de servidores, no prescindir de pares.
@@ -24,7 +26,7 @@ Mantener dos opciones comparables: **A, funciones separadas**, prioritaria para 
 | WAN de sucursal del modelo | Una activa, hasta 300 Mbps nominales; cuatro alternativas no equivalen a cuatro enlaces sumados |
 | Pendientes de carga | Demanda de core financiero, simultaneidad, tamaño de datos, inspección TLS, voz y crecimiento de PCs/teléfonos |
 
-El Excel original declara 22 sedes: las 23 del simulador son una adaptación que debe explicarse al docente. No modificar la ficha original para ocultar la diferencia. No asignar aún teléfonos por cada PC ni redistribuir los 650 entre futuras sedes.
+El Excel original declara 22 sedes: las 23 del simulador son una adaptación que debe explicarse al docente. No modificar la ficha original para ocultar la diferencia. La fase 1 posterior fijó 650 teléfonos como supuesto académico, uno por PC; no redistribuir los 650 entre futuras sedes.
 
 ## Ciclo de vida: hallazgo que impide comprar por nombre de familia
 

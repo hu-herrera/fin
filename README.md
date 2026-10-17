@@ -15,6 +15,8 @@ Este repositorio modela una red corporativa ficticia con **23 sedes y 650 PCs**,
 
 **Laboratorio físico: opcional, fuera del alcance requerido por el trabajo académico.** No hay obligación de adquirir 23 routers/firewalls ni de contratar operadores. Documentos de hardware y candidatos están disponibles como anexos para explicar cómo se validaría un despliegue real, no como condición para presentar el simulador.
 
+**Propuesta en revisión (17-10-2026):** [dimensionamiento, selección y presupuesto parcial](docs/fase-2-dimensionamiento-y-seleccion.md) · [cálculos por sede](docs/dimensionamiento-propuesta-2026-10-17.json). La nueva arquitectura no está adjudicada ni sustituye todavía el perfil DESPUÉS.
+
 ## Qué probar
 
 Abrir [index.html](index.html) en un navegador compatible. Selecciona una sede en el mapa, usa el botón amarillo **Ver topología interna completa** y entra a **📡 Ping / Trace**. El botón **Enviar ping** deja el resultado y la ruta lógica visibles en esa misma ventana; desde ahí se puede abrir la animación del ping sobre el mapa. **▣ Presentar** abre la exposición y abre el Ping / Trace original de S01. Son partes de la misma página y están disponibles en GitHub Pages. Consulta la [guía de demostración](docs/guia-demostracion-simulador.md).

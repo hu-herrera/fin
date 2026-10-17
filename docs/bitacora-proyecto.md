@@ -182,3 +182,16 @@ Se ajustó Ping/Trace local e intersede y el ping del mapa a los equipos inicial
 Se corrigieron zoom con rueda anclado al cursor, encuadre de vista general y arrastre de fondo, conservando el clic en equipos. Se retiraron del diagnóstico disponibilidad, MOS, CPU, licencias, versiones y tiempos de recuperación que no tenían evidencia. Se agregó la matriz problema → requisito → prueba, las dependencias del datacenter y un recorrido de revisión. Versiones, contratos, cableado final, respaldos externos y RPO/RTO de servicios siguen pendientes de validar; la propuesta de compras permanece abierta.
 
 **Validación:** pruebas de navegador específicas de inventario, UI, dependencias, ping y fallas; regresiones de los perfiles existentes y comprobación del inventario generado. Resultados del modelo académico, sin certificación de hardware o cumplimiento legal.
+
+
+## Entrada 008 — 17 de octubre de 2026
+
+**Tema:** continuar con la fase 2 después de cerrar ANTES; dimensionar y comparar la renovación.
+
+Se elaboraron la [propuesta v0.2](fase-2-dimensionamiento-y-seleccion.md) y sus [cálculos](dimensionamiento-propuesta-2026-10-17.json). Se conservan 650 pares iniciales y seis sitios futuros sin cantidad definitiva de puestos. Dos switches de 24 puertos por remota y dos de 48 en CM cubren un ejercicio con crecimiento del 20% y reservas de infraestructura; no se agrega un tercer switch sin función/carga. Se calcularon PoE, uplinks de servidores, túneles y sensibilidad de tráfico central con supuestos explícitos.
+
+La revisión de licencias detectó un límite de 250 Mbps de cifrado agregado en Cisco OS Essentials: el precio del chasis no acredita el objetivo cifrado de 300 Mbps. Se registra una discrepancia de versión mínima C8211 entre ficha y FAQ que debe resolverse por SKU/modo. Se reservan interfaces reales para HA y gestión de los PA; el plano WAN exige entregas accesibles desde ambos routers y no oculta un distribuidor único.
+
+Se revalidaron precios y se añadieron 650 teléfonos, firewall/ATP de CM y kits completos de stack. El subtotal con referencia es CLP 608.597.528 bajo USD=CLP1.000 y factor tributario ilustrativo; no es total de proyecto y faltan componentes esenciales. El límite de 160 millones no se presenta como cubierto. Se compara consolidación WAN/NGFW y se incorpora SIP-T33G como alternativa de telefonía con ficha oficial y precio local: diferencia de CLP 84.236.750 en 650 terminales frente a la referencia Cisco, con soporte/PBX/firmware pendientes. Se plantean ofertas de proyecto y despliegue por etapas antes de adjudicar.
+
+**Resultado:** dimensionamiento y lista corta revisables, con costos desconocidos en null, no cero. Sin compras, contacto con proveedores, sustitución del perfil DESPUÉS ni cambios al Excel/entregables originales. La metadata del inventario ANTES se alinea con su estado ya modelado; no cambia su conectividad.
