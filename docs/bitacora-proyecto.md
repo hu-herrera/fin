@@ -208,3 +208,27 @@ Se fijan dos WAN iniciales verificables por remota, plano de puertos con HA1, HA
 La [BOM derivada](propuesta-optimizada-2026-10-17.json) conserva fuentes y supuestos: CLP 411.158.986 de partidas comparables, reducción referencial de CLP 197.438.542 frente a A. Faltan costos obligatorios y el parcial supera el límite de CLP 160 millones en CLP 251.158.986. No se promete ahorro neto de TCO ni viabilidad con ese presupuesto. Seis remotas futuras: CLP 79.662.120 de red parcial, sin cantidades inventadas de teléfonos.
 
 **Validación:** generador reproducible con comprobación de 650 puestos/23 sedes, sumas por partida, reconciliación A/B y puertos sin duplicados; comprobación incluida en CI. Sin compra/contacto de proveedores ni migración del motor DESPUÉS: se deja una secuencia concreta para actualizar topologías, ping del mapa/interno, estados HA, CLI y exportadores coherentemente.
+
+
+## Entrada 010 — 17 de octubre de 2026
+
+**Tema:** pausar la renovación y consolidar el escenario original a petición del usuario.
+
+Se registra la corrección explícita: MPLS por cable en todas las ubicaciones originales, incluidas Hanga Roa y Antártica, con 100 Mbps remotos como supuesto del caso. Se retira como definición vigente la excepción satelital que había introducido el asistente. Se creó el [escenario consolidado](escenario-original-consolidado.md), con procedencia, recorridos propuestos, borde CM/ASA, datos/identidades, telefonía, alimentación, contratos y límites del inventario.
+
+La auditoría detecta que redundancia de routers no acredita doble entrega MPLS ni continuidad del CPE central; tres GE del 2911 no admiten asignar cuatro enlaces físicos sin otro diseño; faltan caudal central y canales de voz; puertos libres no descuentan toda la infraestructura; 650 puestos no inventarían equipos para 780 trabajadores. Se distinguen decisiones acordadas de supuestos funcionales propuestos y parámetros por estimar.
+
+**Estado:** documentos enlazados, sin cambiar motor/inventario generado mientras se define la base. La excepción satelital sigue en código y pruebas y requiere una corrección coordinada posterior. Propuesta nueva pausada, sin nuevas compras ni precios inventados.
+
+
+## Entrada 011 — 17 de octubre de 2026
+
+**Tema:** afinar y consolidar ANTES y continuar con la corrección funcional autorizada.
+
+Se adopta la definición funcional académica del escenario consolidado: MPLS cableado único en las 23 ubicaciones, 100 Mbps remotos supuestos, navegación centralizada y borde MPLS separado de los ISP que terminan en el ASA. Se mantienen sin precio/caudal/medición los datos no acreditados y se añade una lista de parámetros para el siguiente dimensionamiento de la base, sin retomar todavía compras de la propuesta.
+
+Inventario JSON y navegador regenerado, topologías, detalle de sede, tooltip, mapa y Ping/Trace eliminan la excepción satelital de S21/S22. El corte nacional afecta a las 22 remotas; se agrega en CM un botón para cortar/restaurar el acceso/CPE MPLS central, que aísla remotas sin apagar la LAN/hosts. El mapa actualiza sus líneas inmediatamente después de cambios.
+
+Se representa el enlace único supuesto de DC-01/BKP-01 a SW1 y DC-02 a SW2; perder el miembro correspondiente desconecta al host aunque permanezca encendido. Las conexiones gráficas, información y dependencias del servicio coinciden. Los ISP se dibujan hacia el ASA y MPLS hacia los routers; no se presenta el esquema lógico como cableado certificado.
+
+**Validación:** pruebas de inventario, pings local/mapa, caída/restauración MPLS, fallo de switch/host, aislamiento de modos y zoom; suite completa de navegador y suites Node del proyecto, más sincronización de generados y cálculos económicos. Las pruebas acreditan el software académico; no telefonía, DHCP, ISP o aplicaciones reales.

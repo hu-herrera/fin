@@ -75,3 +75,13 @@ El trabajo está **preparado para elaborar el speech** cuando la última suite C
 No existe un sistema IOS-XE/PAN-OS virtual completo, negociación criptográfica IKEv2, paquetes Ethernet binarios, temporizadores de convergencia física, sesiones reales DNS/TACACS/HTTPS, DHCP sobre red real ni métricas medidas desde operadores. Esas son ampliaciones diferentes de este proyecto educativo y no deberían afirmarse en la exposición.
 
 La prioridad ahora es **coherencia, interacción, belleza visual, explicación técnica y pruebas reproducibles**.
+
+
+## Base ANTES consolidada (17-10-2026)
+
+Las 23 ubicaciones usan MPLS cableado como premisa académica, incluidas Hanga Roa y Antártica; no hay respaldo satelital/móvil. Los 100 Mbps remotos son capacidad nominal supuesta. CM conserva dos ISP distintos del MPLS, dos routers, stack y ASA único. Ver [definición y procedencia](escenario-original-consolidado.md).
+
+- Cortar MPLS nacional: las 22 sucursales pierden acceso central; reset restaura también S21/S22.
+- Abrir CM y cortar el acceso MPLS central: se aíslan las remotas, sin apagar automáticamente los hosts ni la LAN local.
+- Apagar SW1 de CM: DC-01 y BKP-01 siguen encendidos pero pierden su enlace único; SW2 conserva DC-02 y sus dependencias. Apagar SW2 afecta telefonía/DNS/NMS. No hay clúster ni NIC redundante supuestos.
+- El mapa y Ping/Trace interno comparten esas decisiones. Ningún ping demuestra registro telefónico, aplicación, respaldo restaurable o disponibilidad contractual.
