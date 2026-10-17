@@ -245,3 +245,20 @@ Se asignan recursos de estudio a los dos hosts, 1 TB usado protegido, 8 TB útil
 Se halló una oferta pública MPLS con valores de enero de 2018, identificada como histórica y excluida de una cotización actual. El paquete de Internet consultado no es equivalente a MPLS. No se inflan mensualidades, no se suma mantenimiento ya incluido y no se afirma ahorro o payback sin costos comparables. El umbral para recuperar la referencia parcial anterior se identifica como ejercicio; la intención de cuatro WAN requiere rediseñar el plano anterior de dos WAN.
 
 **Validación:** generador y pruebas de redondeo por sede, retención/workspace/crecimiento, límites W/VA, parámetros centrales coherentes y precios desconocidos que no se convierten en cero o ahorro. Se actualizan inventario generado y detalles de CM/hosts sin emular llamadas, backup o cargas eléctricas reales.
+
+
+## Entrada 013 — 17 de octubre de 2026
+
+**Tema:** cerrar el plano físico de cuatro WAN y HA sin presentar la propuesta anterior de dos WAN como vigente.
+
+La [propuesta C4](plano-cuatro-wan-y-ha.md) selecciona PA-540 por remota para cuatro WAN, LAN en dos SFP 1G, HA1, HA2 y backup, MGT separado y un puerto de reserva. CM conserva PA-1410 con cuatro WAN, LAN10G y HA dedicado; los C8221 se retiran de compra base como alternativa condicionada a una función de borde adicional. Se conserva Cisco en acceso. La navegación remota sale localmente por NGFW, manteniendo core/telefonía por VPN.
+
+Se generan 23 planos, 352 combinaciones candidatas de túnel (448 para 28 remotas), terminaciones LAN y gestión, reservas de ópticas y puertos. Cuatro distribuidores por sede quedan como reserva eliminable si CPE entrega dos conexiones equivalentes; no se agrega un distribuidor único para todos los operadores. Se separa VLAN130/MGT y tránsito VLAN131 para no solapar interfaz MGT con datos. Se prevén dos dominios UPS, fuentes y reparto de proveedores, sin deducir autonomía.
+
+Los cálculos muestran que la capacidad central no se cierra por sumar cuatro enlaces. Con las referencias nominales actuales, el conjunto tiene límite ideal y requiere balanceo; perder el enlace mayor limita el margen, y con seis remotas futuras tampoco cabe la envolvente corporativa en ese escenario. No se promete continuidad completa cuando solo queda una WAN ni se etiqueta ECMP como SD-WAN. Se mantiene abierto el cierre comercial/de capacidad y software.
+
+PA-540 hardware y ATP cinco años elevan el parcial referencial a CLP 672.773.658. Advanced SD-WAN opcional añade CLP 219.055.200 según lista USD identificada; faltantes y OPEX siguen sin precio. Distribuidores observados con IVA/bundle no confirmado quedan fuera del subtotal. B se conserva como antecedente y sus cálculos antiguos no se reinterpretan como precio C4.
+
+Se conserva A como alternativa comercial: el parcial histórico con los mismos teléfonos es CLP 524.360.778, inferior al parcial C4, pero faltan licencias Cisco y adaptación de cuatro WAN y las referencias comerciales no son equivalentes. No se declara ahorro por consolidar ni ganador financiero sin ofertas homologadas.
+
+**Validación:** módulo de candidato con rechazo de puertos repetidos/medios incorrectos/modelo insuficiente, VLAN WAN/gestión mezcladas e IPs duplicadas; pruebas por las 23 ubicaciones de caída de WAN/CPE/distribuidor/firewall/LAN/HA/UPS y límites de capacidad. No altera ANTES ni el motor DESPUÉS anterior; sin compras ni contacto de proveedores.

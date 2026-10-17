@@ -4,6 +4,8 @@
 
 **Decisión posterior:** la [decisión 009](decision-arquitectura-optimizada.md) adopta B como diseño preferido y selecciona SIP-T33G sujeto a soporte/piloto. Este documento conserva A y sus precios como referencia histórica; la [BOM optimizada](propuesta-optimizada-2026-10-17.json) es la comparación vigente. PA-520 no añade puertos frente a PA-510; ver corrección y plano de la decisión.
 
+**Plano vigente posterior:** [C4 con cuatro WAN y HA](plano-cuatro-wan-y-ha.md). Este documento conserva el dimensionamiento/comparación inicial A/B, no la BOM física actual.
+
 ## 1. Recomendación de trabajo
 
 Mantener como **variante A** dos routers Cisco equivalentes, dos firewalls iguales en activo/pasivo y dos switches PoE por ubicación. Comparar dos equipos de gama adecuada frente al esquema de un principal muy grande y un respaldo pequeño: el superviviente debe soportar la carga comprometida, las funciones y las licencias. El modelo más barato solo sirve si cumple ese mismo mínimo bajo falla.
