@@ -6,6 +6,8 @@ Se adopta la **variante B**: dos firewalls NGFW en alta disponibilidad activo/pa
 
 La alternativa A queda conservada como comparación histórica en [fase 2](fase-2-dimensionamiento-y-seleccion.md). Los números vigentes de esta decisión se generan en [propuesta optimizada](propuesta-optimizada-2026-10-17.json), sin sobreescribir los precios originales.
 
+**Actualización de alcance posterior:** el usuario mantiene cuatro WAN como objetivo de la propuesta. El plano de dos WAN iniciales de esta revisión queda como antecedente para rediseñar; no representa la solución final a cuatro WAN ni acredita su costo completo. Se priorizó completar el [escenario original](dimensionamiento-operacion-original.md) antes de retomar ese rediseño.
+
 ## Arquitectura elegida
 
 | Ámbito | Selección de diseño | Cantidad inicial | Función |

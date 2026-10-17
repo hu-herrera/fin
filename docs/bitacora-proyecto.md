@@ -232,3 +232,16 @@ Inventario JSON y navegador regenerado, topologías, detalle de sede, tooltip, m
 Se representa el enlace único supuesto de DC-01/BKP-01 a SW1 y DC-02 a SW2; perder el miembro correspondiente desconecta al host aunque permanezca encendido. Las conexiones gráficas, información y dependencias del servicio coinciden. Los ISP se dibujan hacia el ASA y MPLS hacia los routers; no se presenta el esquema lógico como cableado certificado.
 
 **Validación:** pruebas de inventario, pings local/mapa, caída/restauración MPLS, fallo de switch/host, aislamiento de modos y zoom; suite completa de navegador y suites Node del proyecto, más sincronización de generados y cálculos económicos. Las pruebas acreditan el software académico; no telefonía, DHCP, ISP o aplicaciones reales.
+
+
+## Entrada 012 — 17 de octubre de 2026
+
+**Tema:** completar parámetros de operación del escenario original después de consolidar su topología.
+
+Se incorporan [hipótesis explícitas](hipotesis-carga-base.json), [resultados reproducibles](dimensionamiento-base-antes.json) y [análisis de operación](dimensionamiento-operacion-original.md). Para ANTES se adoptan 1 Gbps MPLS central, dos ISP de 300 Mbps, 30 canales SIP y demandas normal/exigente. Se separan 650 terminales, 69 extremos activos de reserva normal y 20 llamadas externas; la voz se redondea por sede, no una sola vez sobre toda la flota. Estos son supuestos, no servicios/consumos medidos.
+
+Se asignan recursos de estudio a los dos hosts, 1 TB usado protegido, 8 TB útiles de backup, full semanal/incremental diario, retención y crecimiento explícitos. Las necesidades de backup llegan a 18,513 TB al año cinco y 22,216 TB al seis bajo ese modelo; RPO/RTO logrado permanecen desconocidos. Se calculan W y VA de UPS supuestas, sin deducir autonomía ni respaldar PCs por inferencia.
+
+Se halló una oferta pública MPLS con valores de enero de 2018, identificada como histórica y excluida de una cotización actual. El paquete de Internet consultado no es equivalente a MPLS. No se inflan mensualidades, no se suma mantenimiento ya incluido y no se afirma ahorro o payback sin costos comparables. El umbral para recuperar la referencia parcial anterior se identifica como ejercicio; la intención de cuatro WAN requiere rediseñar el plano anterior de dos WAN.
+
+**Validación:** generador y pruebas de redondeo por sede, retención/workspace/crecimiento, límites W/VA, parámetros centrales coherentes y precios desconocidos que no se convierten en cero o ahorro. Se actualizan inventario generado y detalles de CM/hosts sin emular llamadas, backup o cargas eléctricas reales.

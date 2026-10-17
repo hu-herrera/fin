@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "as_of": "2026-10-17",
   "phase": "1_PROBLEMA_BASE_ANTES",
   "status": "ESCENARIO_ACADEMICO_MODELADO_EN_NAVEGADOR_NO_EQUIPOS_REALES",
@@ -21,9 +21,10 @@
     "CM mantiene redundancia parcial: dos routers HSRP y dos switches en stack; firewall unico.",
     "No se asignan disponibilidad medida, fallas observadas ni contratos de WAN inexistentes.",
     "MPLS por cable en las 23 ubicaciones, incluidas S21/S22: premisa ficticia corregida por el usuario.",
-    "100 Mbps nominales por remota: supuesto de capacidad contratada, no medicion. Caudal central pendiente.",
+    "100 Mbps remotos y 1 Gbps central nominales como supuestos; caudales medidos y contratos sin acreditar.",
     "Navegacion centralizada via MPLS y ASA/ISP en CM; borde MPLS con CPE compartido accesible por ambos routers.",
-    "Hosts con un enlace de acceso: DC-01/BKP-01 al switch 1 y DC-02 al switch 2 de CM; supuesto academico sin HA de servidores."
+    "Hosts con un enlace de acceso: DC-01/BKP-01 al switch 1 y DC-02 al switch 2 de CM; supuesto academico sin HA de servidores.",
+    "CM 1 Gbps MPLS y dos ISP de 300 Mbps; hosts, backup y UPS dimensionados en hipotesis-carga-base.json como supuestos, no contratos/mediciones."
   ],
   "datacenter": {
     "physical_hosts_assumed": 2,
@@ -52,11 +53,27 @@
       }
     },
     "service_availability": "SIN_CLUSTER_DE_APLICACION_O_BASE_DE_DATOS_DECLARADO",
-    "capacity": "CPU_RAM_IOPS_SO_LICENCIAS_PENDIENTES",
+    "capacity": "CAPACIDADES_ACADEMICAS_DE_ESTUDIO_NO_MEDIDAS",
     "host_network_members_assumed": {
       "dc1": 1,
       "dc2": 2,
       "backup": 1
+    },
+    "capacity_assumptions_source": "hipotesis-carga-base.json",
+    "assumed_host_capacity": {
+      "dc1": {
+        "physical_cores": 8,
+        "ram_gib": 64,
+        "usable_storage_gb": 2000
+      },
+      "dc2": {
+        "physical_cores": 8,
+        "ram_gib": 32,
+        "usable_storage_gb": 1000
+      },
+      "backup": {
+        "usable_storage_gb": 8000
+      }
     }
   },
   "sites": [
@@ -913,6 +930,9 @@
     "central_isp_capacity_mbps": null,
     "central_mpls_handoff": "CPE_COMPARTIDO_DOS_ENTREGAS_LOGICAS_SUPUESTAS",
     "physical_diversity_verified": false,
-    "price_monthly_clp": null
+    "price_monthly_clp": null,
+    "central_access_mbps_assumed": 1000,
+    "central_isp_capacity_mbps_each_assumed": 300,
+    "capacity_assumptions_source": "hipotesis-carga-base.json"
   }
 }

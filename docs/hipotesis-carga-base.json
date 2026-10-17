@@ -1,0 +1,88 @@
+{
+  "as_of": "2026-10-17",
+  "status": "SUPUESTOS_ACADEMICOS_NO_MEDICIONES_NI_CONTRATOS",
+  "traffic": {
+    "direction": "POR_SENTIDO_NO_SUMA_FULL_DUPLEX",
+    "normal": {"data_concurrency": 0.3, "mbps_per_active_pc": 2, "active_phone_fraction": 0.1, "external_calls": 20},
+    "stress": {"data_concurrency": 0.5, "mbps_per_active_pc": 4, "active_phone_fraction": 0.2, "external_calls": 40},
+    "remote_data_internet_fraction": 0.4,
+    "voice_envelope_mbps_per_active_endpoint": 0.16,
+    "planning_max_utilization": 0.7,
+    "external_sip_channels_assumed": 30,
+    "external_sip_channels_licensed_verified": false,
+    "central_mpls_nominal_mbps_assumed": 1000,
+    "central_isp_nominal_mbps_each_assumed": 300
+  },
+  "servers": {
+    "status": "CAPACIDADES_SUPUESTAS_PARA_ANALISIS_NO_INVENTARIO_REAL",
+    "hosts": [
+      {"id": "DC-01", "physical_cores": 8, "ram_gib": 64, "hypervisor_ram_reserve_gib": 8, "usable_storage_gb": 2000, "network_mbps": 1000, "vms": [
+        {"role": "application", "vcpu": 4, "ram_gib": 8, "allocated_disk_gb": 300},
+        {"role": "database", "vcpu": 4, "ram_gib": 32, "allocated_disk_gb": 800}
+      ]},
+      {"id": "DC-02", "physical_cores": 8, "ram_gib": 32, "hypervisor_ram_reserve_gib": 4, "usable_storage_gb": 1000, "network_mbps": 1000, "vms": [
+        {"role": "call_control", "vcpu": 4, "ram_gib": 8, "allocated_disk_gb": 200},
+        {"role": "dns_ntp", "vcpu": 2, "ram_gib": 4, "allocated_disk_gb": 50},
+        {"role": "nms_logs", "vcpu": 2, "ram_gib": 8, "allocated_disk_gb": 250}
+      ]}
+    ],
+    "cpu_performance_validated": false,
+    "iops_validated": false,
+    "hypervisor_os_pbx_db_licenses_verified": false
+  },
+  "backup": {
+    "protected_data_gb_assumed": 1000,
+    "daily_change_fraction": 0.05,
+    "weekly_full_copies_retained": 4,
+    "incremental_days_per_week": 6,
+    "restore_workspace_full_copies": 1,
+    "space_margin_fraction": 0.2,
+    "usable_repository_gb_assumed": 8000,
+    "annual_data_growth_fraction": 0.2,
+    "network_mbps": 1000,
+    "effective_transfer_fraction_assumed": 0.6,
+    "backup_window_hours_assumed": 8,
+    "nominal_backup_interval_hours": 24,
+    "offsite_copy_verified": false,
+    "restore_test_verified": false,
+    "rpo_achieved_hours": null,
+    "rto_achieved_hours": null,
+    "compression_or_deduplication_savings_assumed": false
+  },
+  "power": {
+    "status": "CARGAS_Y_POTENCIAS_NOMINALES_SUPUESTAS_NO_MEDICION",
+    "phone_budget_w": 7,
+    "branch_router_w": 50,
+    "branch_switch_base_w": 60,
+    "cpe_ont_w_each": 15,
+    "central_router_w_each": 80,
+    "central_switch_base_w_each": 100,
+    "central_firewall_w": 60,
+    "central_host_w_each": 250,
+    "backup_repository_w": 100,
+    "headroom_fraction": 0.25,
+    "load_power_factor_assumed": 0.9,
+    "branch_ups_rating_va_assumed": 1500,
+    "branch_ups_rating_w_assumed": 900,
+    "central_ups_rating_va_assumed": 3000,
+    "central_ups_rating_w_assumed": 2700,
+    "branch_ups_count_assumed": 22,
+    "central_ups_count_assumed": 1,
+    "pc_power_backed_up": false,
+    "runtime_minutes_verified": null,
+    "generator_installed_verified": false
+  },
+  "economics": {
+    "old_monthly_complete_clp": null,
+    "new_monthly_complete_clp": null,
+    "incremental_investment_complete_clp": null,
+    "priced_partial_reference_source": "propuesta-optimizada-2026-10-17.json",
+    "partial_is_complete_investment": false,
+    "maintenance_already_included_must_not_be_added_twice": true
+  },
+  "references": [
+    {"id": "VOICE", "source": "https://www.cisco.com/c/en/us/support/docs/voice/voice-quality/7934-bwidth-consume.html", "use": "G.711 20 ms: 87,2 kbps Ethernet; 0,16 Mbps es reserva propia, no valor publicado por Cisco"},
+    {"id": "MPLS_TOPOLOGY_2026", "source": "https://www.mercadopublico.cl/Procurement/Modules/RFB/DetailsAcquisition.aspx?qs=NWZUPnk4VSjG9h7iFIyNIg%3D%3D", "use": "Analogía pública 2026 de remotas 100 Mbps y central Gigabit; no son contratos de Financiera Pacifico"},
+    {"id": "UPS", "source": "https://www.se.com/us/en/work/support/product-support/ups-buying-guide-for-selecting-a-battery-backup-system/", "use": "Distinguir W/VA y margen de potencia; autonomía depende de carga y baterías"}
+  ]
+}

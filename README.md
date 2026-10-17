@@ -19,6 +19,8 @@ Este repositorio modela una red corporativa ficticia con **23 sedes y 650 PCs**,
 
 **Escenario original consolidado:** [base, recorridos y auditoría de huecos](docs/escenario-original-consolidado.md). ANTES representa MPLS cableado en las 23 ubicaciones, 100 Mbps remotos como supuesto, corte nacional de 22 sucursales y dependencia de los hosts de su switch de acceso. Caudales centrales, contratos y servicios reales permanecen sin acreditar.
 
+**Parámetros originales:** [carga, telefonía, servidores, backup y energía](docs/dimensionamiento-operacion-original.md) · [hipótesis explícitas](docs/hipotesis-carga-base.json) · [resultados reproducibles](docs/dimensionamiento-base-antes.json). Son supuestos académicos; costos completos y recuperación de inversión siguen sin determinar. La intención vigente de la propuesta es cuatro WAN: el plano anterior de dos WAN necesita rediseño y no es su cierre.
+
 ## Qué probar
 
 Abrir [index.html](index.html) en un navegador compatible. Selecciona una sede en el mapa, usa el botón amarillo **Ver topología interna completa** y entra a **📡 Ping / Trace**. El botón **Enviar ping** deja el resultado y la ruta lógica visibles en esa misma ventana; desde ahí se puede abrir la animación del ping sobre el mapa. **▣ Presentar** abre la exposición y abre el Ping / Trace original de S01. Son partes de la misma página y están disponibles en GitHub Pages. Consulta la [guía de demostración](docs/guia-demostracion-simulador.md).
@@ -26,6 +28,8 @@ Abrir [index.html](index.html) en un navegador compatible. Selecciona una sede e
 Para comprobaciones reproducibles desde la raíz con Node.js:
 
 ```bash
+node network/base-sizing.cjs --check
+node tests/base-sizing.test.cjs
 node scripts/build-optimized-proposal.cjs --check
 node network/build-browser-lab.cjs --check
 node tests/packet-simulator.test.cjs
