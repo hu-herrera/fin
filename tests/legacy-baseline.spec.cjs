@@ -81,6 +81,8 @@ test('CM muestra hosts, reservas de servicios y los 55 pares dentro del SVG',asy
  await page.locator('.legacy-services button').filter({hasText:'Base de datos'}).click();
  await expect(page.locator('#dev-body')).toContainText('10.70.200.11');
  await expect(page.locator('#dev-body')).toContainText('DC-01');
+ await expect(page.locator('#dev-body')).toContainText('64 GiB RAM');
+ await expect(page.locator('#dev-body')).toContainText('supuestos académicos');
  expect(errors).toEqual([]);
 });
 test('Configuraciones y fallos de DESPUÉS no contaminan ANTES',async({page})=>{

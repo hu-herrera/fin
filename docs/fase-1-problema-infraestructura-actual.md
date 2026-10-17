@@ -45,7 +45,7 @@ Fin de venta, fin de mantenimiento de software y último soporte son hitos disti
 
 El CP-7942G dispone de dos conexiones Ethernet 10/100 [R7]. Permite teléfono → PC con un solo puerto de acceso, pero limita ese camino del puesto a 100 Mbps nominales, aunque el switch sea Gigabit. No se atribuye 1 Gbps a ese PC a través del teléfono.
 
-Los modelos 2960-S escogidos sí son PoE+; el modelo de 48 puertos y el de 24 publican presupuesto PoE de 370 W [R8]. El 3750-X escogido es PoE+ [R9]. La potencia disponible no equivale a autonomía ante un corte eléctrico: UPS y estado de fuentes/baterías quedan por verificar.
+Los modelos 2960-S escogidos sí son PoE+; el modelo de 48 puertos y el de 24 publican presupuesto PoE de 370 W [R8]. El 3750-X escogido es PoE+ [R9]. La potencia disponible no equivale a autonomía ante un corte eléctrico: potencias de UPS se asumen en el dimensionamiento de operación; autonomía y estado de fuentes/baterías siguen sin verificar.
 
 No se mantiene el 2960-24TT-L de la vista anterior: no es la base PoE elegida, y sus 24 puertos tampoco cubrirían una sucursal de 28–30 puestos. CM usa 96 puertos entre dos switches de 48: 55 pares PC/teléfono no requieren 110 puertos cuando se conectan en cascada.
 
@@ -85,7 +85,7 @@ Todas las filas representan supuestos de equipamiento, conservando las ciudades 
 
 Se conservan dos routers con HSRP y dos switches de 48 puertos en un stack físico StackWise Plus, como redundancia parcial asumida del escenario. Se cambia el router de referencia 2901 a 2911 para definir un modelo central concreto con tres GE; la asignación física definitiva de entregas WAN/tránsito sigue pendiente. No se declara StackWise-80 en estos equipos ni se confunde una troncal Ethernet con cables de stack.
 
-La sede mantiene doble ISP de Internet y terminación de la red privada MPLS. No se reemplaza «doble ISP» por dos MPLS de proveedores inventados, como muestra actualmente el dibujo antiguo. Operadores, velocidades y entregas físicas quedan sin confirmar. HSRP no prueba que ambos routers dispongan de todos los servicios WAN.
+La sede mantiene doble ISP de Internet y terminación de la red privada MPLS. No se reemplaza «doble ISP» por dos MPLS de proveedores inventados, como muestra actualmente el dibujo antiguo. Operadores, contratos y entregas físicas quedan sin confirmar. Se adoptan 1 Gbps MPLS y 300 Mbps por ISP como hipótesis nominales del [dimensionamiento de operación](dimensionamiento-operacion-original.md), sin acreditar rendimiento de los equipos. HSRP no prueba que ambos routers dispongan de todos los servicios WAN.
 
 El ASA central aplica el filtrado perimetral del escenario y sigue siendo único. Los dos ISP se conectan al ASA, separados del borde MPLS de dos routers; la navegación remota se centraliza en CM. El tránsito de routers a ASA usa una VLAN aislada en el stack existente. Este es el plano lógico académico; interfaces, CPE compartido y puertos se verifican aparte. Las sucursales no tienen un appliance firewall dedicado: esto no significa ausencia de toda seguridad, pues la ficha ya incluye firewall/VPN y pueden existir ACL en los routers. No se inventan reglas permisivas o cifras de ataques para agravar el problema.
 
@@ -103,7 +103,7 @@ Se asumen 100 Mbps por remota, sin proveedor, SLA, mediciones ni precios inventa
 
 ## 5. Datacenter inicial y servicios
 
-El datacenter de CM ya existe en la ficha. Para dar forma al escenario se asumen **dos hosts físicos** y **un repositorio de respaldo**, con modelos, recursos, sistema operativo y soporte no verificados. No se les atribuye fin de soporte solo por ser antiguos ni se fija una marca para justificar una compra.
+El datacenter de CM ya existe en la ficha. Para dar forma al escenario se asumen **dos hosts físicos** y **un repositorio de respaldo**, con modelos, sistema operativo y soporte no verificados; recursos académicos, backup y energía definidos en el [dimensionamiento de operación](dimensionamiento-operacion-original.md), sin mediciones. No se les atribuye fin de soporte solo por ser antiguos ni se fija una marca para justificar una compra.
 
 | Alojamiento supuesto | Funciones lógicas existentes | Dependencia que estudiar |
 |---|---|---|

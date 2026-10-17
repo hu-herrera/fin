@@ -30,7 +30,7 @@ Se fija como **supuesto académico adoptado** un modelo centralizado: sucursales
 | Sucursal a Internet | MPLS → CM → ASA/NAT → ISP central; sin acceso directo desde la LAN remota al proveedor |
 | Una sucursal a otra | Políticas de CM permiten únicamente servicios necesarios; no se presume libre acceso entre usuarios de todas las sedes |
 | Teléfono a central telefónica | VLAN de voz → router/MPLS → control de llamadas en CM; señalización y medios no son el mismo flujo |
-| Llamadas externas | Tramo de telefonía del operador pendiente; referencia propuesta: troncal SIP central mediante el perímetro de CM |
+| Llamadas externas | Troncal SIP central de 30 canales como supuesto, 20 llamadas externas normales; operador/PBX/licencias sin acreditar |
 | Administración | Desde TI por rutas de gestión; mecanismos/cuentas originales por describir, sin asumir TACACS+ o MFA ya desplegados |
 
 **Datacenter y seguridad interna:** aplicación y BD están en VMs distintas del mismo host; compartir VLAN de servidores no demuestra filtrado entre ambas. No afirmar microsegmentación, cifrado de datos en reposo o restricción de puertos si no se ha definido ese control.
@@ -43,7 +43,7 @@ Para conservar HSRP y que ambos routers alcancen MPLS se supone una entrega del 
 
 El ASA tiene zonas/interfaces separadas para tránsito MPLS, LAN y ambos ISP; las redes de datos/voz/servidores se enrutan en el stack de CM. El plano final debe evitar caminos que omitan el firewall, rutas asimétricas, solapamientos y bucles de encaminamiento. Esto define cómo completar la base, no certifica las configuraciones antiguas.
 
-La capacidad del acceso MPLS central permanece pendiente: **22 accesos de 100 Mbps no significan 2,2 Gbps de uso simultáneo, ni justifican suponer 100 Mbps en CM**. Se debe fijar un caudal central y su sobresuscripción con una hipótesis de concurrencia antes de calcular congestión o cotizar el servicio.
+Se adopta **1 Gbps MPLS central y dos ISP de 300 Mbps** como hipótesis nominales del caso, desarrolladas en el [dimensionamiento de operación](dimensionamiento-operacion-original.md). Contratos, rendimiento de equipos y mediciones siguen sin acreditar: **22 accesos de 100 Mbps no significan 2,2 Gbps de uso simultáneo, ni justifican suponer 100 Mbps en CM**. La reserva de concurrencia y la sensibilidad exigente se calculan aparte; no se simula congestión ni se acredita capacidad física por mostrar el caudal nominal.
 
 ## 3. Inventario existente y capacidad real de puertos
 
@@ -62,11 +62,11 @@ Se mantienen como modelos académicos los ya documentados: 22 CISCO1921-SEC/K9 r
 |---|---|---|
 | DC-01, host físico | VM de aplicación financiera + VM de base de datos | Ambas dependen del mismo host; sin clúster declarado |
 | DC-02, host físico | Control de llamadas, DNS/NTP y NMS/registros, separados lógicamente | Sin segunda instancia de estos servicios declarada |
-| BKP-01, repositorio separado en CM | Copias de datos y configuraciones | Mismo edificio; frecuencia, retención, protección y restauración sin acreditar |
+| BKP-01, repositorio separado en CM | Copias de datos y configuraciones | Mismo edificio; full semanal/incremental diario y cuatro semanas como supuestos; protección/restauración sin acreditar |
 
 Los datos operativos de clientes del escenario residen en la BD central; no se añade nube ni almacenamiento permanente en sucursales por inferencia. Los documentos de clientes, archivos compartidos, correo, grabaciones telefónicas y archivos temporales requieren delimitar su alcance; no se asume que estén cubiertos por respaldar solo la BD.
 
-Marca/capacidad de hosts, discos/RAID, hipervisor, sistemas operativos, motor de BD, recursos, licencias y versiones permanecen pendientes. No hace falta inventar un modelo para explicar el problema; sí hacen falta capacidades para decidir si se reutiliza o renueva. Dos hosts no equivalen a un clúster ni garantizan continuidad de la aplicación.
+Las capacidades académicas quedan en [hipótesis de carga](hipotesis-carga-base.json): DC-01 8 núcleos/64 GiB/2 TB útiles, DC-02 8 núcleos/32 GiB/1 TB y BKP-01 8 TB útiles. Marca real, discos/RAID, hipervisor, SO, motor de BD, licencias, versiones y rendimiento permanecen sin acreditar. No hace falta inventar un modelo para explicar el problema; sí hacen falta capacidades para decidir si se reutiliza o renueva. Dos hosts no equivalen a un clúster ni garantizan continuidad de la aplicación.
 
 La autenticación de empleados y de la aplicación no está definida: no declarar Active Directory, MFA o SSO existentes sin incorporarlos al caso. Las identidades de administradores de red son otra función; TACACS+ no reemplaza la BD de clientes ni el directorio de usuarios.
 
@@ -78,7 +78,7 @@ Se conserva el direccionamiento ANTES de fase 1: VLAN10 datos, VLAN20 voz, VLAN3
 
 No se selecciona una PBX nueva para describir ANTES. La plataforma original debe ser compatible con los CP-7942G y se debe precisar protocolo/firmware y licencias antes de generar configuraciones. Faltan canales simultáneos, numeración/extensiones, troncal externa, llamadas de emergencia y comportamiento bajo pérdida de WAN. No se asume que toda llamada establecida se corte al perder señalización, ni que siga disponible sin probarla.
 
-NMS central y cambios manuales siguen formando parte de la base. Horario de atención, ventanas de mantenimiento, responsables, escalamiento, cobertura de soporte, stock de repuestos y acceso de emergencia no están definidos. No se inventan turnos 24×7 ni tiempos de reparación. Tampoco se atribuyen UPS, generador, doble alimentación, climatización o protección ambiental concretos sin inventario; son puntos de levantamiento, especialmente en CM y sedes especiales.
+NMS central y cambios manuales siguen formando parte de la base. Horario de atención, ventanas de mantenimiento, responsables, escalamiento, cobertura de soporte, stock de repuestos y acceso de emergencia no están definidos. No se inventan turnos 24×7 ni tiempos de reparación. Se suponen 22 UPS de red 1.500 VA/900 W y una central 3.000 VA/2.700 W en el dimensionamiento; modelos/autonomía no acreditados. No se atribuyen generador, doble alimentación, climatización o protección ambiental concretos sin inventario; son puntos de levantamiento, especialmente en CM y sedes especiales.
 
 ## 6. Dependencias y fallas que sí describe la base
 
@@ -104,21 +104,21 @@ Para cerrar la base se revisan estos cinco conjuntos, sin abrir de nuevo la sele
 
 1. **Acordado:** 23 ubicaciones, reparto de puestos, 650 teléfonos, MPLS cableado único en todas, 100 Mbps remotos como supuesto y redundancia parcial central.
 2. **Definición funcional adoptada en este documento:** navegación centralizada, borde MPLS separado de ISP/ASA, flujos del core y telefonía, entrega común a dos routers y DHCP remoto. Se identifica como supuesto académico; no equivale a protocolos/servicios realmente desplegados.
-3. **Parámetros que deben estimarse antes de dimensionar/cotizar:** caudal central, ISP, tráfico simultáneo, canales de voz, almacenamiento/backup, energía y mensualidades. Desconocido no significa cero ni control inexistente.
+3. **Parámetros de estudio completados:** caudal central/ISP, tráfico, canales, recursos, backup y potencia quedan en las hipótesis y resultados reproducibles. Mediciones, licencias, autonomía, RPO/RTO logrado y mensualidades siguen desconocidos; no significan cero ni control inexistente.
 4. **Alcance a declarar:** directorio/identidades, archivos/correo, periféricos, telefonía externa, seguridad física y responsabilidades de otras áreas. No convertir automáticamente cada dependencia en una compra del proyecto de redes.
 5. **Sincronización funcional:** inventario JSON, generador, motor ANTES, textos de topología, pings y pruebas usan MPLS cableado en todas las ubicaciones. El corte nacional aísla las 22 sucursales. El acceso MPLS central se puede cortar/restaurar en CM. Los hosts reflejan su enlace único al miembro del stack definido; no se representa redundancia de servidor inexistente.
 
-**Estado:** definición funcional consolidada e inventario/topología/fallas MPLS integrados en ANTES. DHCP, telefonía e Internet centralizado están descritos como arquitectura, sin sesiones o servicios reales emulados. Caudales centrales, carga de servidores, RPO, energía, contratos y mensualidades siguen pendientes de estimar o acreditar. No afirmar «sin puntos de falla» ni «todo implementado». La siguiente etapa es completar esos parámetros de la base antes de retomar la renovación y comparar TCO.
+**Estado:** definición funcional consolidada e inventario/topología/fallas MPLS integrados en ANTES. DHCP, telefonía e Internet centralizado están descritos como arquitectura, sin sesiones o servicios reales emulados. Caudales centrales, carga de servidores, canales, backup y potencia UPS ya tienen hipótesis de estudio; RPO/RTO logrado, autonomía, contratos y mensualidades siguen sin acreditar. No afirmar «sin puntos de falla» ni «todo implementado». El [dimensionamiento de operación](dimensionamiento-operacion-original.md) completa las hipótesis y cálculos de esta base; la comparación TCO completa sigue pendiente de costos equivalentes.
 
 
 ## 8. Siguiente etapa: completar parámetros sin alterar el escenario
 
 | Parámetro | Estado y regla de trabajo |
 |---|---|
-| Caudal MPLS central y ambos ISP | Sin dato. Estimar con concurrencia de los 650 puestos y tráfico hacia CM; separar contratado de consumido |
-| Voz simultánea y troncal | Sin dato. Usar escenarios de concurrencia declarados y plataforma compatible con CP-7942G, sin equiparar terminales a canales |
-| Datos/almacenamiento y respaldo | Sin dato. Definir tamaño, crecimiento, ventana, retención y RPO/RTO por servicio; no extrapolar capacidad de red a IOPS |
-| Energía | Sin dato. Inventariar cargas y UPS; autonomía se calcula con carga real y estado de baterías |
+| Caudal MPLS central y ambos ISP | Hipótesis nominal: 1 Gbps MPLS y 300 Mbps por ISP; tráfico normal/exigente calculado, sin medición contractual |
+| Voz simultánea y troncal | Reserva normal de 69 extremos activos; 30 canales externos y 20 llamadas externas normales como supuestos, PBX/licencias sin acreditar |
+| Datos/almacenamiento y respaldo | 1 TB protegido/8 TB de backup como supuestos, full semanal/incremental diario; capacidad a 5–6 años calculada; RPO/RTO logrado desconocido |
+| Energía | Hipótesis de cargas y UPS nominales por sede; autonomía permanece desconocida sin curvas/estado de batería |
 | Costos anteriores | Sin dato. Buscar referencias equivalentes de MPLS 100 Mbps, agregación central y servicios; estimaciones por zona con rango y fecha |
 | Periféricos y servicios externos | Fuera de cantidades conocidas. No sumar AP/impresoras/servidores de correo/AD sin dimensionarlos ni atribuirlos al Excel |
 

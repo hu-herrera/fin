@@ -1,0 +1,806 @@
+{
+  "as_of": "2026-10-17",
+  "status": "DIMENSIONAMIENTO_ACADEMICO_BASE_ANTES_NO_TELEMETRIA",
+  "initial_locations": 23,
+  "traffic": {
+    "normal": {
+      "per_site": [
+        {
+          "id": "cm",
+          "pcs": 55,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 33,
+          "voice_mbps": 0.96,
+          "combined_mbps": 33.96,
+          "required_at_planning_utilization_mbps": 48.514
+        },
+        {
+          "id": "s01",
+          "pcs": 30,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 18,
+          "voice_mbps": 0.48,
+          "combined_mbps": 18.48,
+          "required_at_planning_utilization_mbps": 26.4
+        },
+        {
+          "id": "s02",
+          "pcs": 30,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 18,
+          "voice_mbps": 0.48,
+          "combined_mbps": 18.48,
+          "required_at_planning_utilization_mbps": 26.4
+        },
+        {
+          "id": "s03",
+          "pcs": 30,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 18,
+          "voice_mbps": 0.48,
+          "combined_mbps": 18.48,
+          "required_at_planning_utilization_mbps": 26.4
+        },
+        {
+          "id": "s04",
+          "pcs": 30,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 18,
+          "voice_mbps": 0.48,
+          "combined_mbps": 18.48,
+          "required_at_planning_utilization_mbps": 26.4
+        },
+        {
+          "id": "s05",
+          "pcs": 30,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 18,
+          "voice_mbps": 0.48,
+          "combined_mbps": 18.48,
+          "required_at_planning_utilization_mbps": 26.4
+        },
+        {
+          "id": "s06",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s07",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s08",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s09",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s10",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s11",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s12",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s13",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s14",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s15",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s16",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s17",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s18",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s19",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s20",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 3,
+          "data_mbps": 16.8,
+          "voice_mbps": 0.48,
+          "combined_mbps": 17.28,
+          "required_at_planning_utilization_mbps": 24.686
+        },
+        {
+          "id": "s21",
+          "pcs": 17,
+          "active_phone_endpoints_envelope": 2,
+          "data_mbps": 10.2,
+          "voice_mbps": 0.32,
+          "combined_mbps": 10.52,
+          "required_at_planning_utilization_mbps": 15.029
+        },
+        {
+          "id": "s22",
+          "pcs": 8,
+          "active_phone_endpoints_envelope": 1,
+          "data_mbps": 4.8,
+          "voice_mbps": 0.16,
+          "combined_mbps": 4.96,
+          "required_at_planning_utilization_mbps": 7.086
+        }
+      ],
+      "active_phone_endpoints_envelope_total": 69,
+      "remote_active_phone_endpoints_envelope": 63,
+      "mpls_central_mbps": 367.08,
+      "mpls_required_mbps": 524.4,
+      "mpls_nominal_assumption_sufficient": true,
+      "internet_mbps": 179,
+      "internet_required_on_one_isp_mbps": 255.714,
+      "single_isp_nominal_assumption_sufficient": true,
+      "external_calls_assumed": 20,
+      "external_channels_assumed": 30,
+      "external_demand_within_assumed_channels": true,
+      "measured": false,
+      "physical_device_capacity_certified": false
+    },
+    "stress": {
+      "per_site": [
+        {
+          "id": "cm",
+          "pcs": 55,
+          "active_phone_endpoints_envelope": 11,
+          "data_mbps": 110,
+          "voice_mbps": 1.76,
+          "combined_mbps": 111.76,
+          "required_at_planning_utilization_mbps": 159.657
+        },
+        {
+          "id": "s01",
+          "pcs": 30,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 60,
+          "voice_mbps": 0.96,
+          "combined_mbps": 60.96,
+          "required_at_planning_utilization_mbps": 87.086
+        },
+        {
+          "id": "s02",
+          "pcs": 30,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 60,
+          "voice_mbps": 0.96,
+          "combined_mbps": 60.96,
+          "required_at_planning_utilization_mbps": 87.086
+        },
+        {
+          "id": "s03",
+          "pcs": 30,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 60,
+          "voice_mbps": 0.96,
+          "combined_mbps": 60.96,
+          "required_at_planning_utilization_mbps": 87.086
+        },
+        {
+          "id": "s04",
+          "pcs": 30,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 60,
+          "voice_mbps": 0.96,
+          "combined_mbps": 60.96,
+          "required_at_planning_utilization_mbps": 87.086
+        },
+        {
+          "id": "s05",
+          "pcs": 30,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 60,
+          "voice_mbps": 0.96,
+          "combined_mbps": 60.96,
+          "required_at_planning_utilization_mbps": 87.086
+        },
+        {
+          "id": "s06",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s07",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s08",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s09",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s10",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s11",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s12",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s13",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s14",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s15",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s16",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s17",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s18",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s19",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s20",
+          "pcs": 28,
+          "active_phone_endpoints_envelope": 6,
+          "data_mbps": 56,
+          "voice_mbps": 0.96,
+          "combined_mbps": 56.96,
+          "required_at_planning_utilization_mbps": 81.371
+        },
+        {
+          "id": "s21",
+          "pcs": 17,
+          "active_phone_endpoints_envelope": 4,
+          "data_mbps": 34,
+          "voice_mbps": 0.64,
+          "combined_mbps": 34.64,
+          "required_at_planning_utilization_mbps": 49.486
+        },
+        {
+          "id": "s22",
+          "pcs": 8,
+          "active_phone_endpoints_envelope": 2,
+          "data_mbps": 16,
+          "voice_mbps": 0.32,
+          "combined_mbps": 16.32,
+          "required_at_planning_utilization_mbps": 23.314
+        }
+      ],
+      "active_phone_endpoints_envelope_total": 137,
+      "remote_active_phone_endpoints_envelope": 126,
+      "mpls_central_mbps": 1210.16,
+      "mpls_required_mbps": 1728.8,
+      "mpls_nominal_assumption_sufficient": false,
+      "internet_mbps": 592.4,
+      "internet_required_on_one_isp_mbps": 846.286,
+      "single_isp_nominal_assumption_sufficient": false,
+      "external_calls_assumed": 40,
+      "external_channels_assumed": 30,
+      "external_demand_within_assumed_channels": false,
+      "measured": false,
+      "physical_device_capacity_certified": false
+    }
+  },
+  "hosts": [
+    {
+      "id": "DC-01",
+      "physical_cores_assumed": 8,
+      "vcpu_allocated": 8,
+      "ram_gib_assumed": 64,
+      "ram_gib_allocated_with_hypervisor": 48,
+      "ram_gib_unallocated": 16,
+      "usable_storage_gb_assumed": 2000,
+      "vm_disk_gb_allocated": 1100,
+      "unallocated_disk_gb": 900,
+      "performance_validated": false
+    },
+    {
+      "id": "DC-02",
+      "physical_cores_assumed": 8,
+      "vcpu_allocated": 8,
+      "ram_gib_assumed": 32,
+      "ram_gib_allocated_with_hypervisor": 24,
+      "ram_gib_unallocated": 8,
+      "usable_storage_gb_assumed": 1000,
+      "vm_disk_gb_allocated": 500,
+      "unallocated_disk_gb": 500,
+      "performance_validated": false
+    }
+  ],
+  "backup": [
+    {
+      "years": 0,
+      "protected_data_gb": 1000,
+      "daily_incremental_gb": 50,
+      "retained_backups_gb": 5200,
+      "workspace_gb": 1000,
+      "required_repository_gb": 7440,
+      "assumed_usable_repository_gb": 8000,
+      "repository_space_sufficient": true,
+      "full_transfer_hours_assumed": 3.704,
+      "incremental_transfer_hours_assumed": 0.185,
+      "full_transfer_fits_assumed_window": true,
+      "rpo_achieved_hours": null,
+      "rto_achieved_hours": null
+    },
+    {
+      "years": 5,
+      "protected_data_gb": 2488.32,
+      "daily_incremental_gb": 124.416,
+      "retained_backups_gb": 12939.264,
+      "workspace_gb": 2488.32,
+      "required_repository_gb": 18513.101,
+      "assumed_usable_repository_gb": 8000,
+      "repository_space_sufficient": false,
+      "full_transfer_hours_assumed": 9.216,
+      "incremental_transfer_hours_assumed": 0.461,
+      "full_transfer_fits_assumed_window": false,
+      "rpo_achieved_hours": null,
+      "rto_achieved_hours": null
+    },
+    {
+      "years": 6,
+      "protected_data_gb": 2985.984,
+      "daily_incremental_gb": 149.299,
+      "retained_backups_gb": 15527.117,
+      "workspace_gb": 2985.984,
+      "required_repository_gb": 22215.721,
+      "assumed_usable_repository_gb": 8000,
+      "repository_space_sufficient": false,
+      "full_transfer_hours_assumed": 11.059,
+      "incremental_transfer_hours_assumed": 0.553,
+      "full_transfer_fits_assumed_window": false,
+      "rpo_achieved_hours": null,
+      "rto_achieved_hours": null
+    }
+  ],
+  "power": [
+    {
+      "id": "cm",
+      "assumed_load_w": 1450,
+      "design_w_with_margin": 1812.5,
+      "design_va_with_assumed_power_factor": 2013.889,
+      "assumed_ups_w": 2700,
+      "assumed_ups_va": 3000,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s01",
+      "assumed_load_w": 335,
+      "design_w_with_margin": 418.75,
+      "design_va_with_assumed_power_factor": 465.278,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s02",
+      "assumed_load_w": 335,
+      "design_w_with_margin": 418.75,
+      "design_va_with_assumed_power_factor": 465.278,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s03",
+      "assumed_load_w": 335,
+      "design_w_with_margin": 418.75,
+      "design_va_with_assumed_power_factor": 465.278,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s04",
+      "assumed_load_w": 335,
+      "design_w_with_margin": 418.75,
+      "design_va_with_assumed_power_factor": 465.278,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s05",
+      "assumed_load_w": 335,
+      "design_w_with_margin": 418.75,
+      "design_va_with_assumed_power_factor": 465.278,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s06",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s07",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s08",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s09",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s10",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s11",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s12",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s13",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s14",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s15",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s16",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s17",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s18",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s19",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s20",
+      "assumed_load_w": 321,
+      "design_w_with_margin": 401.25,
+      "design_va_with_assumed_power_factor": 445.833,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s21",
+      "assumed_load_w": 244,
+      "design_w_with_margin": 305,
+      "design_va_with_assumed_power_factor": 338.889,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    },
+    {
+      "id": "s22",
+      "assumed_load_w": 181,
+      "design_w_with_margin": 226.25,
+      "design_va_with_assumed_power_factor": 251.389,
+      "assumed_ups_w": 900,
+      "assumed_ups_va": 1500,
+      "nominal_power_fits": true,
+      "includes_pcs": false,
+      "runtime_verified_minutes": null
+    }
+  ],
+  "economics": {
+    "comparison_5y": {
+      "months": 60,
+      "incremental_investment_clp": null,
+      "monthly_net_saving_clp": null,
+      "undiscounted_net_benefit_clp": null,
+      "payback_months": null,
+      "status": "INCOMPLETO"
+    },
+    "comparison_6y": {
+      "months": 72,
+      "incremental_investment_clp": null,
+      "monthly_net_saving_clp": null,
+      "undiscounted_net_benefit_clp": null,
+      "payback_months": null,
+      "status": "INCOMPLETO"
+    },
+    "partial_reference_only_clp": 411158986,
+    "monthly_net_saving_needed_to_recover_partial_in_5y_clp": 6852649.767,
+    "monthly_net_saving_needed_to_recover_partial_in_6y_clp": 5710541.472,
+    "partial_reference_is_complete_investment": false,
+    "partial_reference_excludes_four_wan_redesign": true
+  }
+}
