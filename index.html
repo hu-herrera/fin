@@ -137,7 +137,7 @@ body{background:var(--bg);color:var(--text);
 }
 #chile-map{
   width:100%;height:100%;display:block;
-  cursor:grab;
+  cursor:grab;touch-action:none;user-select:none;
   position:relative;
   z-index: 2;
   background: transparent;
@@ -445,6 +445,8 @@ body{background:var(--bg);color:var(--text);
   .log-entry{flex-wrap:wrap;gap:2px;}.log-msg{overflow-wrap:anywhere;}
   .ping-trace-actions .btn{min-height:32px;}
   .mbox{min-width:0;max-width:96vw;}
+  .pc-config-grid{grid-template-columns:minmax(0,1fr)!important;}
+  .pc-config-grid .dval{min-width:0;overflow-wrap:anywhere;}
 }
 .ios-down{color:#dc4646;}
 .ios-warn{color:#f0c83c;}
@@ -462,7 +464,7 @@ body{background:var(--bg);color:var(--text);
 .term-more{font-weight:700;}
 .term-input-row{display:flex;align-items:center;gap:6px;border-top:1px solid #1a1f2c;padding-top:6px;}
 .term-ps{color:var(--green);font-size:11px;font-family:'Courier New',monospace;white-space:nowrap;}
-.term-input{flex:1;background:transparent;border:none;outline:none;
+.term-input{flex:1;min-width:0;background:transparent;border:none;outline:none;
   color:var(--green);font-family:'Courier New',monospace;font-size:11px;}
 .ping-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;}
 .ping-table th{color:var(--text2);text-align:left;padding:3px 6px;font-size:10px;border-bottom:1px solid var(--panel2);}
@@ -1791,7 +1793,15 @@ function initSatellites(){
   animateSats();
 }
 
-function animateSats(){
+let SAT_ANIMATION_LAST=0;
+function animateSats(now=performance.now()){
+  if(SAT_ANIMATION_LAST&&now-SAT_ANIMATION_LAST<1000/30){requestAnimationFrame(animateSats);return;}
+  const motionScale=SAT_ANIMATION_LAST?Math.min(3,(now-SAT_ANIMATION_LAST)/(1000/60)):1;
+  SAT_ANIMATION_LAST=now;
+  // Freeze decorative map work while the user is reading a console or a modal.
+  // WAN availability is derived from the topology model, not from orbital frames.
+  if(document.hidden||document.querySelector('.sm-overlay.vis,.dev-overlay.vis,.moverlay.vis')||
+     document.getElementById('presentation-overlay')?.hidden===false){requestAnimationFrame(animateSats);return;}
   const esModoAntes = ST.mode === 'antes';
   syncMapLayersVisibility();
   if(esModoAntes){
@@ -1823,7 +1833,7 @@ function animateSats(){
     const estado = tipo === 'starlink' ? slState : kuiperState;
     const col = stateColor[estado][tipo];
     trenes.forEach((t, tIdx) => {
-      t.offsetY += t.speed * t.dy;
+      t.offsetY += t.speed * t.dy * motionScale;
       if(t.offsetY > CICLO_Y) t.offsetY -= CICLO_Y;
       const ly = -200 + t.offsetY;
       const lx = ((t.lx + (t.planeOffset || 0) + MW) % MW);
@@ -1835,10 +1845,9 @@ function animateSats(){
         sat.setAttribute('opacity', estado === 'caido' ? '0.4' : (i === 0 ? '1' : Math.max(0.25, 1 - i*0.09)));
         sat.querySelectorAll('.sat-body').forEach(r => r.setAttribute('fill', col));
         sat.querySelectorAll('.sat-trail').forEach(r => r.setAttribute('stroke', col));
-        if(estado !== 'caido'){
-          SAT_POS[tipo].push([sx, sy]);
-          SAT_META[tipo].push({ trainId: t.id, index: i, x: sx, y: sy });
-        }
+        // Geometry remains available for route snapshots even when a provider is down.
+        SAT_POS[tipo].push([sx, sy]);
+        SAT_META[tipo].push({ trainId: t.id, index: i, x: sx, y: sy });
       });
       if(t.lbl){
         t.lbl.setAttribute('x', lx.toFixed(1));
@@ -2337,7 +2346,6 @@ function renderMap(){
       const selected=nearestMapSede(e)||s;
       if(selectPingSede(selected.id)) return;
       selectSede(selected.id);
-      zoomASede(selected.id);
     });
     c.addEventListener('mouseenter', e=>showTip(e,s));
     c.addEventListener('mouseleave', hideTip);
@@ -2353,7 +2361,6 @@ function renderMap(){
       const selected=nearestMapSede(e)||s;
       if(selectPingSede(selected.id)) return;
       selectSede(selected.id);
-      zoomASede(selected.id);
     });
     hit.addEventListener('mouseenter',e=>showTip(e,s));
     hit.addEventListener('mouseleave',hideTip);
@@ -2600,7 +2607,7 @@ function replayMapPing(){
 function setPingDiagnosticRule(srcId,destId,source,target){
   PING_DIAGNOSTIC_RULE=srcId?{src:srcId,dst:destId,source,target}:null;
   clearPacketSimulation('La política ICMP cambió. Repite la prueba para aplicar la política actual.');
-  cancelPendingSitePing('La política ICMP cambió. Envía otro ping para aplicar la política actual.');
+  invalidateSitePing('La política ICMP cambió. Envía otro ping para aplicar la política actual.');
   addLog(srcId?'Política temporal LAB-ICMP-HOST-PAIR: '+source+' → '+target:'Excepción ICMP temporal eliminada','warn');
 }
 function toggleMapPingDiagnostic(allow){
@@ -2790,7 +2797,7 @@ function showTip(e,s){
 }
 function hideTip(){ document.getElementById('tooltip').classList.remove('vis'); }
 
-const ZOOM = { x: 0, y: 0, w: 300, h: 1120, minW: 8, maxW: 320 };
+const ZOOM = { x: 0, y: 0, w: 300, h: 1120, minW: 4, maxW: 1200 };
 let DRAG = {
   active:false, moved:false, suppressClick:false, pointerId:null,
   startX:0, startY:0, startVX:0, startVY:0, startMatrix:null
@@ -2802,18 +2809,34 @@ function mapZoomHeight(width){
   const aspect=rect.width/Math.max(rect.height,1);
   return width/aspect;
 }
+let LAST_MAP_RECT=null;
 function fitMapZoomHeight(){
-  if(ZOOM.w>=300) return;
-  const centerY=ZOOM.y+ZOOM.h/2;
-  ZOOM.h=mapZoomHeight(ZOOM.w);
-  ZOOM.y=centerY-ZOOM.h/2;
+  const rect=document.getElementById('chile-map').getBoundingClientRect();
+  if(!LAST_MAP_RECT||!rect.width||!rect.height)return;
+  const scale=Math.max(ZOOM.w/LAST_MAP_RECT.width,ZOOM.h/LAST_MAP_RECT.height);
+  const cx=ZOOM.x+ZOOM.w/2,cy=ZOOM.y+ZOOM.h/2;
+  ZOOM.w=rect.width*scale;ZOOM.h=rect.height*scale;
+  ZOOM.x=cx-ZOOM.w/2;ZOOM.y=cy-ZOOM.h/2;
   aplicarZoom();
 }
 function aplicarZoom(){
-  const m = document.getElementById('chile-map');
-  if(!m) return;
-  m.setAttribute('viewBox', `${ZOOM.x} ${ZOOM.y} ${ZOOM.w} ${ZOOM.h}`);
+  const m=document.getElementById('chile-map');if(!m)return;
+  m.setAttribute('viewBox',`${ZOOM.x} ${ZOOM.y} ${ZOOM.w} ${ZOOM.h}`);
+  const rect=m.getBoundingClientRect();LAST_MAP_RECT={width:rect.width,height:rect.height};
   updateMapMarkerScale();
+}
+function mapClientPoint(clientX,clientY){
+  const svg=document.getElementById('chile-map'),matrix=svg.getScreenCTM();
+  return matrix?new DOMPoint(clientX,clientY).matrixTransform(matrix.inverse()):null;
+}
+function zoomMapAt(clientX,clientY,factor){
+  const anchor=mapClientPoint(clientX,clientY);if(!anchor)return;
+  // Scale both dimensions together, including the initial letterboxed country view.
+  // No geographic clamps: the point under the cursor must stay under the cursor.
+  const width=Math.max(ZOOM.minW,Math.min(Math.max(ZOOM.maxW,ZOOM.w),ZOOM.w*factor));
+  const scale=width/ZOOM.w;
+  ZOOM.x=anchor.x-(anchor.x-ZOOM.x)*scale;ZOOM.y=anchor.y-(anchor.y-ZOOM.y)*scale;
+  ZOOM.w=width;ZOOM.h*=scale;aplicarZoom();
 }
 function zoomASede(id){
   const s = SEDES.find(x => x.id === id);
@@ -2845,17 +2868,8 @@ function zoomToSantiago(){
   aplicarZoom();
 }
 function changeMapZoom(factor){
-  const centerX=ZOOM.x+ZOOM.w/2;
-  const centerY=ZOOM.y+ZOOM.h/2;
-  const width=Math.max(ZOOM.minW,Math.min(ZOOM.maxW,ZOOM.w*factor));
-  const height=mapZoomHeight(width);
-  ZOOM.w=width;
-  ZOOM.h=height;
-  ZOOM.x=centerX-width/2;
-  ZOOM.y=centerY-height/2;
-  ZOOM.x=Math.max(-30,Math.min(330-ZOOM.w,ZOOM.x));
-  ZOOM.y=Math.max(-30,Math.min(1120-ZOOM.h,ZOOM.y));
-  aplicarZoom();
+  const rect=document.getElementById('chile-map').getBoundingClientRect();
+  zoomMapAt(rect.left+rect.width/2,rect.top+rect.height/2,factor);
 }
 function toggleMapExpanded(button){
   const map=document.getElementById('map-container');
@@ -2870,54 +2884,28 @@ function initZoom(){
   if(!mapEl || !svgEl) return;
   document.getElementById('ping-trace-card').addEventListener('click',e=>e.stopPropagation());
   window.addEventListener('resize',fitMapZoomHeight);
-  mapEl.addEventListener('wheel', (e) => {
-    if(e.target.closest('.ping-trace-card,.ping-select-bar,.map-zoom-controls'))return;
-    e.preventDefault();
-    const rect = svgEl.getBoundingClientRect();
-    if(!rect.width || !rect.height) return;
-    const factor = e.deltaY > 0 ? 1.15 : 0.87;
-    const newW = Math.max(ZOOM.minW, Math.min(ZOOM.maxW, ZOOM.w * factor));
-    const newH = mapZoomHeight(newW);
-    const mouseX = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
-    const mouseY = Math.min(Math.max(e.clientY - rect.top, 0), rect.height);
-    const pointerViewX = ZOOM.x + (mouseX / rect.width) * ZOOM.w;
-    const pointerViewY = ZOOM.y + (mouseY / rect.height) * ZOOM.h;
-    ZOOM.x = pointerViewX - (mouseX / rect.width) * newW;
-    ZOOM.y = pointerViewY - (mouseY / rect.height) * newH;
-    ZOOM.w = newW;
-    ZOOM.h = newH;
-    ZOOM.x = Math.max(-30, Math.min(330 - ZOOM.w, ZOOM.x));
-    ZOOM.y = Math.max(-30, Math.min(1120 - ZOOM.h, ZOOM.y));
-    aplicarZoom();
-  }, { passive: false });
+  const initial=svgEl.getBoundingClientRect();LAST_MAP_RECT={width:initial.width,height:initial.height};
+  mapEl.addEventListener('wheel',e=>{
+    if(e.target.closest('.ping-trace-card,.ping-select-bar,.map-zoom-controls,.map-expand-btn'))return;
+    e.preventDefault();if(DRAG.active||!e.deltaY)return;
+    const pixels=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?mapEl.clientHeight:1);
+    zoomMapAt(e.clientX,e.clientY,Math.exp(Math.max(-300,Math.min(300,pixels))*0.002));
+  },{passive:false});
   mapEl.addEventListener('pointerdown',e=>{
-    if(e.button!==0 || !svgEl.contains(e.target)) return;
-    if(e.target.closest('#antenna-layer,#sat-layer,#sedes-layer')) return;
-    DRAG.active=true;
-    DRAG.moved=false;
-    DRAG.pointerId=e.pointerId;
-    DRAG.startX=e.clientX;
-    DRAG.startY=e.clientY;
-    DRAG.startVX=ZOOM.x;
-    DRAG.startVY=ZOOM.y;
-    mapEl.setPointerCapture(e.pointerId);
-    svgEl.classList.add('dragging');
-    e.preventDefault();
+    if(e.button!==0||!svgEl.contains(e.target))return;
+    const matrix=svgEl.getScreenCTM();if(!matrix)return;
+    Object.assign(DRAG,{active:true,moved:false,pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,
+      startVX:ZOOM.x,startVY:ZOOM.y,startMatrix:matrix.inverse()});
   });
   mapEl.addEventListener('pointermove',e=>{
-    if(!DRAG.active || e.pointerId!==DRAG.pointerId) return;
-    const dx=e.clientX-DRAG.startX;
-    const dy=e.clientY-DRAG.startY;
-    if(Math.hypot(dx,dy)>4) DRAG.moved=true;
-    if(!DRAG.moved) return;
-    const rect = svgEl.getBoundingClientRect();
-    if(!rect.width || !rect.height) return;
-    const scaleX = ZOOM.w / rect.width;
-    const scaleY = ZOOM.h / rect.height;
-    ZOOM.x = DRAG.startVX - dx * scaleX;
-    ZOOM.y = DRAG.startVY - dy * scaleY;
-    ZOOM.x = Math.max(-30, Math.min(330 - ZOOM.w, ZOOM.x));
-    ZOOM.y = Math.max(-30, Math.min(1120 - ZOOM.h, ZOOM.y));
+    if(!DRAG.active||e.pointerId!==DRAG.pointerId)return;
+    const dx=e.clientX-DRAG.startX,dy=e.clientY-DRAG.startY;
+    if(!DRAG.moved&&Math.hypot(dx,dy)<5)return;
+    if(!DRAG.moved){DRAG.moved=true;mapEl.setPointerCapture(e.pointerId);svgEl.classList.add('dragging');}
+    e.preventDefault();
+    const matrix=DRAG.startMatrix;
+    ZOOM.x=DRAG.startVX-(matrix.a*dx+matrix.c*dy);
+    ZOOM.y=DRAG.startVY-(matrix.b*dx+matrix.d*dy);
     aplicarZoom();
   });
   const finishDrag=e=>{
@@ -2926,7 +2914,7 @@ function initZoom(){
     DRAG.suppressClick=DRAG.moved;
     DRAG.pointerId=null;
     svgEl.classList.remove('dragging');
-    if(DRAG.suppressClick) setTimeout(()=>{DRAG.suppressClick=false;},0);
+    if(DRAG.suppressClick) setTimeout(()=>{DRAG.suppressClick=false;},150);
   };
   mapEl.addEventListener('pointerup',finishDrag);
   mapEl.addEventListener('pointercancel',finishDrag);
@@ -2943,12 +2931,9 @@ function initZoom(){
       svgEl.classList.remove('dragging');
     }
   });
-  mapEl.addEventListener('dblclick', (e) => {
+  mapEl.addEventListener('dblclick',e=>{
     if(!svgEl.contains(e.target))return;
-    if(e.target.closest('circle') || e.target.closest('g')) return;
-    e.preventDefault();
-    zoomReset();
-    addLog('Zoom restaurado — vista Chile completa', 'ok');
+    e.preventDefault();zoomMapAt(e.clientX,e.clientY,0.5);
   });
 }
 
@@ -2959,7 +2944,6 @@ document.getElementById('map-container').addEventListener('click',(e)=>{
   if(nearest){
     if(selectPingSede(nearest.id)) return;
     selectSede(nearest.id);
-    zoomASede(nearest.id);
     return;
   }
   ST.selId=null; ST.selAntenna=null;
@@ -3162,7 +3146,7 @@ function sc_reset(){
   _refresh();
 }
 function _refresh(){
-  cancelPendingSitePing('El estado de la red cambió. Envía otro ping para evaluar la ruta actual.');
+  invalidateSitePing('El estado de la red cambió. Envía otro ping para evaluar la ruta actual.');
   clearPacketSimulation('El estado de la red cambió. Repite el ping para evaluar la ruta actual.');
   renderMap(); renderAntenas(); updateMetrics();
   if(ST.selId) renderDetail(ST.selId);
@@ -3170,7 +3154,7 @@ function _refresh(){
     const source=document.getElementById('ping-source-host'),value=source.value;
     source.innerHTML=pingHostOptions(SEDES.find(s=>s.id===SM_ID));source.value=value;
     updatePingHosts(SM_ID,true);
-    cancelPendingSitePing('El estado de la red cambió. Envía otro ping para evaluar la ruta actual.');
+    invalidateSitePing('El estado de la red cambió. Envía otro ping para evaluar la ruta actual.');
   }
   if(SM_ID&&document.getElementById('sm-overlay').classList.contains('vis')){
     if(['topo','lab','kpis','tables'].includes(SM_TAB))
@@ -3286,13 +3270,11 @@ function openSedeModal(id){
   smTab('topo', document.querySelector('.sm-tab'));
 }
 function closeSedeModal(){
-  cancelPendingSitePing();
   document.getElementById('sm-overlay').classList.remove('vis');
   window.PacketWorkbench?.onSedeClosed();
   SM_ID = null;
 }
 function smTab(tab, btn){
-  cancelPendingSitePing();
   // Mantener una única experiencia: la pestaña Ping/Trace original.
   SM_TAB = tab;
   document.querySelectorAll('.sm-tab').forEach(b=>b.classList.remove('active'));
@@ -3958,7 +3940,6 @@ function pingHostOptions(s,exclude){
     (isSwitchPCPortAvailable(s.id,pc)&&isPCOnConfiguredVlan(s.id,pc)?'':' · sin acceso')+'</option>').join('');
 }
 function invalidatePingSelection(){
-  cancelPendingSitePing();
   const result=document.getElementById('ping-result');
   if(result)result.textContent='Selección actualizada. Envía otro ping para probar estos equipos.';
 }
@@ -4071,6 +4052,7 @@ function renderKPIsTab(s){
 let DEV_STATE = {type:null, sedeId:null, tab:null};
 
 function openDevice(type, sedeId){
+  PC_CONSOLE_RETURN=null;
   DEV_STATE = {type, sedeId, tab:null};
   const s = SEDES.find(x=>x.id===sedeId);
   const esAntes = ST.mode === 'antes';
@@ -4126,7 +4108,8 @@ function openDevice(type, sedeId){
   devTab(tabs[0]?.k||'ov', document.querySelector('.dev-tab'));
 }
 function openPC(sedeId, pcIdx){
-  const s=SEDES.find(x=>x.id===sedeId);
+  PC_CONSOLE_RETURN=null;
+  const s=SEDES.find(x=>x.id===sedeId);if(!s)return;
   const pc=getPCs(s)[pcIdx];
   if(!pc) return;
   DEV_STATE={type:'pc', sedeId, tab:null, pc};
@@ -4138,7 +4121,10 @@ function openPC(sedeId, pcIdx){
   document.getElementById('dev-overlay').classList.add('vis');
   devTab('cfg', document.querySelector('.dev-tab'));
 }
-function closeDevModal(){ document.getElementById('dev-overlay').classList.remove('vis'); }
+function closeDevModal(){
+  if(PC_CONSOLE_RETURN){returnToPCTerminal();return;}
+  document.getElementById('dev-overlay').classList.remove('vis');
+}
 function devTab(tab, btn){
   DEV_STATE.tab = tab;
   document.querySelectorAll('.dev-tab').forEach(b=>b.classList.remove('active'));
@@ -4169,7 +4155,7 @@ function devTab(tab, btn){
     if(t==='pc'){
       const pc=DEV_STATE.pc;
       if(tab==='cfg')  body.innerHTML=genPCConfig(s,pc);
-      if(tab==='term') body.innerHTML=genPCTerminal(s,pc);
+      if(tab==='term'){body.innerHTML=genPCTerminal(s,pc);const output=document.getElementById('term-out');output.scrollTop=output.scrollHeight;document.getElementById('term-input')?.focus();}
     }
     return;
   }
@@ -4211,7 +4197,7 @@ function devTab(tab, btn){
   if(t==='pc'){
     const pc=DEV_STATE.pc;
     if(tab==='cfg')  body.innerHTML=genPCConfig(s,pc);
-    if(tab==='term') body.innerHTML=genPCTerminal(s,pc);
+    if(tab==='term'){body.innerHTML=genPCTerminal(s,pc);const output=document.getElementById('term-out');output.scrollTop=output.scrollHeight;document.getElementById('term-input')?.focus();}
   }
 }
 
@@ -4672,14 +4658,15 @@ function genPCConfig(s,pc){
   const gatewayReachable=isPCNetworkAvailable(s.id,pc);
   const internetReachable=gatewayReachable && !sedeDown(s.id);
   const statusStyle=reachable=>`color:${reachable?'var(--green)':'var(--red)'}`;
-  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+  return `<div class="pc-config-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
     <div class="dsec">
       <div class="dslbl">Configuración TCP/IP</div>
       <div class="drow"><span class="dkey">Hostname</span><span class="dval">${pc.id}</span></div>
       <div class="drow"><span class="dkey">IPv4</span><span class="dval">${pc.ip}</span></div>
+      <div class="drow"><span class="dkey">Máscara</span><span class="dval">255.255.255.128 (/25)</span></div>
       <div class="drow"><span class="dkey">Gateway</span><span class="dval">10.70.${s.num}.1</span></div>
       <div class="drow"><span class="dkey">MAC</span><span class="dval">${pc.mac}</span></div>
-      <div class="drow"><span class="dkey">Switch / puerto</span><span class="dval">SW-${s.code}-0${pc.sw} · Gi1/0/${switchPort}</span></div>
+      <div class="drow"><span class="dkey">Switch / puerto</span><span class="dval">SW-${s.code}-0${pc.sw} · Gi${window.ActiveProfile?.enabled()?pc.sw:1}/0/${switchPort}</span></div>
     </div>
     <div class="dsec">
       <div class="dslbl">Estado</div>
@@ -4687,27 +4674,70 @@ function genPCConfig(s,pc){
       <div class="drow"><span class="dkey">Internet</span><span class="dval" style="${statusStyle(internetReachable)}">${internetReachable?'✓ Online':'✗ Sin servicio'}</span></div>
     </div>
     ${pc.idx === 1 ? `<div style="grid-column:1/-1;display:flex;justify-content:flex-end;margin-top:4px">
-      <button type="button" class="btn btn-b" onclick="openDevice('router','${s.id}')">🔧 Conectar al router de la sede</button>
-    </div>` : `<div style="grid-column:1/-1;color:var(--text2);font-size:10px">PC de administración: ${getPCs(s)[0]?.id || pc.id}</div>`}
+      <button type="button" class="btn btn-b" onclick="consoleFromPCConfig('${s.id}',${pc.idx-1})">🔧 Consola local del router (cable de laboratorio)</button>
+    </div>` : `<div style="grid-column:1/-1;color:var(--text2);font-size:10px">PC con cable de consola local: ${getPCs(s)[0]?.id || pc.id}</div>`}
+    <p id="pc-config-status" role="status" style="grid-column:1/-1" class="ping-note"></p>
   </div>`;
 }
 
+const PC_TERMINALS=new Map();
+let PC_CONSOLE_RETURN=null;
+function pcTerminalSession(s,pc){
+  const key=s.id+':'+pc.idx;
+  if(!PC_TERMINALS.has(key))PC_TERMINALS.set(key,{lines:[],history:[],index:0,arp:new Map()});
+  return PC_TERMINALS.get(key);
+}
 function genPCTerminal(s,pc){
+  const session=pcTerminalSession(s,pc);
   return `<div>
-    <div class="ios" style="font-size:10px;margin-bottom:8px">
-Comandos: <span class="ios-up">ipconfig</span>  <span class="ios-up">ping &lt;IP&gt;</span>  <span class="ios-up">clear</span>
-    </div>
-    <div class="term" id="term-box">
-      <div class="term-out" id="term-out">
-        <div class="term-line term-result">Microsoft Windows [Versión 10.0]</div>
-      </div>
-      <div class="term-input-row">
-        <span class="term-ps">C:\\Users\\${pc.id}></span>
-        <input class="term-input" id="term-input" type="text" autocomplete="off"
-          onkeydown="handleTermCmd(event,'${s.id}',${pc.idx-1})">
-      </div>
-    </div>
-  </div>`;
+    <p class="ping-note">Terminal educativo de ${pc.id}. <strong>help</strong> muestra los comandos. ${pc.idx===1?'Consola local: <strong>console router</strong>, <strong>console sw1</strong>, <strong>console sw2</strong> o <strong>console fw</strong>.':'La consola local de laboratorio está conectada al PC 001 de la sede.'}</p>
+    <div class="term" id="term-box"><div class="term-out" id="term-out">${session.lines.map(line=>'<pre class="term-line '+line.cls+'" style="white-space:pre-wrap;margin:0">'+escapeCLI(line.text)+'</pre>').join('')}</div>
+    <div class="term-input-row"><span class="term-ps">${pc.id}&gt;</span>
+    <input class="term-input" id="term-input" aria-label="Comando del PC" type="text" autocomplete="off" onkeydown="handleTermCmd(event,'${s.id}',${pc.idx-1})"></div></div></div>`;
+}
+function consoleFromPCConfig(sedeId,pcIdx){
+  const s=SEDES.find(site=>site.id===sedeId),error=connectPCConsole(s,getPCs(s)[pcIdx],'router');
+  if(error)document.getElementById('pc-config-status').textContent=error;
+}
+function returnToPCTerminal(){
+  const context=PC_CONSOLE_RETURN;if(!context)return;
+  PC_CONSOLE_RETURN=null;openPC(context.sedeId,context.pcIdx);
+  devTab('term',document.querySelector('#dev-tabs button:last-child'));
+  document.getElementById('term-input')?.focus();
+}
+function connectPCConsole(s,pc,type){
+  if(pc.idx!==1)return 'La consola local de laboratorio está conectada al PC 001 de esta sede.';
+  if(ST.mode==='antes')return 'La consola de configuración interactiva está disponible en DESPUÉS. El perfil ANTES permite consultar su diagnóstico.';
+  const node=type==='fw'?'firewall':type;
+  if(window.ActiveProfile?.enabled()&&!window.ActiveProfile.rawSite(s.id).nodes[node])return 'Sin respuesta de consola: el equipo está apagado en el escenario.';
+  openDevice(type,s.id);
+  PC_CONSOLE_RETURN={sedeId:s.id,pcIdx:pc.idx-1};
+  devTab('cli',[...document.querySelectorAll('#dev-tabs button')].find(b=>b.textContent==='CLI'));
+  document.getElementById('device-term-input')?.focus();
+  return null;
+}
+function evaluatePCPing(s,pc,target){
+  if(!isValidIPv4(target))return {ok:false,reason:'Destino IPv4 no válido o nombre no modelado.'};
+  if(target==='127.0.0.1'||target===pc.ip)return {ok:true,rtt:1,route:[{label:pc.id,ip:pc.ip}]};
+  const peer=findDeviceTargetPC(target);
+  if(peer){
+    const policy=packetPolicyDecision(s,peer.site,pc,peer.pc);
+    const route=buildPacketRoute(s,peer.site,true,pc,peer.pc);
+    const ok=route.length>=2;
+    return {ok,route,peer,rtt:ok?estimatePingRtt(s,peer.site,route):0,
+      reason:policy.action!=='allow'?'BLOQUEADO por firewall: '+policy.rule:'Sin ruta activa: revisa puertos, VLAN, StackWise, gateway y WAN.'};
+  }
+  if(target===`10.70.${s.num}.1`){
+    const ok=isPCNetworkAvailable(s.id,pc);
+    return {ok,rtt:1,route:ok?[{label:pc.id},{label:window.ActiveProfile?.enabled()?'Palo Alto · gateway VLAN 10':'Gateway local'}]:[],reason:'El PC no alcanza su gateway: revisa puerto, VLAN, StackWise y firewall.'};
+  }
+  if(window.ActiveProfile?.enabled()){
+    const octets=target.split('.').map(Number),local=octets[0]===10&&octets[1]===70&&octets[2]===s.num;
+    const zone=local?(octets[3]<128?'USERS':octets[3]<160?'VOICE':octets[3]<176?'MGMT-DATA':octets[3]<192?'GUESTS':'TRANSIT'):'TRANSIT';
+    const policy=window.RedundantLab.evaluateSitePanPolicy(s.num,'USERS',zone,'icmp',target,pc.ip);
+    if(policy.action!=='allow')return {ok:false,reason:'BLOQUEADO por firewall: '+policy.rule};
+  }
+  return {ok:false,reason:'Destino sin respuesta ICMP modelada. No se inventan respuestas de servidores ni IP públicas.'};
 }
 
 function cliText(prompt, command, lines){
@@ -4861,78 +4891,59 @@ function genRouterRunningConfig(s, startup=false){
 }
 
 function handleTermCmd(ev,sedeId,pcIdx){
-  if(ev.key!=='Enter') return;
-  const inp=document.getElementById('term-input');
-  const cmd=inp.value.trim();
-  if(!cmd) return;
-  inp.value='';
-  const s=SEDES.find(x=>x.id===sedeId);
-  const pc=getPCs(s)[pcIdx];
-  const out=document.getElementById('term-out');
-  const addLine=(txt,cls='term-result')=>{
-    const d=document.createElement('pre');
-    d.className=`term-line ${cls}`;
-    d.style.margin = '0';
-    d.style.whiteSpace = 'pre-wrap';
-    // convert HTML <br> to real newlines so outputs render like a real terminal
-    d.innerHTML = String(txt).replace(/<br\s*\/?>/gi, '\n');
-    out.appendChild(d);
-  };
-  addLine(`C:\\Users\\${pc.id}> <span style="color:#7aff7a">${escapeCLI(cmd)}</span>`,'term-prompt');
-  const lower=cmd.toLowerCase();
-  if(lower==='clear'||lower==='cls'){ out.innerHTML=''; return; }
-  if(lower==='ipconfig'){
-    addLine(`Dirección IPv4 . . . . . . . . . . . . .  : ${pc.ip}`);
-    addLine(`Puerta de enlace predeterminada . . . . . : 10.70.${s.num}.1`);
-  } else if(/^ping\s+\S+/.test(lower)){
-    const target=lower.split(/\s+/).at(-1);
-    const sourceAvailable=isPCNetworkAvailable(sedeId,pc);
-    const targetPC=findDeviceTargetPC(target);
-    const targetSite=targetPC?.site || findDeviceTargetSite(target);
-    const isGateway=Boolean(targetSite && target===`10.70.${targetSite.num}.1`);
-    const gatewayPC=!targetPC && isGateway
-      ? getPCs(targetSite).find(candidate=>isPCNetworkAvailable(targetSite.id,candidate))
-      : null;
-    const routeTargetPC=targetPC || (gatewayPC ? {site:targetSite,pc:gatewayPC} : null);
-    const route=routeTargetPC
-      ? buildPacketRoute(s,routeTargetPC.site,true,pc,routeTargetPC.pc)
-      : null;
-    const targetConnected=targetPC
-      ? isPCNetworkAvailable(targetPC.site.id,targetPC.pc)
-      : targetSite
-        ? targetSite.id===sedeId
-          ? isGateway && sourceAvailable
-          : Boolean(isGateway && route?.length)
-        : isValidIPv4(target) && (ST.mode==='antes'
-          ? ST.mpls[sedeId]==='activo' && isSiteLanAvailable(sedeId)
-          : Boolean(activeLink(sedeId)) && sourceAvailable);
-    const reachable=sourceAvailable && targetConnected &&
-      (!routeTargetPC || route.length>0);
-    const delay=targetPC && targetPC.site.id!==sedeId
-      ? Math.max(1,getLinkLatency(s)+getLinkLatency(targetPC.site)+4)
-      : targetSite && targetSite.id!==sedeId
-        ? Math.max(1,getLinkLatency(s)+getLinkLatency(targetSite)+4)
-        : Math.max(1,getLinkLatency(s)+2);
-    if(reachable){
-      for(let i=0;i<4;i++) addLine(`Respuesta desde ${target}: bytes=32 tiempo=${delay}ms TTL=${targetPC?.site.id===sedeId?128:63}`);
-    } else {
-      for(let i=0;i<4;i++) addLine(`Se agotó el tiempo de espera.`,'term-error');
-    }
-
-    // Las configuraciones Cisco y PAN-OS pertenecen a la consola de dispositivo, no al ping de PC.
-  } else if(/^ssh\s+/.test(lower) || /^telnet\s+/.test(lower)){
-    const gateway = `10.70.${s.num}.1`;
-    if(lower.includes(gateway) || lower.includes('router')){
-      openDevice('router', sedeId);
-      return;
-    }
-    addLine(`Conexión rechazada: solo se permite administrar el router local (${gateway}).`,'term-error');
-  } else {
-    addLine(`'${cmd}' no se reconoce.`,'term-error');
+  const s=SEDES.find(site=>site.id===sedeId),pc=s&&getPCs(s)[pcIdx];
+  const input=document.getElementById('term-input'),out=document.getElementById('term-out');
+  if(!s||!pc||!input||!out)return;
+  const session=pcTerminalSession(s,pc);
+  if(ev.key==='ArrowUp'||ev.key==='ArrowDown'){
+    ev.preventDefault();session.index=Math.max(0,Math.min(session.history.length,session.index+(ev.key==='ArrowUp'?-1:1)));
+    input.value=session.history[session.index]||'';return;
   }
-  addLine('');
-  const box=document.getElementById('term-box');
-  if(box) box.scrollTop=box.scrollHeight;
+  if(ev.key!=='Enter')return;ev.preventDefault();
+  const cmd=input.value.trim();if(!cmd)return;input.value='';
+  session.history.push(cmd);if(session.history.length>50)session.history.shift();session.index=session.history.length;
+  const addLine=(text,cls='term-result')=>{
+    session.lines.push({text:String(text),cls});if(session.lines.length>250)session.lines.shift();
+    const line=document.createElement('pre');line.className='term-line '+cls;line.style.cssText='margin:0;white-space:pre-wrap';line.textContent=text;out.append(line);
+    if(out.children.length>250)out.firstElementChild.remove();
+    out.scrollTop=out.scrollHeight;
+  };
+  addLine(pc.id+'> '+cmd,'term-prompt');
+  const lower=cmd.toLowerCase().replace(/\s+/g,' ');
+  if(['clear','cls'].includes(lower)){session.lines=[];out.replaceChildren();return;}
+  if(['help','?'].includes(lower)){
+    addLine('ipconfig [/all] · hostname · ping <IP> · tracert <IP> · route print · arp -a\nconsole router|sw1|sw2|fw (PC 001, cable de laboratorio)\nssh [-l usuario] [usuario@]<IP> (sujeto a conectividad y políticas)\nclear / cls · ↑ / ↓ historial\nSimulación de comandos; no ejecuta Windows, SSH ni IOS reales.');
+  }else if(lower==='hostname')addLine(pc.id);
+  else if(lower==='ipconfig'||lower==='ipconfig /all'){
+    addLine('Adaptador Ethernet · '+pc.id+'\nDirección IPv4: '+pc.ip+'\nMáscara: 255.255.255.128 (/25)\nGateway: 10.70.'+s.num+'.1\nVLAN del PC: '+pc.vlan+' · VLAN del puerto: '+getSwitchPCVlan(s.id,pc)+'\nEnlace: '+(isSwitchPCPortAvailable(s.id,pc)?'activo':'sin conexión'));
+    if(lower.endsWith('/all'))addLine('MAC: '+pc.mac+'\nDNS corporativos configurados: '+CENTRAL_SERVICES.dns1+', '+CENTRAL_SERVICES.dns2+' (disponibilidad de servicio no verificada)');
+  }else if(lower==='route print'){
+    addLine('Tabla de rutas del PC (configurada, no prueba de conectividad)\nDestino              Máscara             Gateway\n10.70.'+s.num+'.0          255.255.255.128     En vínculo\n0.0.0.0              0.0.0.0             10.70.'+s.num+'.1');
+  }else if(lower==='arp -a'){
+    addLine(session.arp.size?[...session.arp].map(([ip,mac])=>ip+'    '+mac+'    dinámica (modelo)').join('\n'):'Sin vecinos aprendidos en esta sesión. Envía ping a otro PC local.');
+  }else if(/^(ping|tracert|traceroute)\s+/.test(lower)){
+    const tokens=lower.split(' '),target=tokens.length===2?(tokens[1]==='localhost'?'127.0.0.1':tokens[1]):'';
+    const result=evaluatePCPing(s,pc,target);
+    if(!result.ok)addLine('Sin respuesta: '+result.reason,'term-error');
+    else{
+      if(result.peer?.site.id===s.id)session.arp.set(target,result.peer.pc.mac);
+      if(tokens[0]==='ping'){
+        addLine('Respuesta ICMP simulada desde '+target+' · RTT estimado '+result.rtt+' ms\nEnviados: 4 · Recibidos: 4 · Perdidos: 0 (modelo)');
+      }else addLine('Recorrido lógico del modelo (incluye switching; no son saltos TTL medidos):\n'+result.route.map((hop,i)=>(i+1)+'. '+hop.label).join('\n'));
+    }
+  }else if(/^(console|connect)\s+/.test(lower)){
+    const type=lower.split(' ')[1];
+    if(lower.split(' ').length!==2||!['router','sw1','sw2','fw'].includes(type))addLine('Uso: console router|sw1|sw2|fw','term-error');
+    else {const error=connectPCConsole(s,pc,type);if(!error)return;addLine(error,'term-error');}
+  }else if(/^(ssh|telnet)\s+/.test(lower)){
+    const target=lower.split(' ').at(-1).split('@').at(-1);
+    if(lower.startsWith('telnet '))addLine('Telnet no está habilitado. Usa SSH por una ruta de gestión autorizada o console router desde PC 001.','term-error');
+    else if(!isPCNetworkAvailable(s.id,pc))addLine('Sin conexión al gateway. SSH no puede abrir una sesión sin ruta.','term-error');
+    else if(!isValidIPv4(target)&&!['router','sw1','sw2','fw'].includes(target))addLine('Destino SSH no reconocido. Usa la IP exacta del equipo.','term-error');
+    else addLine('SSH denegado: este PC está en VLAN 10 (USERS), sin autorización de administración. '+
+      (target===`10.70.${s.num}.1`?'Esa IP es el gateway '+(window.ActiveProfile?.enabled()?'Palo Alto, no el router.':'local.'):'')+
+      '\nPara configurar en el laboratorio desde PC 001: console router, console sw1, console sw2 o console fw.','term-error');
+  }else addLine('Comando no reconocido: '+cmd+'. Escribe help.','term-error');
 }
 
 function devicePrompt(s, type){
@@ -5181,7 +5192,8 @@ function genDeviceCLI(s, type){
   const persistenceWarning = session.persistenceWarning
     ? `<span class="ios-warn">${escapeCLI(session.persistenceWarning)}</span><br>`
     : '';
-  return `<div class="device-cli">
+  const consoleBanner=PC_CONSOLE_RETURN?'<div class="ping-route-summary"><span>Consola local simulada por cable desde PC 001. No es una sesión SSH.</span><button type="button" class="btn btn-b" onclick="returnToPCTerminal()">← Volver al terminal del PC</button></div>':'';
+  return `<div class="device-cli">${consoleBanner}
     <div class="ios" style="font-size:10px;margin-bottom:8px">
       Consola ${model} · comandos soportados para laboratorio · <span class="ios-up">?</span>, <span class="ios-up">show ?</span>, <span class="ios-up">${pagerHelp}</span>, <span class="ios-up">exit</span>, <span class="ios-up">clear</span><br>
       Modos: <span class="ios-up">${modeHelp}</span><br>
@@ -6030,6 +6042,7 @@ function completeDeviceCommand(input, output, type){
 }
 
 function handleDeviceCmd(ev, sedeId, type){
+  if(ev.key==='Escape')return; // Let the modal stack handle Escape even when output is paginated.
   const input = document.getElementById('device-term-input');
   const output = document.getElementById('device-term-out');
   if(!input || !output) return;
@@ -6448,12 +6461,9 @@ ${new Date().toISOString()} info  dataplane  link state changed to up<br>${new D
 
 let PACKET_ANIMATION = { raf: 0, cleanup: 0 };
 let MAP_PING_LAST=null;
-let SITE_PING_TIMER=0;
 // Session-only, exact host pair; never exported as a deployed PAN-OS configuration.
 let PING_DIAGNOSTIC_RULE=null;
-function cancelPendingSitePing(message){
-  clearTimeout(SITE_PING_TIMER);
-  SITE_PING_TIMER=0;
+function invalidateSitePing(message){
   const result=document.getElementById('ping-result');
   if(message&&result)result.textContent=message;
 }
@@ -7005,7 +7015,6 @@ function stepMapPing(){
 }
 
 function runPing(srcId){
-  cancelPendingSitePing();
   const destSelect=document.getElementById('ping-dest');
   const div=document.getElementById('ping-result');
   const src=SEDES.find(x=>x.id===srcId);
@@ -7034,42 +7043,38 @@ function runPing(srcId){
   const routeOk=detailedRoute.length>=2;
   const totalLat=routeOk?estimatePingRtt(src,dst,detailedRoute):0;
   const routeLabel=routeOk?(local?'LAN local':LK_NAME[endpoint.type]||endpoint.type.toUpperCase()):'sin ruta';
-  div.innerHTML='<div class="ping-result">⏳ Simulando ICMP desde '+src.code+' hacia '+(local?'otro equipo de la misma sede':dst.code)+'…</div>';
   addLog('ICMP '+src.code+' → '+(local?'host local':dst.code)+' · '+(routeOk?'ruta '+routeLabel:
     policy.action!=='allow'?'bloqueado por firewall':'paquete descartado'),routeOk?'ok':'warn');
-  SITE_PING_TIMER=window.setTimeout(()=>{
-    SITE_PING_TIMER=0;
-    if(!div.isConnected||SM_ID!==srcId||SM_TAB!=='ping')return;
-    if(policy.action!=='allow'){
-      div.innerHTML='<div class="ping-result fail">⊘ BLOQUEADO por la política del firewall: '+policy.rule+'. El modelo no envía ICMP entre sedes con las reglas actuales.</div><p class="ping-note">Esto es una denegación de seguridad esperada, no un fallo de la animación.</p><button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap(\''+src.id+'\',\''+dst.id+'\')">🗺 Ver el bloqueo sobre el mapa</button>';
-      return;
-    }
-    if(!routeOk){
-      div.innerHTML='<div class="ping-result fail">✕ Tiempo agotado: no existe una ruta activa entre los PCs elegidos. Revisa sus puertos, VLAN, StackWise'+(local?'.':' y WAN.')+'</div>';
-      return;
-    }
-    const middle=route.slice(1,-1).map((hop,index)=>
-      '<tr><td>'+(index+2)+'</td><td>'+hop.label+'</td><td>—</td><td>Tramo lógico</td></tr>'
-    ).join('');
-    div.innerHTML=`
-      <div class="ping-route-summary">
-        <strong>ICMP · RESPUESTA SIMULADA</strong>
-        <span>${src.code} (${srcPc.ip}) → ${dst.code} (${destPc.ip})</span>
-      </div>
-      ${local&&window.ActiveProfile?.enabled()?renderLocalPingTopology(src,srcPc,destPc):''}
-      <table class="ping-table">
-        <thead><tr><th>Paso</th><th>Dispositivo / tramo</th><th>IP</th><th>Estado</th></tr></thead>
-        <tbody>
-          <tr><td>1</td><td>${srcPc.id}</td><td>${srcPc.ip}</td><td class="ping-ok">Origen</td></tr>
-          ${middle}
-          <tr><td>${route.length}</td><td>${destPc.id}</td><td>${destPc.ip}</td><td class="ping-ok">Respuesta</td></tr>
-        </tbody>
-      </table>
-      <div class="ping-result ok">✓ Respuesta ICMP simulada · ${route.length} pasos lógicos · RTT estimado ${totalLat} ms · ${routeLabel}</div>
-      ${local?'':'<button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap(\''+src.id+'\',\''+dst.id+'\')">🗺 Ver animación del ping en el mapa</button>'}
-      <p class="ping-note">Política: ${escapeCLI(policy.rule)}. Los tiempos son estimaciones del modelo; no son mediciones de una red física.</p>`;
-    addLog('ICMP reply simulado '+src.code+' → '+(local?'host local':dst.code)+' · RTT estimado '+totalLat+' ms','ok');
-  },350);
+  if(!div.isConnected||SM_ID!==srcId||SM_TAB!=='ping')return;
+  if(policy.action!=='allow'){
+    div.innerHTML='<div class="ping-result fail">⊘ BLOQUEADO por la política del firewall: '+policy.rule+'. El modelo no envía ICMP entre sedes con las reglas actuales.</div><p class="ping-note">Esto es una denegación de seguridad esperada, no un fallo de la animación.</p><button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap(\''+src.id+'\',\''+dst.id+'\')">🗺 Ver el bloqueo sobre el mapa</button>';
+    return;
+  }
+  if(!routeOk){
+    div.innerHTML='<div class="ping-result fail">✕ Tiempo agotado: no existe una ruta activa entre los PCs elegidos. Revisa sus puertos, VLAN, StackWise'+(local?'.':' y WAN.')+'</div>';
+    return;
+  }
+  const middle=route.slice(1,-1).map((hop,index)=>
+    '<tr><td>'+(index+2)+'</td><td>'+hop.label+'</td><td>—</td><td>Tramo lógico</td></tr>'
+  ).join('');
+  div.innerHTML=`
+    <div class="ping-route-summary">
+      <strong>ICMP · RESPUESTA SIMULADA</strong>
+      <span>${src.code} (${srcPc.ip}) → ${dst.code} (${destPc.ip})</span>
+    </div>
+    ${local&&window.ActiveProfile?.enabled()?renderLocalPingTopology(src,srcPc,destPc):''}
+    <table class="ping-table">
+      <thead><tr><th>Paso</th><th>Dispositivo / tramo</th><th>IP</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>${srcPc.id}</td><td>${srcPc.ip}</td><td class="ping-ok">Origen</td></tr>
+        ${middle}
+        <tr><td>${route.length}</td><td>${destPc.id}</td><td>${destPc.ip}</td><td class="ping-ok">Respuesta</td></tr>
+      </tbody>
+    </table>
+    <div class="ping-result ok">✓ Respuesta ICMP simulada · ${route.length} pasos lógicos · RTT estimado ${totalLat} ms · ${routeLabel}</div>
+    ${local?'':'<button type="button" class="btn btn-b ping-map-action" onclick="showPingOnMap(\''+src.id+'\',\''+dst.id+'\')">🗺 Ver animación del ping en el mapa</button>'}
+    <p class="ping-note">Política: ${escapeCLI(policy.rule)}. Los tiempos son estimaciones del modelo; no son mediciones de una red física.</p>`;
+  addLog('ICMP reply simulado '+src.code+' → '+(local?'host local':dst.code)+' · RTT estimado '+totalLat+' ms','ok');
 }
 function showPingOnMap(srcId,destId){
   const source=document.getElementById('ping-source-host')?.value,target=document.getElementById('ping-target-host')?.value;
