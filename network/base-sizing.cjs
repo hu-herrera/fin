@@ -58,7 +58,10 @@ function build(base,hypothesis,pricedPartial) {
  assert.equal(base.original_wan.central_access_mbps_assumed,hypothesis.traffic.central_mpls_nominal_mbps_assumed,'MPLS central desalineado');
  assert.equal(base.original_wan.central_isp_capacity_mbps_each_assumed,hypothesis.traffic.central_isp_nominal_mbps_each_assumed,'ISP centrales desalineados');
  assert.equal(base.sites.reduce((n,s)=>n+s.pcs,0),650);assert.equal(base.sites.reduce((n,s)=>n+s.phones,0),650);
+ assert.equal(base.datacenter.assumed_host_capacity.backup.usable_storage_gb,hypothesis.backup.usable_repository_gb_assumed,'Repositorio desalineado');
  const hosts=hypothesis.servers.hosts.map(h=>{
+  const inventoryCapacity=base.datacenter.assumed_host_capacity[h.id==='DC-01'?'dc1':'dc2'];
+  for(const key of ['physical_cores','ram_gib','usable_storage_gb'])assert.equal(inventoryCapacity[key],h[key],h.id+' '+key+' desalineado');
   const ram=h.vms.reduce((n,v)=>n+v.ram_gib,0)+h.hypervisor_ram_reserve_gib,disk=h.vms.reduce((n,v)=>n+v.allocated_disk_gb,0);
   assert.ok(ram<=h.ram_gib&&disk<=h.usable_storage_gb,'Asignación excesiva en '+h.id);
   return {id:h.id,physical_cores_assumed:h.physical_cores,vcpu_allocated:h.vms.reduce((n,v)=>n+v.vcpu,0),ram_gib_assumed:h.ram_gib,ram_gib_allocated_with_hypervisor:ram,ram_gib_unallocated:h.ram_gib-ram,usable_storage_gb_assumed:h.usable_storage_gb,vm_disk_gb_allocated:disk,unallocated_disk_gb:h.usable_storage_gb-disk,performance_validated:false};

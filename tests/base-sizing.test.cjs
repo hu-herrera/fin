@@ -34,4 +34,8 @@ const result=build(base,h,411158986);assert.equal(result.traffic.normal.active_p
 assert.equal(result.traffic.normal.mpls_required_mbps,524.4);assert.equal(result.economics.comparison_5y.payback_months,null);
 assert.equal(result.economics.partial_reference_excludes_four_wan_redesign,true);
 assert.throws(()=>build({...base,original_wan:{...base.original_wan,central_access_mbps_assumed:100}},h,411158986),/desalineado/);
+const mismatchedHost=structuredClone(base);mismatchedHost.datacenter.assumed_host_capacity.dc1.ram_gib=1;
+assert.throws(()=>build(mismatchedHost,h,411158986),/DC-01 ram_gib desalineado/);
+const mismatchedBackup=structuredClone(base);mismatchedBackup.datacenter.assumed_host_capacity.backup.usable_storage_gb=1;
+assert.throws(()=>build(mismatchedBackup,h,411158986),/Repositorio desalineado/);
 console.log('OK: carga por sede, voz/canales, retención y crecimiento, W/VA y economía sin ahorros ficticios');
