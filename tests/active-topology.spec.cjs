@@ -213,8 +213,9 @@ test('Perfil anterior permanece disponible y aislado para comparar modelos',asyn
  });
  expect(r.modern.router).toContain('Port-channel10');
  expect(r.modern.stack).toContain('Port-channel20');
- expect(r.classic.router).toContain('GigabitEthernet0/0/0.10');
- expect(r.classic.sw1).toContain('Port-channel1');
+ expect(r.classic.router).toContain('Gi0/1.10');
+ expect(r.classic.sw1).toContain('WS-C2960S-48LPS-L');
+ expect(r.classic.sw1).not.toContain('Port-channel1');
  expect(r.modernAgain).toBe(r.modern.router);
 });
 

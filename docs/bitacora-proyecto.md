@@ -169,3 +169,16 @@ Se distingue obsolescencia de incumplimiento legal demostrado. Se revisaron Ley 
 Se incorporaron accesos, tratamiento de datos, cifrado/segmentación, recuperación, incidentes, cambios, endpoints/telefonía y dependencias físicas/de terceros. La ausencia de evidencia no se presenta como control inexistente. Se mantiene el alcance del proyecto de redes y se señalan dependencias de las demás áreas.
 
 **Resultado:** diagnóstico ampliado sin afirmar certificación o incumplimiento integral y sin cambios al código del simulador.
+
+
+## Entrada 007 — 17 de octubre de 2026
+
+**Tema:** integrar la base inicial y el datacenter en la vista ANTES tras la autorización de continuar.
+
+Se conectó el inventario documental con el navegador: 23 sedes, 650 pares PC/teléfono con sus IPs y puerto PoE compartido, switches con capacidad suficiente y equipos antiguos por modelo. CM conserva dos routers y stack StackWise Plus, ASA único, DC-01, DC-02 y BKP-01. Los servicios se muestran con sus dependencias, sin ejecutar una aplicación financiera o telefonía real.
+
+Se ajustó Ping/Trace local e intersede y el ping del mapa a los equipos iniciales. Las fallas de WAN/router conservan switching local; una caída de switch afecta datos y PoE. El corte MPLS incluye 20 remotas continentales y conserva S21/S22 con acceso satelital supuesto. Los estados de equipos antiguos quedan separados de los modernos.
+
+Se corrigieron zoom con rueda anclado al cursor, encuadre de vista general y arrastre de fondo, conservando el clic en equipos. Se retiraron del diagnóstico disponibilidad, MOS, CPU, licencias, versiones y tiempos de recuperación que no tenían evidencia. Se agregó la matriz problema → requisito → prueba, las dependencias del datacenter y un recorrido de revisión. Versiones, contratos, cableado final, respaldos externos y RPO/RTO de servicios siguen pendientes de validar; la propuesta de compras permanece abierta.
+
+**Validación:** pruebas de navegador específicas de inventario, UI, dependencias, ping y fallas; regresiones de los perfiles existentes y comprobación del inventario generado. Resultados del modelo académico, sin certificación de hardware o cumplimiento legal.

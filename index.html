@@ -505,6 +505,7 @@ body{background:var(--bg);color:var(--text);
 .kpi-val{font-size:18px;font-weight:700;line-height:1;}
 .kpi-lbl{font-size:10px;color:var(--text2);margin-top:4px;}
 .kpi-sub{font-size:9px;color:var(--gray);margin-top:2px;}
+.legacy-controls,.legacy-services{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.legacy-info{padding:16px;line-height:1.6;color:var(--text)}.legacy-phone{cursor:pointer}.legacy-phone:focus rect{stroke:#fff;stroke-width:3}.legacy-baseline .ping-note{line-height:1.5}
 </style>
 </head>
 <body>
@@ -683,7 +684,7 @@ body{background:var(--bg);color:var(--text);
       <div class="leg"><div class="leg-dot" style="background:var(--gray)"></div>N/D</div>
       <div class="leg"><div class="leg-dot" style="background:var(--blue-cm)"></div>Casa Matriz</div>
       <div class="leg"><div class="leg-dot" style="background:var(--purple)"></div>Base Antártica</div>
-      <div class="leg" id="leg-mpls" style="display:none"><div class="leg-dot" style="background:#5a6478"></div>MPLS / Legacy</div>
+      <div class="leg" id="leg-mpls" style="display:none"><div class="leg-dot" style="background:#5a6478"></div>MPLS / satélite supuesto</div>
       <div class="leg" id="leg-sat"><div class="leg-dot" style="background:var(--accent)"></div>Starlink</div>
       <div class="leg" id="leg-kuiper"><div class="leg-dot" style="background:var(--blue-cm)"></div>Amazon Leo Kuiper</div>
       <div class="leg" id="leg-5g"><div class="leg-dot" style="background:var(--green)"></div>5G Entel</div>
@@ -710,7 +711,7 @@ body{background:var(--bg);color:var(--text);
       <button class="btn btn-r" onclick="sc_dropLink('g4')">↓ 4G GTD</button>
     </div>
     <div class="sbtns" id="sg-links-antes" style="display:none">
-      <button class="btn btn-rb" onclick="sc_dropMPLS()">↓ MPLS Sucursal</button>
+      <button class="btn btn-rb" onclick="sc_dropMPLS()">↓ MPLS nacional</button>
     </div>
   </div>
   <div class="sg">
@@ -2044,7 +2045,7 @@ function renderFlowLinesAntes(){
     if(ST.mpls[s.id] === 'inactivo') return;
     const pos = sedePos(s);
     const caido = ST.mpls[s.id] === 'caido';
-    const color = caido ? '#dc4646' : '#5a6478';
+    const color = caido ? '#dc4646' : (s.isIsland||s.isAntarctic?'#b59bdf':'#5a6478');
     const dx = cmPos[0] - pos[0];
     const dy = cmPos[1] - pos[1];
     const dist = Math.hypot(dx, dy) || 1;
@@ -2067,6 +2068,7 @@ function renderFlowLinesAntes(){
       path.classList.add('flow-line');
       path.style.animationDuration = '4.5s';
     }
+    const label=document.createElementNS(NS,'title');label.textContent=s.isIsland||s.isAntarctic?'Satelital + VPN (supuesto)':'MPLS continental · operador pendiente';path.appendChild(label);
     fl.appendChild(path);
   });
 
@@ -2084,7 +2086,7 @@ function renderFlowLinesAntes(){
     cable.setAttribute('stroke-linecap', 'round');
     if(dash) cable.setAttribute('stroke-dasharray', dash);
     const title = document.createElementNS(NS, 'title');
-    title.textContent = dash ? 'MPLS Movistar · standby' : 'MPLS Entel · activo';
+    title.textContent = dash ? 'Internet ISP B · contrato pendiente' : 'Internet ISP A · contrato pendiente';
     cable.appendChild(title);
     fl.appendChild(cable);
   });
@@ -2388,7 +2390,7 @@ function updateMetrics(){
   const metricSedes = ST.selId ? SEDES.filter(s=>s.id===ST.selId) : SEDES;
   const activeLatencies = metricSedes.map(s => {
     if(sedeDown(s.id)) return 0;
-    if(ST.mode === 'antes') return 15;
+    if(ST.mode === 'antes') return 0;
     const type = activeLink(s.id);
     return parseFloat(s.links?.[type]?.lat) || 0;
   }).filter(value => value > 0);
@@ -2421,7 +2423,7 @@ function updateMetrics(){
   document.getElementById('m-preemp').textContent = latency?`${latency.toFixed(1)} ms`:'—';
   document.getElementById('m-preemp').style.color = 'var(--text)';
   if(ST.mode==='antes'){
-    document.getElementById('m-uptime').textContent='99.5%';
+    document.getElementById('m-uptime').textContent='Sin medir';
     document.getElementById('m-uptime').style.color='var(--red)';
   } else {
     document.getElementById('m-uptime').textContent='99.95% (meta)';
@@ -2470,7 +2472,7 @@ function toggleMode(){
     leg5g.style.display='none';
     leg4g.style.display='none';
     legMpls.style.display='';
-    addLog('Vista DIAGNÓSTICO — MPLS por sede y dos uplinks en Casa Matriz, hardware EOL 2014-2015','warn');
+    addLog('Vista ANTES — 23 sedes, teléfonos PoE y datacenter académico; soporte verificado, disponibilidad sin medir','warn');
   } else {
     pill.textContent='REDISEÑO'; pill.className='mode-pill pill-despues';
     btn.textContent='Ver ANTES →'; btn.className='btn btn-toggle btn-n';
@@ -2774,8 +2776,8 @@ function showTip(e,s){
   if(ST.mode==='antes'){
     const ms=ST.mpls[s.id];
     const mplsLabel = ms === 'inactivo' ? 'SIN COBERTURA LEGACY' : TIP_LBL[ms]||ms.toUpperCase();
-    rows=`<div class="tt-lrow"><div class="tt-dot" style="background:${ms==='activo'?'#3cc878':'#dc4646'}"></div>MPLS: ${mplsLabel}</div>`;
-    rows+=`<div class="tt-lrow" style="font-size:10px;color:#8a93a6;margin-top:3px">Legacy 2014-2015</div>`;
+    rows=`<div class="tt-lrow"><div class="tt-dot" style="background:${ms==='activo'?'#3cc878':'#dc4646'}"></div>${s.isIsland||s.isAntarctic?'Satelital + VPN':'MPLS'}: ${mplsLabel}</div>`;
+    rows+=`<div class="tt-lrow" style="font-size:10px;color:#8a93a6;margin-top:3px">Base inicial · inventario supuesto</div>`;
   } else {
     PRIORITY.forEach(k=>{
       const st=lk[k];
@@ -3235,7 +3237,7 @@ function showModal(){
     <div class="m2col">
       <div class="mstat"><div class="mstat-v" style="color:var(--green)">${op}</div><div class="mstat-l">Sedes operativas</div></div>
       <div class="mstat"><div class="mstat-v" style="color:${down?'var(--red)':'var(--gray)'}">${down}</div><div class="mstat-l">Sedes caídas</div></div>
-      <div class="mstat"><div class="mstat-v" style="color:var(--accent)">${ST.mode==='despues'?'99.95% (meta)':'99.5%'}</div><div class="mstat-l">Disponibilidad objetivo (no medida)</div></div>
+      <div class="mstat"><div class="mstat-v" style="color:var(--accent)">${ST.mode==='despues'?'99.95% (meta)':'Sin medir'}</div><div class="mstat-l">Disponibilidad objetivo (no medida)</div></div>
       <div class="mstat"><div class="mstat-v" style="color:var(--blue-br)">${ST.evCount}</div><div class="mstat-l">Eventos totales</div></div>
     </div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:6px">Enlace activo AHORA</div>
@@ -3248,9 +3250,9 @@ function showModal(){
       </div>`;
     }).join('')}
     <div style="margin-top:14px;padding:10px;background:var(--panel2);border-radius:6px;font-size:11px;color:var(--text2)">
-      <div style="font-weight:700;color:var(--text);margin-bottom:6px">Cálculo de disponibilidad teórica</div>
-      <div>P(falla 4 enlaces simultáneos) = 7.5 × 10⁻¹¹</div>
-      <div style="color:var(--accent);font-weight:700;margin-top:4px">→ Uptime: 99.95% (meta)</div>
+      <div style="font-weight:700;color:var(--text);margin-bottom:6px">Disponibilidad y evidencia</div>
+      <div>La independencia de enlaces y los tiempos de recuperación deben verificarse.</div>
+      <div style="color:var(--accent);font-weight:700;margin-top:4px">Las metas no equivalen a una disponibilidad medida.</div>
     </div>
     <div style="margin-top:12px;display:flex;justify-content:flex-end">
       <button class="btn btn-n" onclick="closeModal()">Cerrar</button>
@@ -3265,7 +3267,7 @@ function openSedeModal(id){
   const s = SEDES.find(x=>x.id===id);
   document.getElementById('sm-icon').textContent = s.isCM?'🏛':s.isIsland?'🏝':s.isAntarctic?'🔬':'🏢';
   document.getElementById('sm-title').textContent = s.name+(s.isCM?' [Casa Matriz / nodo central]':'');
-  document.getElementById('sm-sub').textContent   = `${s.city}  ·  ${s.ip}  ·  ${PC_COUNT[id]} PCs  ·  ${ST.mode==='antes' ? 'Topología legacy 2014' : 'Topología rediseñada 2026'}`;
+  document.getElementById('sm-sub').textContent   = `${s.city}  ·  ${s.ip}  ·  ${PC_COUNT[id]} PCs  ·  ${ST.mode==='antes' ? 'Base inicial · '+PC_COUNT[id]+' teléfonos supuestos' : 'Topología rediseñada 2026'}`;
   document.getElementById('sm-overlay').classList.add('vis');
   smTab('topo', document.querySelector('.sm-tab'));
 }
@@ -3424,10 +3426,10 @@ function renderRedundantLabTab(s){
     '<p style="color:var(--text2);font-size:12px;margin-top:12px">Para despliegue real faltan: acceso administrativo protegido por VLAN30 y consola, validación/aprobación PAN-OS, IP/SLA del operador, VPN y pruebas IOS-XE. Un PA único sigue siendo punto único de falla.</p></div>';
 }
 function topoToolbar(s){
-  const active = ST.mode === 'antes' ? 'MPLS Entel' : (LK_NAME[window.ActiveProfile?.enabled()?window.ActiveProfile.selectedWan(s.id):activeLink(s.id)] || 'Sin enlace');
+  const active = ST.mode === 'antes' ? (s.isCM?'MPLS central + doble ISP':s.isIsland||s.isAntarctic?'Satelital + VPN (supuesto)':'MPLS único') : (LK_NAME[window.ActiveProfile?.enabled()?window.ActiveProfile.selectedWan(s.id):activeLink(s.id)] || 'Sin enlace');
   return `<div class="topo-toolbar">
     <strong>Topología interna · ${s.code}</strong>
-    <span>Haz clic en un router, firewall, switch o PC para abrir su consola.</span>
+    <span>${ST.mode==='antes'?'Haz clic en un equipo para consultar su diagnóstico; los controles permiten probar sus dependencias.':'Haz clic en un router, firewall, switch o PC para abrir su consola.'}</span>
     <span class="topo-state">WAN: ${active}</span>
     <button type="button" class="btn btn-acc" id="topo-ping-tool"
       onclick="smTab('ping',document.querySelector('#sm-tabs .sm-tab:nth-child(3)'))">📡 Probar Ping / Trace</button>
@@ -3465,7 +3467,8 @@ function initTopologyWorkspace(s){
     applyTopologyTransform(wrap);
   };
   viewport.addEventListener('pointerdown', event => {
-    if(event.target.closest('button, .topo-pc, .prov-card, text')) return;
+    const interactive=event.target.closest('button, [onclick], [role=button], .topo-pc, .prov-card, text');
+    if(event.button!==0 || (interactive&&viewport.contains(interactive))) return;
     state.dragging = true;
     state.pointerX = event.clientX;
     state.pointerY = event.clientY;
@@ -3485,9 +3488,8 @@ function initTopologyWorkspace(s){
   });
   viewport.addEventListener('wheel', event => {
     event.preventDefault();
-    const factor = event.deltaY < 0 ? 1.12 : .89;
-    state.scale = Math.max(.72, Math.min(2.4, state.scale * factor));
-    applyTopologyTransform(wrap);
+    const rect=viewport.getBoundingClientRect();
+    zoomTopologyAt(wrap,state.scale*Math.exp(-event.deltaY*.0015),event.clientX-rect.left,event.clientY-rect.top);
   }, {passive:false});
   markActiveTopology(s);
   applyTopologyTransform(wrap);
@@ -3498,18 +3500,24 @@ function fitSedeTopology(button){
   const svg = wrap?.querySelector('.topo-svg');
   if(!wrap || !svg) return;
   const state = topologyState(wrap);
-  state.scale = 1;
-  state.x = 0;
-  state.y = 0;
+  const viewport=wrap.querySelector('.topo-viewport'),width=svg.clientWidth,height=svg.clientHeight;
+  state.scale=Math.min(1,(viewport.clientWidth-20)/width,(viewport.clientHeight-20)/height);
+  state.x=(viewport.clientWidth-width*state.scale)/2;
+  state.y=(viewport.clientHeight-height*state.scale)/2;
+  applyTopologyTransform(wrap);
+}
+
+function zoomTopologyAt(wrap,scale,x,y){
+  const state=topologyState(wrap),next=Math.max(.15,Math.min(4,scale)),ratio=next/state.scale;
+  state.x=x-(x-state.x)*ratio;state.y=y-(y-state.y)*ratio;state.scale=next;
   applyTopologyTransform(wrap);
 }
 
 function topologyZoom(button, delta){
   const wrap = button?.closest('.topo-wrap');
   if(!wrap) return;
-  const state = topologyState(wrap);
-  state.scale = Math.max(.72, Math.min(2.4, state.scale + delta));
-  applyTopologyTransform(wrap);
+  const state=topologyState(wrap),viewport=wrap.querySelector('.topo-viewport');
+  zoomTopologyAt(wrap,state.scale+delta,viewport.clientWidth/2,viewport.clientHeight/2);
 }
 
 function markActiveTopology(s){
@@ -3526,174 +3534,8 @@ function markActiveTopology(s){
 /* =========================================================
    TOPOLOGÍA LEGACY (ANTES) — AMPLIADA Y CON HOVER EN PCs
 ========================================================= */
-function renderTopoTabLegacy(s){
-  const pcs = getPCs(s);
-  const mplsUp = ST.mpls[s.id]==='activo';
-  const isCM = s.isCM;
+function renderTopoTabLegacy(s){ return window.LegacyBaseline.topology(s); }
 
-  const pcGrid = (list, centerX, startY, label) => {
-    const cols = 8;
-    const cellW = 60;
-    const cellH = 46;
-    const totalW = cols * cellW;
-    const startX = centerX - totalW / 2;
-
-    let g = `<text x="${centerX}" y="${startY - 14}" text-anchor="middle" font-size="15"
-              font-weight="700" fill="#8a7560" font-family="system-ui">${list.length} PCs · ${label}</text>`;
-
-    list.forEach((pc, i) => {
-      const col = i % cols, row = Math.floor(i / cols);
-      const px = startX + col * cellW + 8;
-      const py = startY + row * cellH;
-
-      g += `<g class="topo-pc" onclick="openPC('${s.id}',${pc.idx-1})">
-        <title>Click para abrir ${pc.id} · IP ${pc.ip}</title>
-        <rect class="pc-body" x="${px}" y="${py}" width="44" height="32" rx="4"
-              fill="#2a1f14" stroke="#4a3a2a" stroke-width="1.4"/>
-        <rect class="pc-screen" x="${px+5}" y="${py+5}" width="34" height="20" rx="2"
-              fill="#1a1208" stroke="none"/>
-        <text x="${px+22}" y="${py+45}" text-anchor="middle" font-size="11"
-              font-weight="700" fill="#8a7560"
-              font-family="system-ui" style="pointer-events:none">${pc.idx}</text>
-      </g>`;
-    });
-    return g;
-  };
-
-  const W = 1300;
-  const pcsTotal = pcs.length;
-  const rowsPC = Math.ceil(pcsTotal / 8);
-  const totalH = isCM ? 260 + rowsPC * 46 + 80 : 300 + rowsPC * 46 + 80;
-
-  if(isCM){
-    return `<div class="topo-wrap">${topoToolbar(s)}<div class="topo-viewport"><svg class="topo-svg" width="${W}" height="${totalH}" viewBox="0 0 ${W} ${totalH}" xmlns="http://www.w3.org/2000/svg">
-  <text x="${W/2}" y="28" text-anchor="middle" font-size="20" fill="#8a7560" font-family="system-ui" font-weight="700" letter-spacing="1">
-    TOPOLOGÍA LEGACY — CASA MATRIZ (2014)
-  </text>
-
-  <!-- 2 MPLS -->
-  <g class="prov-card">
-    <rect x="330" y="55" width="280" height="66" rx="8" fill="#1a1a1a" stroke="#5a6478" stroke-width="2"/>
-    <text x="470" y="82" text-anchor="middle" font-size="18" fill="#8a93a6" font-weight="700" font-family="system-ui">MPLS ENTEL</text>
-    <text x="470" y="104" text-anchor="middle" font-size="14" fill="#5a6478" font-family="system-ui">100 Mbps · activo</text>
-  </g>
-  <g class="prov-card">
-    <rect x="690" y="55" width="280" height="66" rx="8" fill="#1a1a1a" stroke="#4a5468" stroke-width="2"/>
-    <text x="830" y="82" text-anchor="middle" font-size="18" fill="#8a93a6" font-weight="700" font-family="system-ui">MPLS MOVISTAR</text>
-    <text x="830" y="104" text-anchor="middle" font-size="14" fill="#5a6478" font-family="system-ui">100 Mbps · standby</text>
-  </g>
-
-  <line x1="470" y1="121" x2="530" y2="165" stroke="#5a6478" stroke-width="2"/>
-  <line x1="830" y1="121" x2="770" y2="165" stroke="#5a6478" stroke-width="2" stroke-dasharray="6 4"/>
-
-  <!-- 2 Cisco 2901 -->
-  <rect x="410" y="165" width="240" height="76" rx="8" fill="#1f1a14" stroke="#8a7560" stroke-width="2"/>
-  <text x="530" y="197" text-anchor="middle" font-size="17" fill="#8a7560" font-weight="700" font-family="system-ui">Cisco 2901 #1</text>
-  <text x="530" y="220" text-anchor="middle" font-size="13" fill="#5a6478" font-family="system-ui">HSRP Activo · EOL 2019</text>
-
-  <rect x="650" y="165" width="240" height="76" rx="8" fill="#1f1a14" stroke="#8a7560" stroke-width="2"/>
-  <text x="770" y="197" text-anchor="middle" font-size="17" fill="#8a7560" font-weight="700" font-family="system-ui">Cisco 2901 #2</text>
-  <text x="770" y="220" text-anchor="middle" font-size="13" fill="#5a6478" font-family="system-ui">HSRP Standby · EOL 2019</text>
-
-  <line x1="650" y1="203" x2="650" y2="203" stroke="#8a7560" stroke-width="2" stroke-dasharray="4 3"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="#8a7560"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="#8a7560"/>
-  <!-- Conexión HSRP entre los 2 routers -->
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-  <line x1="650" y1="203" x2="650" y2="203" stroke="none"/>
-
-  <line x1="530" y1="241" x2="530" y2="280" stroke="#8a7560" stroke-width="2"/>
-  <line x1="770" y1="241" x2="770" y2="280" stroke="#8a7560" stroke-width="2"/>
-
-  <!-- ASA 5512-X -->
-  <rect x="410" y="280" width="480" height="66" rx="8" fill="#1f1a14" stroke="#dc4646" stroke-width="2"/>
-  <text x="650" y="308" text-anchor="middle" font-size="17" fill="#8a7560" font-weight="700" font-family="system-ui">Cisco ASA 5512-X</text>
-  <text x="650" y="330" text-anchor="middle" font-size="13" fill="#dc4646" font-family="system-ui" font-weight="700">⚠ EOL 2017 · Sin parches por 9 años</text>
-
-  <line x1="650" y1="346" x2="650" y2="380" stroke="#8a7560" stroke-width="2"/>
-
-  <!-- C3750-X Stack -->
-  <rect x="380" y="380" width="540" height="66" rx="8" fill="#1f1a14" stroke="#8a7560" stroke-width="2"/>
-  <text x="650" y="408" text-anchor="middle" font-size="17" fill="#8a7560" font-weight="700" font-family="system-ui">Cisco Catalyst 3750-X Stack (x2)</text>
-  <text x="650" y="430" text-anchor="middle" font-size="13" fill="#dc4646" font-family="system-ui" font-weight="700">EOL 2020 · Sin MACsec</text>
-
-  <line x1="650" y1="446" x2="650" y2="475" stroke="#8a7560" stroke-width="2"/>
-
-  ${pcGrid(pcs, 650, 480, 'Casa Matriz')}
-  </svg></div></div>`;
-  }
-
-  return `<div class="topo-wrap">${topoToolbar(s)}<div class="topo-viewport"><svg class="topo-svg" width="${W}" height="${totalH}" viewBox="0 0 ${W} ${totalH}" xmlns="http://www.w3.org/2000/svg">
-  <text x="${W/2}" y="28" text-anchor="middle" font-size="20" fill="#8a7560" font-family="system-ui" font-weight="700" letter-spacing="1">
-    TOPOLOGÍA LEGACY — ${s.code} (2014)
-  </text>
-
-  <!-- MPLS único -->
-  <g class="prov-card">
-    <rect x="510" y="55" width="280" height="66" rx="8" fill="#1a1a1a" stroke="#5a6478" stroke-width="2"/>
-    <text x="650" y="82" text-anchor="middle" font-size="18" fill="#8a93a6" font-weight="700" font-family="system-ui">MPLS ENTEL</text>
-    <text x="650" y="104" text-anchor="middle" font-size="14" fill="#dc4646" font-family="system-ui" font-weight="700">10 Mbps · ÚNICO — Sin respaldo</text>
-  </g>
-
-  <line x1="650" y1="121" x2="650" y2="170" stroke="#5a6478" stroke-width="2" stroke-dasharray="${mplsUp ? 'none' : '6 4'}"/>
-
-  <!-- Cisco 1921 -->
-  <rect x="470" y="170" width="360" height="76" rx="8" fill="#1f1a14" stroke="#8a7560" stroke-width="2"/>
-  <text x="650" y="202" text-anchor="middle" font-size="19" fill="#8a7560" font-weight="700" font-family="system-ui">Cisco 1921</text>
-  <text x="650" y="226" text-anchor="middle" font-size="13" fill="#5a6478" font-family="system-ui">IOS 15.5(3)M · EOL 2020</text>
-
-  <line x1="650" y1="246" x2="650" y2="285" stroke="#8a7560" stroke-width="2"/>
-
-  <!-- C2960-24TT-L -->
-  <rect x="440" y="285" width="420" height="76" rx="8" fill="#1f1a14" stroke="#8a7560" stroke-width="2"/>
-  <text x="650" y="317" text-anchor="middle" font-size="17" fill="#8a7560" font-weight="700" font-family="system-ui">Cisco Catalyst 2960-24TT-L</text>
-  <text x="650" y="341" text-anchor="middle" font-size="13" fill="#dc4646" font-family="system-ui" font-weight="700">EOL 2018 · SIN FIREWALL · SIN HA</text>
-
-  <line x1="650" y1="361" x2="650" y2="395" stroke="#8a7560" stroke-width="2"/>
-
-  <!-- Alerta sin firewall -->
-  <rect x="490" y="395" width="320" height="40" rx="6" fill="#2a1010" stroke="#dc4646" stroke-width="1.5"/>
-  <text x="650" y="420" text-anchor="middle" font-size="14" fill="#dc4646" font-family="system-ui" font-weight="700">
-    ⚠ SIN FIREWALL PERIMETRAL
-  </text>
-
-  <line x1="650" y1="435" x2="650" y2="465" stroke="#8a7560" stroke-width="2"/>
-
-  ${pcGrid(pcs, 650, 470, 'Sucursal')}
-  </svg></div></div>`;
-}
-
-/* =========================================================
-   TOPOLOGÍA ACTUAL (DESPUÉS) — AMPLIADA Y CON HOVER EN PCs
-========================================================= */
-// Topología física objetivo; este SVG es parte del simulador, no foto de instalación.
 function renderActiveTopoTab(s){
   const profile=window.ActiveProfile,z=profile.status(s.id),raw=profile.rawSite(s.id);
   const pcs=getPCs(s),pc1=pcs.filter(p=>p.sw===1),pc2=pcs.filter(p=>p.sw===2);
@@ -3913,15 +3755,12 @@ function renderTopoTab(s){
 
 function renderCmdTab(s){
   if(ST.mode === 'antes'){
-    return `<div style="margin-bottom:10px">
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-legacy" onclick="openDevice('router','${s.id}')">🔧 ${s.isCM?'Cisco 2901':'Cisco 1921'}</button>
-        <button class="btn btn-legacy" onclick="openDevice('sw1','${s.id}')">⚡ ${s.isCM?'C3750-X (enlace troncal independiente)':'C2960-24TT-L'}</button>
-        ${s.isCM ? `<button class="btn btn-legacy" onclick="openDevice('fw','${s.id}')">🛡 Cisco ASA 5512-X</button>` : ''}
-      </div>
-      <div style="font-size:11px;color:var(--red);margin-top:8px">⚠ Equipos fuera de soporte fabricante (EOL 2017-2020)</div>
-    </div>
-    <div class="ios">${genRouterOverviewLegacy(s)}</div>`;
+    const b=LegacyBaseline.site(s);
+    return '<div class="legacy-controls">'+
+      '<button class="btn btn-legacy" onclick="openDevice(\'router\',\''+s.id+'\')">'+b.router_model+'</button>'+
+      '<button class="btn btn-legacy" onclick="openDevice(\'sw1\',\''+s.id+'\')">'+b.switch_model+' #1</button>'+
+      (s.isCM?'<button class="btn btn-legacy" onclick="openDevice(\'sw2\',\'cm\')">3750-X #2</button><button class="btn btn-legacy" onclick="openDevice(\'fw\',\'cm\')">ASA 5512-X</button>':'')+
+      '</div><p class="ping-note">Diagnósticos de consulta. Versiones y licencias originales no verificadas.</p><div class="ios">'+genRouterOverviewLegacy(s)+'</div>';
   }
   return `<div style="margin-bottom:10px">
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -4019,21 +3858,7 @@ function renderTablesTab(s){
 
 function renderKPIsTab(s){
   const esAntes = ST.mode === 'antes';
-  if(esAntes){
-    const mplsCaido = ST.mpls[s.id] === 'caido';
-    return `
-    <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">99.5%</div><div class="kpi-lbl">Objetivo, no medido</div></div>
-      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">180 min</div><div class="kpi-lbl">RTO</div></div>
-      <div class="kpi-card"><div class="kpi-val" style="color:var(--gray)">—</div><div class="kpi-lbl">Latencia</div></div>
-      <div class="kpi-card"><div class="kpi-val" style="color:var(--gray)">—</div><div class="kpi-lbl">Jitter</div></div>
-      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">${mplsCaido ? '100%' : '<0.1%'}</div><div class="kpi-lbl">Pérdida</div></div>
-      <div class="kpi-card"><div class="kpi-val" style="color:var(--red)">3.2</div><div class="kpi-lbl">MOS VoIP</div></div>
-    </div>
-    <div style="margin-top:14px;font-size:11px;color:var(--red);text-align:center;padding:8px;background:#2e1010;border-radius:4px;border:1px solid #4a2020">
-      ⚠ Sin BFD · Sin IP SLA · Sin tracking · Sin firewall · Hardware EOL
-    </div>`;
-  }
+  if(esAntes)return '<div class="legacy-info"><h3>Indicadores de la base inicial</h3><p>Disponibilidad histórica, RTO, pérdida, jitter y MOS: sin mediciones aportadas. No se asignan valores por la antigüedad.</p><p>Estado de acceso en el modelo: '+(sedeDown(s.id)?'interrumpido':'disponible')+'. Usa Ping / Trace para verificar un par de PCs.</p><p>El RTT mostrado por el ping es una estimación didáctica, no una medición ni un SLA del operador.</p></div>';
   const al=sedeDown(s.id)?'—':activeLink(s.id)||'—';
   const lat=al==='—' ? 0 : getLinkLatency(s, al);
   const jitter=al==='—' ? 0 : getLinkJitter(al);
@@ -4059,18 +3884,9 @@ function openDevice(type, sedeId){
 
   let titles, models;
   if(esAntes){
-    titles = {
-      router: s.isCM ? `Cisco 2901 (x2 HSRP) — ${s.code}` : `Cisco 1921 — ${s.code}`,
-      fw:     `Cisco ASA 5512-X — ${s.code}`,
-      sw1:    s.isCM ? `Cisco Catalyst 3750-X #1 — ${s.code}` : `Cisco Catalyst 2960-24TT-L — ${s.code}`,
-      sw2:    s.isCM ? `Cisco Catalyst 3750-X #2 — ${s.code}` : `—`,
-    };
-    models = {
-      router: s.isCM ? 'Cisco 2901 · IOS 15.5(3)M · EOL 2019' : 'Cisco 1921 · IOS 15.5(3)M · EOL 2020',
-      fw:     'Cisco ASA 5512-X · ASA 9.1 · EOL 2017',
-      sw1:    s.isCM ? 'Cisco Catalyst 3750-X · IOS 15.2 · EOL 2020' : 'Cisco Catalyst 2960-24TT-L · IOS 15.0 · EOL 2018',
-      sw2:    '—',
-    };
+    const b=LegacyBaseline.site(s);
+    titles={router:b.router_model+' — '+s.code,fw:'ASA 5512-X — '+s.code,sw1:b.switch_model+' #1',sw2:b.switch_model+' #2'};
+    models={router:'Versión y licencias originales no verificadas',fw:'ASA central único',sw1:'PoE · consulta del modelo',sw2:'StackWise Plus · consulta del modelo'};
   } else {
     titles = {
       router:`RTR-${s.code} — Cisco Catalyst C8300-2N2S-4T2X`,
@@ -4089,10 +3905,10 @@ function openDevice(type, sedeId){
   document.getElementById('dev-title').textContent = titles[type]||type;
   document.getElementById('dev-model').textContent = models[type]||'';
   const tabConfigs = esAntes ? {
-    router:[{k:'ov',l:'Overview'},{k:'iface',l:'Interfaces'},{k:'wan',l:'WAN MPLS'},{k:'eol',l:'EOL/Deuda'}],
+    router:[{k:'ov',l:'Overview'},{k:'iface',l:'Interfaces'},{k:'wan',l:'WAN inicial'},{k:'eol',l:'EOL/Deuda'}],
     fw:    [{k:'ov',l:'Overview'},{k:'iface',l:'Interfaces'},{k:'rules',l:'Reglas'},{k:'eol',l:'EOL/Deuda'}],
     sw1:   [{k:'ov',l:'Overview'},{k:'vlan',l:'VLANs'},{k:'ports',l:'Puertos'}],
-    sw2:   [{k:'ov',l:'Overview'}],
+    sw2:   [{k:'ov',l:'Overview'},{k:'vlan',l:'VLANs'},{k:'ports',l:'Puertos'}],
   } : {
     router:[{k:'ov',l:'Overview'},{k:'cli',l:'CLI'},{k:'routes',l:'Rutas'},{k:'hsrp',l:'HSRP'},{k:'iface',l:'Interfaces'},{k:'vlan',l:'VLANs'},{k:'wan',l:'WAN/Failover'},{k:'ipsec',l:'IPsec'},{k:'acl',l:'ACLs'}],
     fw:    [{k:'ov',l:'Overview'},{k:'cli',l:'CLI'},{k:'iface',l:'Interfaces'},{k:'zones',l:'Zonas/Reglas'},{k:'threat',l:'Threat Prev.'}],
@@ -4228,209 +4044,27 @@ ${esG4 ? '<span class="ios-up">● 4G GTD Empresas — APN bam.gtd.cl</span>' : 
 DNA Center: <span class="ios-up">ACTIVO</span>`;
 }
 
-function genRouterOverviewLegacy(s){
-  const mplsEstado = ST.mpls[s.id];
-  const label = mplsEstado === 'activo' ? '<span class="ios-up">UP</span>' : '<span class="ios-down">DOWN</span>';
-  return `RTR-${s.code}> <span class="ios-cmd">show version</span>
+function genRouterOverviewLegacy(s){ return window.LegacyBaseline.deviceText(s,'router','ov'); }
 
-Cisco IOS Software, C1900 Software (C1900-UNIVERSALK9-M)
-Version 15.5(3)M, RELEASE SOFTWARE (fc1)
-${s.isCM ? 'Cisco 2901' : 'Cisco 1921'} uptime is ${UPTIME}
+function genIfBriefLegacy(s){ return window.LegacyBaseline.deviceText(s,'router','iface'); }
 
-<span class="ios-down">⚠ EQUIPO FUERA DE SOPORTE — EOL desde ${s.isCM ? '2019' : '2020'}</span>
-<span class="ios-down">Sin repuestos oficiales · Sin parches de seguridad</span>
+function genWANLegacy(s){ return window.LegacyBaseline.deviceText(s,'router','wan'); }
 
-<span class="ios-hdr">HARDWARE INSTALADO</span>
-2x Gigabit Ethernet integrados
-Sin módulos cellular (no soporta 5G/4G)
-Sin HA en sucursales (único router)
+function genEOLRouter(s){ return window.LegacyBaseline.deviceText(s,'router','eol'); }
 
-<span class="ios-hdr">MPLS</span>
-Interfaz Gig0/0/0 → MPLS Entel (${s.isCM ? '100' : '10'} Mbps)
-Estado: ${label}
+function genFWLegacyOverview(s){ return window.LegacyBaseline.deviceText(s,'fw','ov'); }
 
-<span class="ios-hdr">Memoria / CPU</span>
-DRAM: 512 MB (limitante para nuevas features)
-CPU load: ${Math.floor(30+Math.random()*40)}% (elevado por antigüedad)`;
-}
+function genFWLegacyIfaces(s){ return window.LegacyBaseline.deviceText(s,'fw','iface'); }
 
-function genIfBriefLegacy(s){
-  const n = s.num;
-  const mplsSt = ST.mpls[s.id]==='caido'?'<span class="ios-down">down           down</span>':'<span class="ios-up">up               up</span>';
-  if(s.isCM){
-    return `RTR-CM> <span class="ios-cmd">show ip interface brief</span>
-<span class="ios-hdr">Interface                  IP-Address        OK? Method Status           Protocol</span>
-GigabitEthernet0/0/0       dhcp              YES NVRAM  <span class="ios-up">up</span>               <span class="ios-up">up</span>   (MPLS Entel)
-GigabitEthernet0/0/1       dhcp              YES NVRAM  <span class="ios-up">up</span>               <span class="ios-up">up</span>   (MPLS Movistar)
-GigabitEthernet0/1.10      10.70.${n}.1      YES NVRAM  up               up   (VLAN Datos)
-GigabitEthernet0/1.20      10.70.${n}.129     YES NVRAM  up               up   (VLAN VoIP)
-GigabitEthernet0/1.30      10.70.${n}.161     YES NVRAM  up               up   (VLAN Gestión)
-GigabitEthernet0/1.40      10.70.${n}.177     YES NVRAM  up               up   (VLAN Invitados)`;
-  }
-  return `RTR-${s.code}> <span class="ios-cmd">show ip interface brief</span>
-<span class="ios-hdr">Interface                  IP-Address        OK? Method Status           Protocol</span>
-GigabitEthernet0/0/0       dhcp              YES NVRAM  ${mplsSt}   (MPLS Único)
-GigabitEthernet0/1.10      10.70.${n}.1      YES NVRAM  up               up   (VLAN Datos)
-GigabitEthernet0/1.20      10.70.${n}.129     YES NVRAM  up               up   (VLAN VoIP)
-GigabitEthernet0/1.30      10.70.${n}.161     YES NVRAM  up               up   (VLAN Gestión)
-GigabitEthernet0/1.40      10.70.${n}.177     YES NVRAM  up               up   (VLAN Invitados)
+function genFWLegacyRules(s){ return window.LegacyBaseline.deviceText(s,'fw','rules'); }
 
-<span class="ios-hdr">⚠ PUNTO ÚNICO DE FALLA</span>
-Solo 1 interfaz WAN. Si cae MPLS, no hay ruta alternativa.`;
-}
+function genEOLFW(s){ return window.LegacyBaseline.deviceText(s,'fw','eol'); }
 
-function genWANLegacy(s){
-  return `RTR-${s.code}> <span class="ios-cmd">show ip route | include 0.0.0.0</span>
+function genSWLegacyOverview(s){ return window.LegacyBaseline.deviceText(s,(DEV_STATE.type==='sw2'?'sw2':'sw1'),'ov'); }
 
-Gateway of last resort is 10.100.0.1 to network 0.0.0.0
+function genSWLegacyVLAN(s){ return window.LegacyBaseline.deviceText(s,(DEV_STATE.type==='sw2'?'sw2':'sw1'),'vlan'); }
 
-<span class="ios-hdr">S*   0.0.0.0/0 [1/0] via 10.100.0.1</span>
-
-<span class="ios-hdr">OSPF</span>
-Router ID: 10.70.${s.num}.1
-Neighbors: ${ST.mpls[s.id]==='activo' ? '1 (RTR-CM)' : '0 (peer perdido)'}
-Hello: 10s · Dead: 40s
-<span class="ios-warn">⚠ Sin BFD · Reconvergencia 30-60s ante falla</span>
-
-<span class="ios-hdr">⚠ PROBLEMAS ACTUALES</span>
-• Sin IP SLA configurado
-• Sin tracking objects
-• Sin rutas de respaldo
-• Sin failover automático
-• Cambios de configuración = intervención manual`;
-}
-
-function genEOLRouter(s){
-  const modelo = s.isCM ? 'Cisco 2901' : 'Cisco 1921';
-  const eol = s.isCM ? '2019' : '2020';
-  return `${modelo} — ANÁLISIS EOL
-
-<span class="ios-hdr">CICLO DE VIDA</span>
-Año instalación:     2014-2015
-Fecha EOL:           ${eol}
-Años sin soporte:    ${s.isCM ? 7 : 6} años
-Último firmware:     IOS 15.5(3)M
-
-<span class="ios-hdr">RIESGOS</span>
-• CVEs públicos sin parche disponible
-• Sin acceso a TAC de Cisco
-• Repuestos solo en mercado secundario
-• No soporta 5G, IPsec IKEv2 con AES-256-GCM
-• DRAM limitada impide features nuevas
-
-<span class="ios-hdr">CONCLUSIÓN</span>
-<span class="ios-down">⚠ Equipo debe ser reemplazado en el rediseño</span>`;
-}
-
-function genFWLegacyOverview(s){
-  return `ASA-${s.code}> <span class="ios-cmd">show version</span>
-
-Cisco Adaptive Security Appliance Software Version 9.1(7)22
-Hardware:   ASA5512, 4096 MB RAM
-Uptime:     ${UPTIME}
-
-<span class="ios-down">⚠ ASA 5512-X EOL desde 2017 — 9 años sin parches</span>
-
-<span class="ios-hdr">LICENCIAS</span>
-AnyConnect Premium: 25 sesiones
-Firewall: Base
-Contextos: 2
-
-<span class="ios-hdr">RIESGOS</span>
-• Vulnerabilidades CVE sin mitigación
-• Sin WildFire · Sin Threat Prevention moderno`;
-}
-
-function genFWLegacyIfaces(s){
-  return `ASA-${s.code}> <span class="ios-cmd">show interface ip brief</span>
-
-<span class="ios-hdr">Interface    IP-Address      OK?  Method  Status  Protocol</span>
-GigabitEthernet0/0    100.64.10.2    YES  CONFIG  up      up        (outside — MPLS)
-GigabitEthernet0/1    10.70.0.254    YES  CONFIG  up      up        (inside)
-GigabitEthernet0/2    unassigned     YES  unset   down    down
-GigabitEthernet0/3    unassigned     YES  unset   down    down
-Management0/0        10.70.0.250    YES  CONFIG  up      up        (management)`;
-}
-
-function genFWLegacyRules(s){
-  return `ASA-${s.code}> <span class="ios-cmd">show running-config access-list</span>
-
-access-list INSIDE_OUT extended permit ip any any
-access-list OUTSIDE_IN extended deny ip any any
-
-<span class="ios-warn">⚠ ANÁLISIS: Reglas mínimas, sin granularidad</span>
-
-• No hay ACL por VLAN
-• No hay inspección de aplicaciones
-• No hay filtrado por URL
-• Permit "any any" en dirección saliente (riesgo exfiltración)`;
-}
-
-function genEOLFW(s){
-  return `ASA 5512-X — ANÁLISIS EOL
-
-<span class="ios-hdr">CICLO DE VIDA</span>
-Año instalación:     2014
-Fecha EOL:           2017
-Años sin soporte:    9 años
-Último firmware:     9.1(7)22 (2017)
-
-<span class="ios-hdr">RIESGOS CRÍTICOS</span>
-• CVEs de 2018-2025 sin parche
-• Ejemplos públicos: CVE-2018-0101, CVE-2020-3187, CVE-2023-20269
-• No soporta TLS 1.3
-• No soporta certificados modernos
-• Posible incumplimiento PCI DSS
-
-<span class="ios-hdr">CONCLUSIÓN</span>
-<span class="ios-down">⚠ Equipo heredado: reemplazo propuesto Palo Alto PA-1410</span>`;
-}
-
-function genSWLegacyOverview(s){
-  const modelo = s.isCM ? 'Cisco Catalyst 3750-X' : 'Cisco Catalyst 2960-24TT-L';
-  const ios = s.isCM ? '15.2(4)E10' : '15.0(2)SE11';
-  const eol = s.isCM ? '2020' : '2018';
-  const puertos = s.isCM ? '48 puertos GbE + stack' : '24 puertos 10/100 + 2 GbE';
-  return `SW-${s.code}> <span class="ios-cmd">show version</span>
-
-Cisco IOS Software, ${modelo}
-Version ${ios}, RELEASE SOFTWARE
-
-Modelo:              ${modelo}
-Puertos:             ${puertos}
-Uptime:              ${UPTIME}
-
-<span class="ios-down">⚠ EOL desde ${eol} · Sin actualizaciones de seguridad</span>
-
-<span class="ios-hdr">NOTAS</span>
-${s.isCM ? '• Stack de 2 unidades (redundancia de puertos)' : '• 1 unidad única (sin redundancia de puertos)'}
-${s.isCM ? '• Sin MACsec' : '• Puertos 10/100 (limitante actual)'}`;
-}
-
-function genSWLegacyVLAN(s){
-  return `SW-${s.code}> <span class="ios-cmd">show vlan brief</span>
-
-<span class="ios-hdr">VLAN Name                             Status    Ports</span>
-1    default                          active    Gi1/0/1-24
-10   DATOS-Usuarios                   active    Gi1/0/3-15
-20   VOIP-Telefonia                   active    Gi1/0/16-20
-30   GESTION-Red                      active    Gi1/0/21
-40   INVITADOS-DMZ                    active    Gi1/0/22
-
-<span class="ios-warn">⚠ VLANs definidas pero SIN ACLs de política</span>`;
-}
-
-function genSWLegacyPorts(s){
-  return `SW-${s.code}> <span class="ios-cmd">show interfaces status</span>
-
-<span class="ios-hdr">Port      Name              Status      Vlan</span>
-Gi1/0/1   Uplink-Router     <span class="ios-up">connected </span> trunk
-Gi1/0/2   Libre             notconnect  1
-Gi1/0/3   PC-001            <span class="ios-up">connected </span> 10
-Gi1/0/4   PC-002            <span class="ios-up">connected </span> 10
-Gi1/0/5   PC-003            <span class="ios-up">connected </span> 10
-Gi1/0/6   PC-004            <span class="ios-up">connected </span> 10`;
-}
+function genSWLegacyPorts(s){ return window.LegacyBaseline.deviceText(s,(DEV_STATE.type==='sw2'?'sw2':'sw1'),'ports'); }
 
 function genIfBrief(s){
   if(window.ActiveProfile?.enabled())return window.ActiveProfile.routerDetail(s,'show ip interface brief');
@@ -4916,7 +4550,7 @@ function handleTermCmd(ev,sedeId,pcIdx){
   }else if(lower==='hostname')addLine(pc.id);
   else if(lower==='ipconfig'||lower==='ipconfig /all'){
     addLine('Adaptador Ethernet · '+pc.id+'\nDirección IPv4: '+pc.ip+'\nMáscara: 255.255.255.128 (/25)\nGateway: 10.70.'+s.num+'.1\nVLAN del PC: '+pc.vlan+' · VLAN del puerto: '+getSwitchPCVlan(s.id,pc)+'\nEnlace: '+(isSwitchPCPortAvailable(s.id,pc)?'activo':'sin conexión'));
-    if(lower.endsWith('/all'))addLine('MAC: '+pc.mac+'\nDNS corporativos configurados: '+CENTRAL_SERVICES.dns1+', '+CENTRAL_SERVICES.dns2+' (disponibilidad de servicio no verificada)');
+    if(lower.endsWith('/all'))addLine('MAC: '+pc.mac+'\nDNS corporativos configurados: '+(ST.mode==='antes'?'10.70.200.30 (reserva académica)':CENTRAL_SERVICES.dns1+', '+CENTRAL_SERVICES.dns2)+' (disponibilidad de servicio no verificada)');
   }else if(lower==='route print'){
     addLine('Tabla de rutas del PC (configurada, no prueba de conectividad)\nDestino              Máscara             Gateway\n10.70.'+s.num+'.0          255.255.255.128     En vínculo\n0.0.0.0              0.0.0.0             10.70.'+s.num+'.1');
   }else if(lower==='arp -a'){
@@ -5177,6 +4811,7 @@ function genRouterDetail(s,command){
 }
 
 function genLegacyVersion(s,type){
+  if(ST.mode==='antes')return LegacyBaseline.deviceText(s,type,'ov');
   const p=devicePrompt(s,type), n=s.num;
   if(type==='fw') return cliText(p,'show version',['Cisco ASA Software Version 9.1(7)23','Device Manager Version 7.5(2)','Compiled on Fri 14-Aug-15 16:00 by builders','Hardware: ASA5512, 4096 MB RAM, CPU Clarkdale 2800 MHz','ASA-Security Appliance uptime is 8 years, 12 weeks','Serial Number: JMX2345ABC','Activation Key: 0x0000 0x0000 0x0000 0x0000 0x0000','** NOTE: This platform is END OF LIFE (EOL) since 2017 **']);
   if(type.startsWith('sw')) return cliText(p,'show version',['Cisco IOS Software, C2960 Software (C2960-LANBASEK9-M), Version 15.0(2)SE11','Technical Support: http://www.cisco.com/techsupport',`${p.replace('>','')} uptime is 8 years, 12 weeks, 3 days`,'cisco WS-C2960-24TT-L processor (revision K0) with 61440K/4096K bytes of memory.','24 FastEthernet interfaces','2 Gigabit Ethernet interfaces','Processor board ID FOC1633X0AB','Configuration register is 0xF','** NOTE: This platform is END OF LIFE (EOL) since 2018 **']);
@@ -7024,7 +6659,7 @@ function runPing(srcId){
     addLog('⚠ No se pudo iniciar Ping / Trace','alert');
     return;
   }
-  if(local&&window.ActiveProfile?.enabled()===false){
+  if(local&&ST.mode!=='antes'&&window.ActiveProfile?.enabled()===false){
     div.innerHTML='<div class="ping-result fail">El ping local requiere el perfil DESPUÉS.</div>';
     return;
   }
@@ -7151,14 +6786,14 @@ function openComparativa(){
   const comp = document.getElementById('comp-body');
   comp.innerHTML=`
     <div style="background:#2a1f14;border:1px solid #4a3a2a;border-radius:6px;padding:14px">
-      <div style="font-size:13px;font-weight:700;color:var(--legacy);margin-bottom:10px">⚠ ANTES — Diagnóstico 2014-2015</div>
-      <div class="drow"><span class="dkey">Routers</span><span class="dval" style="color:var(--legacy)">Cisco 1921 / 2901 (EOL)</span></div>
-      <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--legacy)">C2960-24TT-L / C3750-X (EOL)</span></div>
-      <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--red)">Solo ASA 5512-X (EOL 2017)</span></div>
-      <div class="drow"><span class="dkey">WAN</span><span class="dval" style="color:var(--red)">24 enlaces MPLS (100 Mbps c/u, escenario heredado)</span></div>
-      <div class="drow"><span class="dkey">Uptime</span><span class="dval" style="color:var(--red)">99.5%</span></div>
-      <div class="drow"><span class="dkey">RTO</span><span class="dval" style="color:var(--red)">180 min (supuesto)</span></div>
-      <div class="drow"><span class="dkey">Años sin soporte</span><span class="dval" style="color:var(--red)">6-9</span></div>
+      <div style="font-size:13px;font-weight:700;color:var(--legacy);margin-bottom:10px">⚠ ANTES — Base inicial documentada</div>
+      <div class="drow"><span class="dkey">Routers</span><span class="dval" style="color:var(--legacy)">Cisco 1921 / 2911 (sin soporte)</span></div>
+      <div class="drow"><span class="dkey">Switches</span><span class="dval" style="color:var(--legacy)">2960-S / 3750-X PoE (sin soporte)</span></div>
+      <div class="drow"><span class="dkey">Firewall</span><span class="dval" style="color:var(--red)">ASA 5512-X central · soporte hasta 2022</span></div>
+      <div class="drow"><span class="dkey">WAN</span><span class="dval" style="color:var(--red)">MPLS continental; satélite supuesto S21/S22; doble ISP CM</span></div>
+      <div class="drow"><span class="dkey">Uptime</span><span class="dval" style="color:var(--red)">Sin medir</span></div>
+      <div class="drow"><span class="dkey">RTO</span><span class="dval" style="color:var(--red)">Sin medir</span></div>
+      <div class="drow"><span class="dkey">Soporte original</span><span class="dval" style="color:var(--red)">Fechas por modelo en diagnóstico</span></div>
     </div>
     <div style="background:#0a2010;border:1px solid var(--green);border-radius:6px;padding:14px">
       <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px">✓ DESPUÉS — Rediseño 2026</div>
@@ -7190,9 +6825,11 @@ initZoom();
 
 addLog('Sistema NOC iniciado — Financiera Pacífico','ok');
 addLog('Modo DESPUÉS: 23 sedes + 4 enlaces inalámbricos + satélites LEO','ok');
-addLog('Modo ANTES: hardware legacy 2014-2015 (Cisco 1921/2901, C2960, ASA 5512-X)','warn');
+addLog('Base ANTES documentada: Cisco 1921/2911, switches PoE, teléfonos y datacenter supuesto','warn');
 addLog('Click en sede/satélite/torre/proveedor → modal de configuración','ok');
 </script>
+<script src="./network/legacy-inventory.js"></script>
+<script src="./network/legacy-baseline.js"></script>
 <script src="./network/packet-workbench.js"></script>
 </body>
 </html>

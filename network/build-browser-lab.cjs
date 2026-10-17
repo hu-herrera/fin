@@ -27,7 +27,11 @@ const browser=[
  ''].join('\n');
 new Function(browser);
 const target=path.join(__dirname,'redundant-browser.js');
+const baseline=JSON.parse(fs.readFileSync(path.join(__dirname,'../docs/base-infraestructura-antes.json'),'utf8'));
+const baselineBrowser='/* Generated from docs/base-infraestructura-antes.json. Do not edit. */\nwindow.LegacyInventory='+JSON.stringify(baseline)+';\n';
+const baselineTarget=path.join(__dirname,'legacy-inventory.js');
 if(process.argv.includes('--check')){
  if(fs.readFileSync(target,'utf8')!==browser)throw Error('Browser lab desactualizado: ejecutar node network/build-browser-lab.cjs');
+ if(fs.readFileSync(baselineTarget,'utf8')!==baselineBrowser)throw Error('Inventario ANTES desactualizado: ejecutar node network/build-browser-lab.cjs');
  console.log('OK: motor Node y navegador sincronizados');
-}else{fs.writeFileSync(target,browser); console.log('Generado '+target)}
+}else{fs.writeFileSync(target,browser);fs.writeFileSync(baselineTarget,baselineBrowser); console.log('Generados motor e inventario ANTES')}
