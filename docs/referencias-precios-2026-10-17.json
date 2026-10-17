@@ -1,0 +1,101 @@
+{
+  "price": {
+    "fx_assumption_clp_per_usd": 1000,
+    "iva_assumption": 0.19,
+    "sites_initial": 23,
+    "branches_initial": 22,
+    "branches_future": 6
+  },
+  "unit": {
+    "router_usd": 2161.99,
+    "fw_usd": 1138.5,
+    "atp5_usd": 1276.09,
+    "switch9200_clp_iva": 2856000,
+    "switch1300x_usd": 1562.99,
+    "phone_usd": 185.99
+  },
+  "per": {
+    "router": 2572768,
+    "fw": 1354815,
+    "atp": 1518547,
+    "sw9200": 2856000,
+    "sw1300x": 1859958
+  },
+  "scenarios": [
+    {
+      "id": "A_routers_y_C9200L",
+      "per_branch": 16604260,
+      "branches22": 365293720,
+      "future6": 99625560
+    },
+    {
+      "id": "B_routers_y_C1300X",
+      "per_branch": 14612176,
+      "branches22": 321467872,
+      "future6": 87673056
+    },
+    {
+      "id": "C_consolidado_C1300X",
+      "per_branch": 9466640,
+      "branches22": 208266080,
+      "future6": 56799840
+    }
+  ],
+  "as_of": "2026-10-17",
+  "status": "REFERENCIAS_PUBLICAS_Y_ESCENARIOS_PARCIALES_NO_COTIZACION_FORMAL",
+  "rounding": "Redondear cada precio unitario convertido al peso antes de multiplicar cantidades.",
+  "exclusions": [
+    "Casa matriz completa",
+    "Soporte",
+    "Licencias Cisco y seguridad adicional",
+    "Telefonia",
+    "Servidores",
+    "UPS",
+    "Opticas y stacking",
+    "Distribucion WAN",
+    "Implementacion",
+    "Contratos WAN",
+    "Flete y cargos de importacion",
+    "Cobertura sexto anio"
+  ],
+  "sources": [
+    {
+      "sku": "C8211-G2",
+      "price": 2161.99,
+      "currency": "USD",
+      "url": "https://www.cdw.com/product/cisco-8200-series-router-desktop/9186404"
+    },
+    {
+      "sku": "PAN-PA-510",
+      "price": 1138.5,
+      "currency": "USD",
+      "url": "https://networkdevicesinc.com/products/pan-pa-510"
+    },
+    {
+      "sku": "PAN-PA-510-ATP-5YR",
+      "price": 1276.09,
+      "currency": "USD",
+      "url": "https://networkdevicesinc.com/collections/new-collection/products/pan-pa-510-atp-5yr"
+    },
+    {
+      "sku": "C9200L-24P-4G-E",
+      "price": 2856000,
+      "currency": "CLP",
+      "iva_included": true,
+      "condition": "Publicacion etiquetada Nuevo; confirmar paquete",
+      "url": "https://www.ksmtec.cl/producto/switches/switch-catalyst-c9200l-24p-4g-e-2/"
+    },
+    {
+      "sku": "C1300X-24P-4X",
+      "price": 1562.99,
+      "currency": "USD",
+      "url": "https://www.cdw.com/product/cisco-catalyst-1300x-24p-4x-switch-24-ports-managed-rack-mountable/9193163"
+    },
+    {
+      "sku": "DP-9841-K9=",
+      "price": 185.99,
+      "currency": "USD",
+      "url": "https://www.ipphone-warehouse.com/cisco-9841-voip-desk-phone-dp-9841-k9/"
+    }
+  ]
+}
