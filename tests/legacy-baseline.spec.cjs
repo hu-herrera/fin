@@ -45,9 +45,26 @@ test('Recorrido intersede incluye teléfonos, un ASA central y ningún firewall 
  const r=await page.evaluate(()=>{const p=evaluateMapPing('s01','s02');return {ok:p.ok,ids:p.route.map(n=>n.id)};});
  expect(r.ok).toBe(true);expect(r.ids).toContain('site:s01:phone:1');expect(r.ids).toContain('site:s02:phone:1');expect(r.ids.filter(n=>n.endsWith(':firewall'))).toEqual(['site:cm:firewall']);
 });
-test('MPLS nacional aísla solo las 20 continentales y conserva satélite supuesto',async({page})=>{
- const r=await page.evaluate(()=>{sc_antes_e2();return {down:SEDES.filter(s=>ST.mpls[s.id]==='caido').map(s=>s.id),land:evaluateMapPing('s01','s02').ok,sat:evaluateMapPing('s21','s22').ok,cm:evaluateMapPing('s21','cm').ok};});
- expect(r.down).toHaveLength(20);expect(r.down).not.toContain('s21');expect(r.land).toBe(false);expect(r.sat).toBe(true);expect(r.cm).toBe(true);
+test('MPLS nacional aísla las 22 remotas incluidas S21/S22 y reset restaura',async({page})=>{
+ const r=await page.evaluate(()=>{sc_antes_e2();const down=SEDES.filter(s=>ST.mpls[s.id]==='caido').map(s=>s.id),pings=['s01','s21','s22'].map(id=>evaluateMapPing(id,'cm').ok);sc_reset();return {down,pings,restored:evaluateMapPing('s21','s22').ok};});
+ expect(r.down).toHaveLength(22);expect(r.down).toEqual(expect.arrayContaining(['s21','s22']));expect(r.pings).toEqual([false,false,false]);expect(r.restored).toBe(true);
+});
+test('Toda remota usa MPLS cableado en inventario, mapa y topología',async({page})=>{
+ const r=await page.evaluate(()=>SEDES.filter(s=>!s.isCM).map(s=>({id:s.id,wan:LegacyBaseline.site(s).wan_type,rate:LegacyBaseline.site(s).wan_access_mbps_assumed,endpoint:getWanEndpoint(s).type,html:renderTopoTab(s)})));
+ for(const s of r){expect(s.wan).toBe('MPLS unico por cable');expect(s.rate).toBe(100);expect(s.endpoint).toBe('mpls');expect(s.html).toContain('MPLS cableado');expect(s.html).not.toMatch(/Satelital|600 ms/);}
+ await page.evaluate(()=>{selectSede('s21');showTip({target:document.getElementById('chile-map')},SEDES.find(s=>s.id==='s21'));});
+ await expect(page.locator('#detail-panel')).toContainText('100 Mbps supuestos');await expect(page.locator('#tooltip')).toContainText('MPLS cableado');
+ const titles=await page.locator('#flow-layer path title').allTextContents();expect(titles).toHaveLength(22);expect(titles.every(t=>t.includes('MPLS cableado'))).toBe(true);
+});
+test('Corte del acceso MPLS central afecta remotas sin apagar LAN ni hosts',async({page})=>{
+ await page.evaluate(()=>openSedeModal('cm'));await page.locator('[data-legacy-wan="cm"]').click();
+ const r=await page.evaluate(()=>{const s=SEDES.find(s=>s.id==='s21'),p=getPCs(s);return {all:SEDES.filter(s=>!s.isCM).every(s=>!evaluateMapPing(s.id,'cm').ok),local:evaluatePCPing(s,p[0],p[1].ip).ok,host:LegacyBaseline.service('application').operational,lines:document.querySelectorAll('#flow-layer .mpls-down-line').length};});
+ expect(r).toEqual({all:true,local:true,host:true,lines:22});
+ await page.locator('[data-legacy-wan="cm"]').click();expect(await page.evaluate(()=>evaluateMapPing('s22','cm').ok)).toBe(true);
+});
+test('Hosts centrales pierden red solo al caer su switch de acceso supuesto',async({page})=>{
+ const r=await page.evaluate(()=>{LegacyBaseline.toggle('cm','sw1');const first={app:LegacyBaseline.service('application'),voice:LegacyBaseline.service('call_control'),backup:LegacyBaseline.service('backup')};LegacyBaseline.toggle('cm','sw2');return {first,allOff:!LegacyBaseline.service('call_control').operational};});
+ expect(r.first.app.powered).toBe(true);expect(r.first.app.network).toBe(false);expect(r.first.app.operational).toBe(false);expect(r.first.voice.operational).toBe(true);expect(r.first.backup.operational).toBe(false);expect(r.allOff).toBe(true);
 });
 test('CM: un router conserva el modelo HA, ambos o el ASA impiden el tránsito',async({page})=>{
  const r=await page.evaluate(()=>{const ping=()=>evaluateMapPing('s01','s02').ok;LegacyBaseline.toggle('cm','router');const one=ping();LegacyBaseline.toggle('cm','router2');const both=ping();sc_reset();LegacyBaseline.toggle('cm','firewall');return {one,both,fw:ping(),local:evaluateMapPing('s01','s01','10.70.1.10','10.70.1.11').ok};});

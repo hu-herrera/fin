@@ -17,6 +17,8 @@ Este repositorio modela una red corporativa ficticia con **23 sedes y 650 PCs**,
 
 **Diseño preferido B (17-10-2026):** [decisión WAN/VPN integrada y telefonía SIP](docs/decision-arquitectura-optimizada.md) · [BOM y cálculos optimizados](docs/propuesta-optimizada-2026-10-17.json). Dos NGFW y dos switches PoE de acceso por remota, sin routers remotos adicionales; Cisco en borde CM y switching; 650 SIP-T33G sujetos a soporte/piloto. Subtotal parcial comparable CLP 411.158.986; total completo pendiente y superior al presupuesto original. La [variante A de fase 2](docs/fase-2-dimensionamiento-y-seleccion.md) se conserva como comparación histórica. DESPUÉS todavía ejecuta el perfil anterior; su migración funcional queda identificada en la decisión.
 
+**Escenario original consolidado:** [base, recorridos y auditoría de huecos](docs/escenario-original-consolidado.md). ANTES representa MPLS cableado en las 23 ubicaciones, 100 Mbps remotos como supuesto, corte nacional de 22 sucursales y dependencia de los hosts de su switch de acceso. Caudales centrales, contratos y servicios reales permanecen sin acreditar.
+
 ## Qué probar
 
 Abrir [index.html](index.html) en un navegador compatible. Selecciona una sede en el mapa, usa el botón amarillo **Ver topología interna completa** y entra a **📡 Ping / Trace**. El botón **Enviar ping** deja el resultado y la ruta lógica visibles en esa misma ventana; desde ahí se puede abrir la animación del ping sobre el mapa. **▣ Presentar** abre la exposición y abre el Ping / Trace original de S01. Son partes de la misma página y están disponibles en GitHub Pages. Consulta la [guía de demostración](docs/guia-demostracion-simulador.md).

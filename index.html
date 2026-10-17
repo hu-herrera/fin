@@ -2044,8 +2044,8 @@ function renderFlowLinesAntes(){
   SEDES.slice(1).forEach(s => {
     if(ST.mpls[s.id] === 'inactivo') return;
     const pos = sedePos(s);
-    const caido = ST.mpls[s.id] === 'caido';
-    const color = caido ? '#dc4646' : (s.isIsland||s.isAntarctic?'#b59bdf':'#5a6478');
+    const caido = ST.mpls[s.id] === 'caido' || ST.mpls.cm !== 'activo';
+    const color = caido ? '#dc4646' : '#5a6478';
     const dx = cmPos[0] - pos[0];
     const dy = cmPos[1] - pos[1];
     const dist = Math.hypot(dx, dy) || 1;
@@ -2068,7 +2068,7 @@ function renderFlowLinesAntes(){
       path.classList.add('flow-line');
       path.style.animationDuration = '4.5s';
     }
-    const label=document.createElementNS(NS,'title');label.textContent=s.isIsland||s.isAntarctic?'Satelital + VPN (supuesto)':'MPLS continental · operador pendiente';path.appendChild(label);
+    const label=document.createElementNS(NS,'title');label.textContent='MPLS cableado · 100 Mbps supuestos · operador pendiente';path.appendChild(label);
     fl.appendChild(path);
   });
 
@@ -2776,7 +2776,8 @@ function showTip(e,s){
   if(ST.mode==='antes'){
     const ms=ST.mpls[s.id];
     const mplsLabel = ms === 'inactivo' ? 'SIN COBERTURA LEGACY' : TIP_LBL[ms]||ms.toUpperCase();
-    rows=`<div class="tt-lrow"><div class="tt-dot" style="background:${ms==='activo'?'#3cc878':'#dc4646'}"></div>${s.isIsland||s.isAntarctic?'Satelital + VPN':'MPLS'}: ${mplsLabel}</div>`;
+    rows=`<div class="tt-lrow"><div class="tt-dot" style="background:${ms==='activo'?'#3cc878':'#dc4646'}"></div>MPLS cableado: ${mplsLabel}</div>`;
+    if(!s.isCM&&ST.mpls.cm!=='activo')rows+='<div class="tt-lrow" style="color:var(--red)">Acceso MPLS central caído: sin ruta a CM</div>';
     rows+=`<div class="tt-lrow" style="font-size:10px;color:#8a93a6;margin-top:3px">Base inicial · inventario supuesto</div>`;
   } else {
     PRIORITY.forEach(k=>{
@@ -3150,7 +3151,7 @@ function sc_reset(){
 function _refresh(){
   invalidateSitePing('El estado de la red cambió. Envía otro ping para evaluar la ruta actual.');
   clearPacketSimulation('El estado de la red cambió. Repite el ping para evaluar la ruta actual.');
-  renderMap(); renderAntenas(); updateMetrics();
+  renderMap(); if(ST.mode==='antes')renderFlowLines(); renderAntenas(); updateMetrics();
   if(ST.selId) renderDetail(ST.selId);
   if(SM_TAB==='ping'&&document.getElementById('ping-source-host')){
     const source=document.getElementById('ping-source-host'),value=source.value;
@@ -3426,7 +3427,7 @@ function renderRedundantLabTab(s){
     '<p style="color:var(--text2);font-size:12px;margin-top:12px">Para despliegue real faltan: acceso administrativo protegido por VLAN30 y consola, validación/aprobación PAN-OS, IP/SLA del operador, VPN y pruebas IOS-XE. Un PA único sigue siendo punto único de falla.</p></div>';
 }
 function topoToolbar(s){
-  const active = ST.mode === 'antes' ? (s.isCM?'MPLS central + doble ISP':s.isIsland||s.isAntarctic?'Satelital + VPN (supuesto)':'MPLS único') : (LK_NAME[window.ActiveProfile?.enabled()?window.ActiveProfile.selectedWan(s.id):activeLink(s.id)] || 'Sin enlace');
+  const active = ST.mode === 'antes' ? (s.isCM?'MPLS central + doble ISP':'MPLS cableado · 100 Mbps supuestos') : (LK_NAME[window.ActiveProfile?.enabled()?window.ActiveProfile.selectedWan(s.id):activeLink(s.id)] || 'Sin enlace');
   return `<div class="topo-toolbar">
     <strong>Topología interna · ${s.code}</strong>
     <span>${ST.mode==='antes'?'Haz clic en un equipo para consultar su diagnóstico; los controles permiten probar sus dependencias.':'Haz clic en un router, firewall, switch o PC para abrir su consola.'}</span>

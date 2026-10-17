@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "as_of": "2026-10-17",
   "phase": "1_PROBLEMA_BASE_ANTES",
   "status": "ESCENARIO_ACADEMICO_MODELADO_EN_NAVEGADOR_NO_EQUIPOS_REALES",
@@ -19,7 +19,11 @@
     "Fechas de soporte consultadas en avisos oficiales Cisco.",
     "Direcciones de voz y servidores reservadas del escenario ANTES; telefonos visibles y dependencias de hosts modeladas. No hay DHCP, llamadas ni servicios financieros reales.",
     "CM mantiene redundancia parcial: dos routers HSRP y dos switches en stack; firewall unico.",
-    "No se asignan disponibilidad medida, fallas observadas ni contratos de WAN inexistentes."
+    "No se asignan disponibilidad medida, fallas observadas ni contratos de WAN inexistentes.",
+    "MPLS por cable en las 23 ubicaciones, incluidas S21/S22: premisa ficticia corregida por el usuario.",
+    "100 Mbps nominales por remota: supuesto de capacidad contratada, no medicion. Caudal central pendiente.",
+    "Navegacion centralizada via MPLS y ASA/ISP en CM; borde MPLS con CPE compartido accesible por ambos routers.",
+    "Hosts con un enlace de acceso: DC-01/BKP-01 al switch 1 y DC-02 al switch 2 de CM; supuesto academico sin HA de servidores."
   ],
   "datacenter": {
     "physical_hosts_assumed": 2,
@@ -48,7 +52,12 @@
       }
     },
     "service_availability": "SIN_CLUSTER_DE_APLICACION_O_BASE_DE_DATOS_DECLARADO",
-    "capacity": "CPU_RAM_IOPS_SO_LICENCIAS_PENDIENTES"
+    "capacity": "CPU_RAM_IOPS_SO_LICENCIAS_PENDIENTES",
+    "host_network_members_assumed": {
+      "dc1": 1,
+      "dc2": 2,
+      "backup": 1
+    }
   },
   "sites": [
     {
@@ -82,7 +91,9 @@
         "10.70.64.64"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": null,
+      "wan_capacity_basis": "PENDIENTE"
     },
     {
       "id": "s01",
@@ -102,7 +113,7 @@
       "ports_after_workstations_before_infrastructure": 18,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.1.0/25",
       "voice_network": "10.70.65.0/25",
       "management_network": "10.70.1.160/28",
@@ -115,7 +126,9 @@
         "10.70.65.39"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s02",
@@ -135,7 +148,7 @@
       "ports_after_workstations_before_infrastructure": 18,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.2.0/25",
       "voice_network": "10.70.66.0/25",
       "management_network": "10.70.2.160/28",
@@ -148,7 +161,9 @@
         "10.70.66.39"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s03",
@@ -168,7 +183,7 @@
       "ports_after_workstations_before_infrastructure": 18,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.3.0/25",
       "voice_network": "10.70.67.0/25",
       "management_network": "10.70.3.160/28",
@@ -181,7 +196,9 @@
         "10.70.67.39"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s04",
@@ -201,7 +218,7 @@
       "ports_after_workstations_before_infrastructure": 18,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.4.0/25",
       "voice_network": "10.70.68.0/25",
       "management_network": "10.70.4.160/28",
@@ -214,7 +231,9 @@
         "10.70.68.39"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s05",
@@ -234,7 +253,7 @@
       "ports_after_workstations_before_infrastructure": 18,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.5.0/25",
       "voice_network": "10.70.69.0/25",
       "management_network": "10.70.5.160/28",
@@ -247,7 +266,9 @@
         "10.70.69.39"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s06",
@@ -267,7 +288,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.6.0/25",
       "voice_network": "10.70.70.0/25",
       "management_network": "10.70.6.160/28",
@@ -280,7 +301,9 @@
         "10.70.70.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s07",
@@ -300,7 +323,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.7.0/25",
       "voice_network": "10.70.71.0/25",
       "management_network": "10.70.7.160/28",
@@ -313,7 +336,9 @@
         "10.70.71.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s08",
@@ -333,7 +358,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.8.0/25",
       "voice_network": "10.70.72.0/25",
       "management_network": "10.70.8.160/28",
@@ -346,7 +371,9 @@
         "10.70.72.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s09",
@@ -366,7 +393,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.9.0/25",
       "voice_network": "10.70.73.0/25",
       "management_network": "10.70.9.160/28",
@@ -379,7 +406,9 @@
         "10.70.73.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s10",
@@ -399,7 +428,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.10.0/25",
       "voice_network": "10.70.74.0/25",
       "management_network": "10.70.10.160/28",
@@ -412,7 +441,9 @@
         "10.70.74.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s11",
@@ -432,7 +463,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.11.0/25",
       "voice_network": "10.70.75.0/25",
       "management_network": "10.70.11.160/28",
@@ -445,7 +476,9 @@
         "10.70.75.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s12",
@@ -465,7 +498,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.12.0/25",
       "voice_network": "10.70.76.0/25",
       "management_network": "10.70.12.160/28",
@@ -478,7 +511,9 @@
         "10.70.76.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s13",
@@ -498,7 +533,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.13.0/25",
       "voice_network": "10.70.77.0/25",
       "management_network": "10.70.13.160/28",
@@ -511,7 +546,9 @@
         "10.70.77.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s14",
@@ -531,7 +568,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.14.0/25",
       "voice_network": "10.70.78.0/25",
       "management_network": "10.70.14.160/28",
@@ -544,7 +581,9 @@
         "10.70.78.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s15",
@@ -564,7 +603,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.15.0/25",
       "voice_network": "10.70.79.0/25",
       "management_network": "10.70.15.160/28",
@@ -577,7 +616,9 @@
         "10.70.79.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s16",
@@ -597,7 +638,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.16.0/25",
       "voice_network": "10.70.80.0/25",
       "management_network": "10.70.16.160/28",
@@ -610,7 +651,9 @@
         "10.70.80.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s17",
@@ -630,7 +673,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.17.0/25",
       "voice_network": "10.70.81.0/25",
       "management_network": "10.70.17.160/28",
@@ -643,7 +686,9 @@
         "10.70.81.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s18",
@@ -663,7 +708,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.18.0/25",
       "voice_network": "10.70.82.0/25",
       "management_network": "10.70.18.160/28",
@@ -676,7 +721,9 @@
         "10.70.82.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s19",
@@ -696,7 +743,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.19.0/25",
       "voice_network": "10.70.83.0/25",
       "management_network": "10.70.19.160/28",
@@ -709,7 +756,9 @@
         "10.70.83.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s20",
@@ -729,7 +778,7 @@
       "ports_after_workstations_before_infrastructure": 20,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "MPLS unico",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.20.0/25",
       "voice_network": "10.70.84.0/25",
       "management_network": "10.70.20.160/28",
@@ -742,7 +791,9 @@
         "10.70.84.37"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s21",
@@ -762,7 +813,7 @@
       "ports_after_workstations_before_infrastructure": 7,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "Acceso satelital unico con VPN; supuesto sin operador confirmado",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.21.0/25",
       "voice_network": "10.70.85.0/25",
       "management_network": "10.70.21.160/28",
@@ -775,7 +826,9 @@
         "10.70.85.26"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     },
     {
       "id": "s22",
@@ -795,7 +848,7 @@
       "ports_after_workstations_before_infrastructure": 16,
       "firewall_model": null,
       "firewalls": 0,
-      "wan_type": "Acceso satelital unico con VPN; supuesto sin operador confirmado",
+      "wan_type": "MPLS unico por cable",
       "data_network": "10.70.22.0/25",
       "voice_network": "10.70.86.0/25",
       "management_network": "10.70.22.160/28",
@@ -808,7 +861,9 @@
         "10.70.86.17"
       ],
       "inventory_status": "MODELADO_EN_VISTA_ANTES_NO_INVENTARIO_REAL",
-      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL"
+      "infrastructure_basis": "SUPUESTO_ACADEMICO_NO_INVENTARIO_REAL",
+      "wan_access_mbps_assumed": 100,
+      "wan_capacity_basis": "SUPUESTO_ACADEMICO_NO_MEDICION"
     }
   ],
   "hardware_catalog": {
@@ -846,5 +901,18 @@
       "pc_path_max_mbps": 100,
       "source": "https://www.cisco.com/c/en/us/products/collateral/collaboration-endpoints/unified-ip-phone-7900-series/eos-eol-notice-c51-735570.html"
     }
+  },
+  "original_wan": {
+    "medium": "CABLE",
+    "service": "MPLS",
+    "branch_access_mbps_assumed": 100,
+    "central_access_mbps": null,
+    "remote_backup_accesses": 0,
+    "internet_breakout": "CENTRALIZADO_EN_CM",
+    "central_internet_isps": 2,
+    "central_isp_capacity_mbps": null,
+    "central_mpls_handoff": "CPE_COMPARTIDO_DOS_ENTREGAS_LOGICAS_SUPUESTAS",
+    "physical_diversity_verified": false,
+    "price_monthly_clp": null
   }
 }

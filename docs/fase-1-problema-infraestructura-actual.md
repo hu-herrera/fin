@@ -2,6 +2,8 @@
 
 **Financiera Pacífico · corte de diagnóstico: 17-10-2026.** Definición del escenario ANTES, previa a modificar las topologías. Los modelos y cantidades de hardware se establecen como supuestos académicos autorizados por el usuario; no constituyen un inventario levantado en una empresa real.
 
+**Base consolidada:** el [escenario original](escenario-original-consolidado.md) fija MPLS cableado en las 23 ubicaciones, incluidos S21/S22, y distingue decisiones académicas de parámetros no medidos. Inventario y motor ANTES ya reflejan esa definición.
+
 ## 1. Problema que se busca resolver
 
 La infraestructura permite la operación cotidiana de Financiera Pacífico, el acceso al core financiero y la telefonía corporativa en condiciones normales. Sin embargo, los equipos de red y teléfonos seleccionados para representar la base han superado sus fechas oficiales de soporte; las sucursales dependen de una única conexión y un único router y switch, y los cambios se realizan manualmente. Casa matriz tiene redundancia parcial, pero mantiene un firewall único y dependencias centrales. La organización necesita renovar y estandarizar la infraestructura, reducir el impacto de las interrupciones y preparar seis sucursales adicionales.
@@ -16,7 +18,7 @@ El problema no es que la red esté permanentemente caída. Se trata de una plata
 | Requisitos de la ficha | RTO sucursal <=5 minutos, cifrado y auditoría; seis nuevas sucursales; horizonte de cinco años; CLP 160 millones; objetivos 99,99% core y 99,95% sucursal |
 | Adaptación ya acordada | 23 ubicaciones iniciales del simulador, incluidas Isla de Pascua y Antártica; total futuro de 29. El Excel parte de 22, no de 23 |
 | Distribución existente en el simulador | 650 PCs distribuidos en las 23 ubicaciones |
-| Supuestos fijados en esta fase | Equipos antiguos indicados abajo; 650 teléfonos, uno por PC; conexión switch → teléfono → PC también en la base; dos hosts físicos centrales; acceso satelital único para las dos ubicaciones especiales |
+| Supuestos fijados en esta fase | Equipos antiguos indicados abajo; 650 teléfonos, uno por PC; conexión switch → teléfono → PC también en la base; dos hosts físicos centrales; MPLS cableado también en S21/S22; 100 Mbps remotos como supuesto; navegación centralizada |
 | Información no acreditada | Inventario físico original, contratos, mediciones, versiones de software/licencias, capacidad de servidores y cobertura de operadores |
 
 Los 780 trabajadores del caso no se transforman automáticamente en 780 PCs o teléfonos. Los 650 pares representan puestos informáticos del escenario. No se inventan equipos de colaboradores fuera de ese inventario.
@@ -74,8 +76,8 @@ Todas las filas representan supuestos de equipamiento, conservando las ciudades 
 | S18 | Puerto Montt | 28 / 28 | 1 × 1921 | 1 × WS-C2960S-48LPS-L | 48 / 20 | MPLS único |
 | S19 | Coyhaique | 28 / 28 | 1 × 1921 | 1 × WS-C2960S-48LPS-L | 48 / 20 | MPLS único |
 | S20 | Punta Arenas | 28 / 28 | 1 × 1921 | 1 × WS-C2960S-48LPS-L | 48 / 20 | MPLS único |
-| S21 | Hanga Roa (Isla de Pascua) | 17 / 17 | 1 × 1921 | 1 × WS-C2960S-24PS-L | 24 / 7 | Satelital único + VPN |
-| S22 | Antártica Chilena | 8 / 8 | 1 × 1921 | 1 × WS-C2960S-24PS-L | 24 / 16 | Satelital único + VPN |
+| S21 | Hanga Roa (Isla de Pascua) | 17 / 17 | 1 × 1921 | 1 × WS-C2960S-24PS-L | 24 / 7 | MPLS cableado único |
+| S22 | Antártica Chilena | 8 / 8 | 1 × 1921 | 1 × WS-C2960S-24PS-L | 24 / 16 | MPLS cableado único |
 
 \* «Libres» descuenta solo los puestos. Antes de asignar puertos hay que descontar enlaces a routers/firewall, servidores, impresoras y otros dispositivos. Los enlaces físicos, fuentes y módulos no se presuponen instalados por figurar un chasis en esta tabla. No hay un segundo switch de respaldo en las sucursales de esta base.
 
@@ -85,9 +87,9 @@ Se conservan dos routers con HSRP y dos switches de 48 puertos en un stack físi
 
 La sede mantiene doble ISP de Internet y terminación de la red privada MPLS. No se reemplaza «doble ISP» por dos MPLS de proveedores inventados, como muestra actualmente el dibujo antiguo. Operadores, velocidades y entregas físicas quedan sin confirmar. HSRP no prueba que ambos routers dispongan de todos los servicios WAN.
 
-El ASA central aplica el filtrado perimetral del escenario y sigue siendo único. Las sucursales no tienen un appliance firewall dedicado: esto no significa ausencia de toda seguridad, pues la ficha ya incluye firewall/VPN y pueden existir ACL en los routers. No se inventan reglas permisivas o cifras de ataques para agravar el problema.
+El ASA central aplica el filtrado perimetral del escenario y sigue siendo único. Los dos ISP se conectan al ASA, separados del borde MPLS de dos routers; la navegación remota se centraliza en CM. El tránsito de routers a ASA usa una VLAN aislada en el stack existente. Este es el plano lógico académico; interfaces, CPE compartido y puertos se verifican aparte. Las sucursales no tienen un appliance firewall dedicado: esto no significa ausencia de toda seguridad, pues la ficha ya incluye firewall/VPN y pueden existir ACL en los routers. No se inventan reglas permisivas o cifras de ataques para agravar el problema.
 
-### Sucursales continentales S01–S20
+### Sucursales S01–S22
 
 Un router, un switch PoE y una conexión MPLS por ubicación. La terminación LAN de datos/voz se plantea en subinterfaces del router remoto; los switches son acceso L2. Se mantiene el encaminamiento corporativo OSPF como función de la ficha, con configuración real/licencias por verificar.
 
@@ -95,9 +97,9 @@ La pérdida del router o switch único detiene la conectividad de esa sede. La p
 
 ### S21 y S22: adaptación geográfica
 
-Hanga Roa y Antártica forman parte de la base por decisión del proyecto. Para no afirmar cobertura MPLS o móvil no demostrada, se define un acceso satelital único con VPN como supuesto académico; quedan sin proveedor, caudal y latencia contratados. No se atribuye a la instalación de referencia de 2014 Starlink, Amazon Leo o 5G.
+Hanga Roa y Antártica forman parte de la base por decisión del proyecto. **Ambas tienen MPLS por cable como premisa académica explícita del usuario**, igual que las demás sucursales. No es una afirmación sobre infraestructura geográfica real. No hay satélite, acceso móvil o respaldo WAN en ANTES.
 
-Su riesgo es dependencia de un único acceso, router, switch y de la logística de soporte. La recuperación presencial puede ser más difícil, pero no se asignan tiempos o probabilidades de avería sin evidencia. El tratamiento distinto de estas ubicaciones deberá reflejarse en el futuro motor de escenarios.
+Se asumen 100 Mbps por remota, sin proveedor, SLA, mediciones ni precios inventados. El corte MPLS nacional afecta a las 22 remotas y el corte del acceso central afecta también a S21/S22. La logística de soporte requiere estudio; no se asignan tiempos o probabilidades de avería.
 
 ## 5. Datacenter inicial y servicios
 
@@ -111,11 +113,13 @@ El datacenter de CM ya existe en la ficha. Para dar forma al escenario se asumen
 
 La plataforma/versión de control de llamadas y sus licencias están pendientes: el teléfono no realiza llamadas por tener una IP. No se instala TACACS+ por este documento; las identidades locales, cambios manuales y registros dispersos son supuestos para estudiar estandarización. El NMS central se mantiene porque la ficha sí lo contempla.
 
+Se asume enlace único de DC-01 y BKP-01 al miembro 1 del stack y DC-02 al miembro 2. La pérdida del switch de acceso desconecta esos hosts aunque sigan encendidos; el segundo switch no duplica una NIC inexistente. Este detalle ya está modelado y no representa un clúster de servidores.
+
 La caída de acceso al control de llamadas puede afectar registros y nuevas llamadas; no se afirma que todas las llamadas ya establecidas se corten necesariamente. La dependencia de Internet para llamadas externas exige definir el servicio telefónico real.
 
 ## 6. Direccionamiento documental para preparar la base
 
-Este plan es una **reserva lógica del escenario ANTES**, no un cambio a las configuraciones del simulador ni una afirmación sobre el IPAM entregado por el profesor. Se mantiene el espacio base `10.70.0.0/16`.
+Este plan es una **reserva lógica del escenario ANTES**, representada por el inventario y los diagnósticos del simulador; no es DHCP real ni una afirmación sobre el IPAM entregado por el profesor. Se mantiene el espacio base `10.70.0.0/16`.
 
 Para número de sede `N=0..22` (CM=0):
 
@@ -155,7 +159,7 @@ La definición documental se integró después en `index.html` mediante un módu
 6. Ping/Trace y efectos de fallos reales del modelo: sin forzar caídas por la antigüedad ni respuestas de servicios inexistentes.
 7. Regresiones, guía de demostración y entregables anteriores que describen el escenario previo.
 
-**Estado:** la representación funcional de ANTES incluye inventario, diagnósticos de consulta, dependencias y Ping/Trace. No se generan configuraciones originales certificadas ni se ejecutan servicios reales. La elección del equipamiento DESPUÉS sigue abierta.
+**Estado:** la representación funcional de ANTES incluye inventario, diagnósticos de consulta, dependencias y Ping/Trace. No se generan configuraciones originales certificadas ni se ejecutan servicios reales. La renovación queda separada de esta base; sus modelos/licencias y cuatro WAN requieren su propio cierre.
 
 ## 9. Brechas organizacionales, protección de datos y marco chileno
 
@@ -233,9 +237,9 @@ Inventario estructurado: [base-infraestructura-antes.json](base-infraestructura-
 
 DC-01 contiene las VMs de aplicación y base de datos; DC-02 contiene las de control de llamadas, DNS/NTP y NMS/logs. BKP-01 es un repositorio separado. Son funciones lógicas: no se inventan marca, recursos, hipervisor, motor de base de datos o plataforma telefónica. La caída de un host cambia sus dependencias, sin apagar artificialmente la red ni producir respuestas ICMP de servidores.
 
-El modelo HA de CM presupone entrega lógica de la red privada a ambos routers. El cableado, CPE y las interfaces/transceptores efectivos deberán verificarse; no demuestra diversidad física ni conmutación real. MPLS central y los ISP de Internet son dominios separados. S21/S22 usan un acceso satelital genérico supuesto y no adquieren redundancia celular/LEO por inferencia.
+El modelo HA de CM presupone entrega lógica de la red privada a ambos routers. El cableado, CPE y las interfaces/transceptores efectivos deberán verificarse; no demuestra diversidad física ni conmutación real. MPLS central y los ISP de Internet son dominios separados. S21/S22 usan el mismo MPLS cableado supuesto; no existe respaldo inalámbrico en ninguna remota de ANTES.
 
-Para visualizar el recorrido se usan RTT didácticos constantes: 2 ms local; 15 ms por extremo continental o 600 ms por extremo satelital más 4 ms de tránsito central. No son mediciones, predicciones de cobertura ni compromisos del proveedor. No hay llamadas, base de datos ni aplicación financiera en ejecución. Un servicio marcado con dependencias disponibles no queda certificado como sano.
+Para visualizar el recorrido se usan RTT didácticos constantes: 2 ms local y 34 ms intersede, uniformes e ilustrativos. La geografía no introduce retardos satelitales en la base MPLS. No son mediciones, predicciones de cobertura ni compromisos del proveedor. No hay llamadas, base de datos ni aplicación financiera en ejecución. Un servicio marcado con dependencias disponibles no queda certificado como sano.
 
 ### Recorrido de revisión
 
@@ -243,5 +247,5 @@ Para visualizar el recorrido se usan RTT didácticos constantes: 2 ms local; 15 
 2. Ejecutar Ping/Trace local y hacia S02; revisar los teléfonos, routers y el ASA central en el recorrido. Repetir desde el ping del mapa sin abrir topología.
 3. Apagar el router remoto: el ping local continúa y el intersede se detiene. Apagar el switch: ambos fallan y el teléfono pierde PoE.
 4. Abrir CM: revisar los 55 pares, dos routers, stack, ASA y tres alojamientos. Apagar DC-01 y comprobar que aplicación/base de datos pierden alojamiento; DC-02 conserva sus dependencias.
-5. Cortar MPLS nacional: las 20 remotas continentales se aíslan; S21/S22 conservan el acceso satelital supuesto. Restaurar el escenario.
+5. Cortar MPLS nacional: las 22 remotas se aíslan, incluidas S21/S22. Restaurar. En CM, cortar solo el acceso/CPE MPLS central: la LAN y los hosts alimentados permanecen disponibles, pero todas las remotas pierden acceso a CM.
 6. Volver a DESPUÉS: las configuraciones candidatas y estados de equipos modernos permanecen independientes del modelo de equipos antiguos. Cambiar de modo reinicia enlaces WAN según el comportamiento existente del simulador.
